@@ -24,7 +24,20 @@ export default function StartPage() {
         body: JSON.stringify({ email, durationDays: Number(duration) }),
       });
 
-      const data = await res.json();
+      const responseText = await res.text();
+      let data: { error?: string; userId?: string } = {};
+
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        if (!res.ok) {
+          throw new Error(
+            `Le serveur a répondu avec une erreur (${res.status}) : ${responseText.slice(0, 200)}`
+          );
+        }
+
+        throw new Error('Le serveur a renvoyé une réponse inattendue.');
+      }
 
       if (!res.ok) {
         throw new Error(data.error || 'Une erreur est survenue');
