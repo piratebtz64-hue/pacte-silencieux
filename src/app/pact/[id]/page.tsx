@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -15,7 +15,8 @@ interface Pact {
   userB: { id: string; email: string } | null;
 }
 
-export default function PactPage({ params }: { params: { id: string } }) {
+export default function PactPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [pact, setPact] = useState<Pact | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +24,7 @@ export default function PactPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     const fetchPact = async () => {
       try {
-        const res = await fetch(`/api/pact?pactId=${params.id}`);
+        const res = await fetch(`/api/pact?pactId=${id}`);
         if (!res.ok) throw new Error('Pacte non trouvé');
         const data = await res.json();
         setPact(data);
@@ -35,7 +36,7 @@ export default function PactPage({ params }: { params: { id: string } }) {
     };
 
     fetchPact();
-  }, [params.id]);
+  }, [id]);
 
   if (loading) {
     return (
