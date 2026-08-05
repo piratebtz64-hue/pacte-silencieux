@@ -24,24 +24,13 @@ export default function StartPage() {
         body: JSON.stringify({ email, durationDays: Number(duration) }),
       });
 
-      const responseText = await res.text();
-      let data: { error?: string; userId?: string } = {};
-
-      try {
-        data = JSON.parse(responseText);
-      } catch {
-        if (!res.ok) {
-          throw new Error(
-            `Le serveur a répondu avec une erreur (${res.status}) : ${responseText.slice(0, 200)}`
-          );
-        }
-
-        throw new Error('Le serveur a renvoyé une réponse inattendue.');
-      }
-
       if (!res.ok) {
-        throw new Error(data.error || 'Une erreur est survenue');
+        const text = await res.text();
+        console.error('Erreur API:', text);
+        throw new Error('Erreur lors de la soumission');
       }
+
+      const data: { userId?: string } = await res.json();
 
       localStorage.setItem('pacte_email', email.toLowerCase().trim());
       localStorage.setItem('pacte_duration', duration);
