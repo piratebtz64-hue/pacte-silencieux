@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  emailHash        String    @unique
+  createdAt        DateTime  @default(now())
+  lastActiveAt     DateTime  @default(now())
+  activePactId     String?
+  pactsAsUserA     Pact[]    @relation("PactUserA")
+  pactsAsUserB     Pact[]    @relation("PactUserB")
+  gesturesSent     Gesture[] @relation("GestureSender")
+  gesturesReceived Gesture[] @relation("GestureReceiver")
+  reports          Report[]
+  waitingSince     DateTime?
+}
+
+model Pact {
+  id           String      @id @default(cuid())
+  createdAt    DateTime    @default(now())
+  startedAt    DateTime?
+  endsAt       DateTime?
+  durationDays Int
+  status       PactStatus  @default(WAITING)
+  userAId      String?
+  userBId      String?
+  userA        User?       @relation("PactUserA", fields: [userAId], references: [id])
+  userB        User?       @relation("PactUserB", fields: [userBId], references: [id])
+  gestures     Gesture[]
+}
+
+enum PactStatus {
+  WAITING
+  ACTIVE
+  ENDED
+}
+
+model Gesture {
+  id             String       @id @default(cuid())
+  pactId         String
+  pact           Pact         @relation(fields: [pactId], references: [id], onDelete: Cascade)
+  senderUserId   String
+  senderUser     User         @relation("GestureSender", fields: [senderUserId], references: [id])
+  receiverUserId String
+  receiverUser   User         @relation("GestureReceiver", fields: [receiverUserId], references: [id])
+  type           GestureType
+  seenAt         DateTime?
+  createdAt      DateTime     @default(now())
+}
+
+enum GestureType {
+  JE_SUIS_LA
+  JE_TIENS
+  AUJOURDHUI_FRAGILE
+  JE_VEILLE_AVEC_TOI
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  pactId    String?
+  reason    String
+  createdAt DateTime @default(now())
+}
