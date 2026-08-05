@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError) {
+      await prisma.pact.delete({ where: { id: pact.id } });
       console.error('Supabase auth error:', authError);
       return NextResponse.json(
         { error: 'Erreur lors de l\'envoi du lien' },

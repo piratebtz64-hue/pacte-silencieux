@@ -24,11 +24,13 @@ export default function StartPage() {
         body: JSON.stringify({ email, durationDays: Number(duration) }),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
-        throw new Error(data.error || 'Une erreur est survenue');
+        const text = await res.text();
+        console.error('Erreur API:', text);
+        throw new Error('Erreur lors de la soumission');
       }
+
+      const data: { userId?: string } = await res.json();
 
       localStorage.setItem('pacte_email', email.toLowerCase().trim());
       localStorage.setItem('pacte_duration', duration);
