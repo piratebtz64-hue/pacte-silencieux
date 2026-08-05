@@ -4,34 +4,13 @@
   "outputDirectory": ".next",
   "devCommand": "next dev",
   "installCommand": "npm ci",
-  "env": [
-    {
-      "key": "NEXT_PUBLIC_SUPABASE_URL",
-      "value": "@next_public_supabase_url"
-    },
-    {
-      "key": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-      "value": "@next_public_supabase_anon_key"
-    },
-    {
-      "key": "SUPABASE_SERVICE_ROLE_KEY",
-      "value": "@supabase_service_role_key"
-    },
-    {
-      "key": "DATABASE_URL",
-      "value": "@database_url"
-    },
-    {
-      "key": "DIRECT_URL",
-      "value": "@direct_url"
-    },
-    {
-      "key": "NEXT_PUBLIC_APP_URL",
-      "value": "@next_public_app_url"
-    },
-    {
-      "key": "NEXT_PUBLIC_STRIPE_DONATION_LINK",
-      "value": "@next_public_stripe_donation_link"
-    }
-  ]
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@next_public_supabase_anon_key",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
+    "DATABASE_URL": "@database_url",
+    "DIRECT_URL": "@direct_url",
+    "NEXT_PUBLIC_APP_URL": "@next_public_app_url",
+    "NEXT_PUBLIC_STRIPE_DONATION_LINK": "@next_public_stripe_donation_link"
+  }
 }
