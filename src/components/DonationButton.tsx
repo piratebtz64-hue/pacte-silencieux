@@ -3,10 +3,17 @@
 import Link from 'next/link';
 
 export default function DonationButton({ className = '' }: { className?: string }) {
-  const external = process.env.NEXT_PUBLIC_STRIPE_DONATION_LINK;
+  // Priorité : lien PayPal, sinon Stripe, sinon page /don
+  const paypal = process.env.NEXT_PUBLIC_PAYPAL_DONATION_LINK;
+  const stripe = process.env.NEXT_PUBLIC_STRIPE_DONATION_LINK;
+  const external =
+    paypal && paypal.startsWith('http')
+      ? paypal
+      : stripe && stripe.startsWith('http')
+        ? stripe
+        : null;
 
-  // Si un lien Stripe Payment Link est configuré → ouverture directe
-  if (external && external.startsWith('http')) {
+  if (external) {
     return (
       <a
         href={external}
@@ -19,7 +26,6 @@ export default function DonationButton({ className = '' }: { className?: string 
     );
   }
 
-  // Sinon → page don interne
   return (
     <Link
       href="/don"

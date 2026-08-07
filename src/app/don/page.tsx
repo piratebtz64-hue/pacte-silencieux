@@ -5,15 +5,22 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 const AMOUNTS = [
-  { label: '3 €', hint: 'Un café discret', value: '3' },
-  { label: '5 €', hint: 'Soutien léger', value: '5' },
-  { label: '10 €', hint: 'Présence tangible', value: '10' },
-  { label: '20 €', hint: 'Un vrai coup de pouce', value: '20' },
+  { label: '3 €', hint: 'Un café discret' },
+  { label: '5 €', hint: 'Soutien léger' },
+  { label: '10 €', hint: 'Présence tangible' },
+  { label: '20 €', hint: 'Un vrai coup de pouce' },
 ];
 
 export default function DonPage() {
-  const stripeLink = process.env.NEXT_PUBLIC_STRIPE_DONATION_LINK;
-  const hasStripe = Boolean(stripeLink && stripeLink.startsWith('http'));
+  const paypal = process.env.NEXT_PUBLIC_PAYPAL_DONATION_LINK;
+  const stripe = process.env.NEXT_PUBLIC_STRIPE_DONATION_LINK;
+  const paymentLink =
+    paypal && paypal.startsWith('http')
+      ? paypal
+      : stripe && stripe.startsWith('http')
+        ? stripe
+        : null;
+  const provider = paypal && paypal.startsWith('http') ? 'PayPal' : paymentLink ? 'Stripe' : null;
 
   return (
     <main className="min-h-screen flex flex-col">
@@ -38,16 +45,16 @@ export default function DonPage() {
             maintenance), un don libre est le bienvenu. Aucune obligation.
           </p>
 
-          {hasStripe ? (
+          {paymentLink ? (
             <div className="mt-10 space-y-3">
               <p className="text-sm font-bold text-[#1f6b67]">
-                Choisir un montant indicatif, puis payer via Stripe (sécurisé).
+                Paiement sécurisé via {provider}. Montant libre de ton côté.
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {AMOUNTS.map((a) => (
                   <a
-                    key={a.value}
-                    href={stripeLink}
+                    key={a.label}
+                    href={paymentLink}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-4 rounded-xl border border-black/10 dark:border-white/10 hover:border-[#1f6b67] hover:bg-[#1f6b67]/5 transition text-center"
@@ -58,24 +65,41 @@ export default function DonPage() {
                 ))}
               </div>
               <a
-                href={stripeLink}
+                href={paymentLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-4 flex w-full items-center justify-center py-3.5 rounded-full bg-[#1f6b67] text-white font-bold hover:bg-[#184f4d] transition"
               >
-                Continuer vers le paiement sécurisé
+                Continuer vers {provider}
               </a>
               <p className="text-xs text-center text-[#a49f96]">
-                Paiement traité par Stripe. Nous ne voyons pas ton numéro de carte.
+                Tu seras redirigé vers {provider}. Nous ne voyons pas tes données
+                bancaires.
               </p>
             </div>
           ) : (
             <div className="mt-10 p-6 rounded-2xl border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-900/20">
+              <p className="text-sm text-amber-900 dark:text-amber-200 leading-relaxed font-bold mb-2">
+                Lien PayPal à configurer
+              </p>
               <p className="text-sm text-amber-900 dark:text-amber-200 leading-relaxed">
-                Le lien de paiement n’est pas encore configuré. Dès qu’un{' '}
-                <strong>Stripe Payment Link</strong> est ajouté dans les variables
-                d’environnement Vercel (<code className="text-xs">NEXT_PUBLIC_STRIPE_DONATION_LINK</code>),
-                ce bouton s’activera automatiquement.
+                1. Crée un lien de don sur{' '}
+                <a
+                  href="https://www.paypal.com/buttons/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  PayPal Buttons
+                </a>{' '}
+                (ou PayPal.Me)
+                <br />
+                2. Sur Vercel → Settings → Environment Variables, ajoute :
+                <br />
+                <code className="text-xs block mt-2 p-2 rounded bg-black/5 dark:bg-white/10">
+                  NEXT_PUBLIC_PAYPAL_DONATION_LINK = https://paypal.me/toncompte
+                </code>
+                3. Redeploy. Le bouton s’activera tout seul.
               </p>
             </div>
           )}
