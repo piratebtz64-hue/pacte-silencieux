@@ -9,7 +9,9 @@ import {
   CATEGORY_LABELS,
   getMessageById,
   searchMessages,
+  getMessagesByIntent,
   type MessageCategory,
+  type MessageIntent,
   type SupportOpening,
 } from '@/lib/messages';
 
@@ -52,14 +54,26 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<'fil' | 'geste' | 'soutien'>('fil');
-  const [selectedCategory, setSelectedCategory] = useState<MessageCategory | 'all' | 'fav'>('all');
+  const [intent, setIntent] = useState<MessageIntent | 'all'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<
+    MessageCategory | 'all' | 'fav'
+  >('all');
   const [search, setSearch] = useState('');
   const [favorites, setFavorites] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [lastSeenCount, setLastSeenCount] = useState(0);
 
-  const currentUserId = pact?.userAId || pact?.userBId || '';
+  // Identité locale (plus fiable que seulement userA)
+  const localUserId =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('pacte_userId') || ''
+      : '';
+  const currentUserId =
+    localUserId ||
+    (pact?.userAId && pact?.userBId
+      ? ''
+      : pact?.userAId || pact?.userBId || '');
 
   useEffect(() => {
     try {
@@ -102,7 +116,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 15000);
+    const interval = setInterval(load, 12000);
     return () => clearInterval(interval);
   }, [id]);
 
@@ -112,32 +126,52 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
   const unreadCount = Math.max(0, messages.length - lastSeenCount);
 
+  const resolvedUserId =
+    currentUserId ||
+    (messages[0]
+      ? localStorage.getItem('pacte_userId') || messages[0].senderUserId
+      : '');
+
   const pendingForMe = messages.filter(
     (m) =>
-      m.receiverUserId === currentUserId &&
+      resolvedUserId &&
+      m.receiverUserId === resolvedUserId &&
       !m.responseText &&
-      m.senderUserId !== currentUserId
+      m.senderUserId !== resolvedUserId
   ).length;
 
   const filteredOpenings = useMemo(() => {
-    let list = search ? searchMessages(search) : SUPPORT_MESSAGES;
+    let list = search
+      ? searchMessages(search, intent)
+      : getMessagesByIntent(intent);
     if (selectedCategory === 'fav') {
       list = list.filter((m) => favorites.includes(m.id));
     } else if (selectedCategory !== 'all') {
       list = list.filter((m) => m.category === selectedCategory);
     }
     return list;
-  }, [search, selectedCategory, favorites]);
+  }, [search, selectedCategory, favorites, intent]);
+
+  const categoriesForIntent = useMemo(() => {
+    const set = new Set(
+      getMessagesByIntent(intent).map((m) => m.category)
+    );
+    return Array.from(set);
+  }, [intent]);
 
   const sendGesture = async (type: string) => {
-    if (!pact || !currentUserId) return;
+    const uid = localStorage.getItem('pacte_userId');
+    if (!pact || !uid) {
+      setStatusMsg('Session incomplète. Repars depuis /start.');
+      return;
+    }
     setSending(true);
     setStatusMsg(null);
     try {
       const res = await fetch('/api/gesture', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pactId: id, type, senderUserId: currentUserId }),
+        body: JSON.stringify({ pactId: id, type, senderUserId: uid }),
       });
       if (!res.ok) {
         const d = await res.json();
@@ -153,7 +187,11 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   };
 
   const sendOpening = async (opening: SupportOpening) => {
-    if (!pact || !currentUserId) return;
+    const uid = localStorage.getItem('pacte_userId');
+    if (!pact || !uid) {
+      setStatusMsg('Session incomplète. Repars depuis /start.');
+      return;
+    }
     setSending(true);
     setStatusMsg(null);
     try {
@@ -162,13 +200,13 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           pactId: id,
-          senderUserId: currentUserId,
+          senderUserId: uid,
           openingId: opening.id,
         }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'Erreur');
-      setStatusMsg('Message envoyé. Tu pourras en renvoyer dans quelques heures.');
+      setStatusMsg('Message envoyé.');
       await load();
       setTab('fil');
     } catch (e) {
@@ -245,13 +283,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
             </span>
           </div>
 
-          {pact.status === 'WAITING' && (
-            <div className="mt-6 p-4 rounded-xl bg-[#1f6b67]/8 border border-[#1f6b67]/20 text-sm text-[#1f6b67]">
-              En attente d’une autre personne avec la même durée. Dès qu’elle
-              arrive, vous pourrez vous envoyer des gestes et des messages.
-            </div>
-          )}
-
           {statusMsg && (
             <div className="mt-4 p-3 rounded-lg bg-[#f2eee5] dark:bg-white/5 text-sm text-center">
               {statusMsg}
@@ -289,22 +320,25 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                 <div className="mt-6 space-y-4">
                   {pendingForMe > 0 && (
                     <div className="p-3 rounded-lg bg-[#1f6b67]/10 border border-[#1f6b67]/20 text-sm text-[#1f6b67] text-center">
-                      {pendingForMe} message{pendingForMe > 1 ? 's' : ''} en attente de ta réponse
+                      {pendingForMe} message
+                      {pendingForMe > 1 ? 's' : ''} en attente de ta réponse
                     </div>
                   )}
                   {messages.length === 0 && (
                     <p className="text-sm text-[#a49f96] text-center py-10">
                       Aucun message pour l’instant.
                       <br />
-                      Envoie un geste ou un message de soutien.
+                      Va dans <strong>Soutien</strong> pour écrire ou demander.
                     </p>
                   )}
                   {messages.map((m) => {
-                    const isMine = m.senderUserId === currentUserId;
+                    const uid = localStorage.getItem('pacte_userId');
+                    const isMine = uid ? m.senderUserId === uid : false;
                     const needsResponse =
+                      uid &&
                       !isMine &&
                       !m.responseText &&
-                      m.receiverUserId === currentUserId;
+                      m.receiverUserId === uid;
                     const opening = getMessageById(m.openingId);
 
                     return (
@@ -386,14 +420,71 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
               {tab === 'soutien' && (
                 <div className="mt-6">
+                  {/* Deux zones d’intention */}
+                  <div className="grid grid-cols-2 gap-3 mb-5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIntent('offer');
+                        setSelectedCategory('all');
+                      }}
+                      className={`p-4 rounded-2xl border text-left transition ${
+                        intent === 'offer'
+                          ? 'border-[#1f6b67] bg-[#1f6b67]/10 ring-2 ring-[#1f6b67]/30'
+                          : 'border-black/10 dark:border-white/10 hover:border-[#1f6b67]/40'
+                      }`}
+                    >
+                      <span className="block text-sm font-bold text-[#1f6b67]">
+                        Je soutiens
+                      </span>
+                      <span className="block text-xs text-[#706b63] dark:text-[#a49f96] mt-1 leading-snug">
+                        Offrir une présence, du courage, de la douceur…
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIntent('seek');
+                        setSelectedCategory('all');
+                      }}
+                      className={`p-4 rounded-2xl border text-left transition ${
+                        intent === 'seek'
+                          ? 'border-[#1f6b67] bg-[#1f6b67]/10 ring-2 ring-[#1f6b67]/30'
+                          : 'border-black/10 dark:border-white/10 hover:border-[#1f6b67]/40'
+                      }`}
+                    >
+                      <span className="block text-sm font-bold text-[#1f6b67]">
+                        J’ai besoin de soutien
+                      </span>
+                      <span className="block text-xs text-[#706b63] dark:text-[#a49f96] mt-1 leading-snug">
+                        Dire que c’est lourd, la fatigue, la nuit…
+                      </span>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIntent('all')}
+                    className={`mb-4 text-xs font-bold ${
+                      intent === 'all' ? 'text-[#1f6b67]' : 'text-[#a49f96]'
+                    }`}
+                  >
+                    Voir tous les messages
+                  </button>
+
                   <p className="text-sm text-[#706b63] dark:text-[#a49f96] mb-3">
-                    Choisis un message. L’autre pourra répondre parmi des options.
+                    {intent === 'offer'
+                      ? 'Messages pour soutenir l’autre personne.'
+                      : intent === 'seek'
+                        ? 'Messages pour exprimer ton besoin de soutien.'
+                        : 'Choisis d’abord une zone, ou parcours tout.'}
+                    {' '}
                     Limite : 2 messages / 12 h.
                   </p>
 
                   <input
                     type="search"
-                    placeholder="Rechercher un message…"
+                    placeholder="Rechercher…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1f6b67]/30 mb-4"
@@ -418,29 +509,27 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                           : 'bg-black/5 dark:bg-white/10 text-[#706b63]'
                       }`}
                     >
-                      ♥ Favoris ({favorites.length})
+                      ♥ Favoris
                     </button>
-                    {(Object.keys(CATEGORY_LABELS) as MessageCategory[]).map(
-                      (cat) => (
-                        <button
-                          key={cat}
-                          onClick={() => setSelectedCategory(cat)}
-                          className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            selectedCategory === cat
-                              ? 'bg-[#1f6b67] text-white'
-                              : 'bg-black/5 dark:bg-white/10 text-[#706b63]'
-                          }`}
-                        >
-                          {CATEGORY_LABELS[cat]}
-                        </button>
-                      )
-                    )}
+                    {categoriesForIntent.map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setSelectedCategory(cat)}
+                        className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          selectedCategory === cat
+                            ? 'bg-[#1f6b67] text-white'
+                            : 'bg-black/5 dark:bg-white/10 text-[#706b63]'
+                        }`}
+                      >
+                        {CATEGORY_LABELS[cat]}
+                      </button>
+                    ))}
                   </div>
 
                   <div className="space-y-2 max-h-[28rem] overflow-y-auto pr-1">
                     {filteredOpenings.length === 0 && (
                       <p className="text-sm text-[#a49f96] text-center py-8">
-                        Aucun message trouvé.
+                        Aucun message dans cette zone.
                       </p>
                     )}
                     {filteredOpenings.map((m) => {
@@ -456,7 +545,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                             className={`mt-1 text-lg leading-none shrink-0 ${
                               isFav ? 'text-red-500' : 'text-[#a49f96]'
                             }`}
-                            aria-label={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
                           >
                             {isFav ? '♥' : '♡'}
                           </button>
@@ -468,6 +556,11 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                           >
                             <span className="text-[10px] uppercase tracking-wide text-[#a49f96]">
                               {CATEGORY_LABELS[m.category]}
+                              {m.intent === 'offer'
+                                ? ' · soutenir'
+                                : m.intent === 'seek'
+                                  ? ' · besoin'
+                                  : ''}
                             </span>
                             <p className="mt-0.5 text-sm leading-relaxed">{m.text}</p>
                           </button>
