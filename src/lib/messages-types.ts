@@ -18,12 +18,12 @@ export type MessageCategory =
   | 'depart'
   | 'solitude'
   | 'fierte'
-  | 'transition';
+  | 'transition'
+  | 'travail'
+  | 'panique'
+  | 'famille';
 
-/** Intention : offrir / demander / les deux */
 export type MessageIntent = 'offer' | 'seek' | 'both';
-
-/** Ton du message */
 export type MessageTone = 'doux' | 'neutre' | 'energique' | 'court';
 
 export interface SupportOpening {
@@ -33,7 +33,6 @@ export interface SupportOpening {
   responses: string[];
   intent?: MessageIntent;
   tone?: MessageTone;
-  /** Attribution courte pour citations (optionnel) */
   source?: string;
 }
 
@@ -58,6 +57,9 @@ export const CATEGORY_LABELS: Record<MessageCategory, string> = {
   solitude: 'Solitude',
   fierte: 'Petite fierté',
   transition: 'Changement',
+  travail: 'Travail / stress',
+  panique: 'Crise / panique',
+  famille: 'Famille / proche',
 };
 
 export const TONE_LABELS: Record<MessageTone, string> = {
@@ -91,6 +93,9 @@ export const SEEK_CATEGORIES: MessageCategory[] = [
   'reconnexion',
   'solitude',
   'transition',
+  'travail',
+  'panique',
+  'famille',
 ];
 
 export function getIntentForCategory(category: MessageCategory): MessageIntent {
@@ -111,8 +116,10 @@ export function getDefaultTone(category: MessageCategory): MessageTone {
     category === 'nuit' ||
     category === 'deuil' ||
     category === 'depart' ||
-    category === 'solitude'
+    category === 'solitude' ||
+    category === 'panique'
   )
     return 'doux';
+  if (category === 'travail' || category === 'colere') return 'neutre';
   return 'neutre';
 }
