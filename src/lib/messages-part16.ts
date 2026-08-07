@@ -1,0 +1,208 @@
+import type { SupportOpening } from './messages-types';
+
+/**
+ * Nuances d’intensité (1 léger · 2 moyen · 3 profond)
+ * Communication non verbale textuelle — exemples concrets
+ */
+export const PART16: SupportOpening[] = [
+  // —— Intensité 1 : contact minimal, peu de charge ——
+  {
+    id: 'nu-1a',
+    category: 'micro',
+    intent: 'both',
+    tone: 'court',
+    intensity: 1,
+    text: 'Juste un point de contact. Rien à résoudre.',
+    responses: ['Point reçu.', 'OK.', 'Merci.', 'Pareil.'],
+  },
+  {
+    id: 'nu-1b',
+    category: 'corporel',
+    intent: 'offer',
+    tone: 'court',
+    intensity: 1,
+    text: '[Légère inclinaison de tête — “je t’ai vu”.]',
+    responses: ['[Inclinaison en retour.]', 'Vu.', 'Merci.', 'OK.'],
+  },
+  {
+    id: 'nu-1c',
+    category: 'salutation',
+    intent: 'both',
+    tone: 'court',
+    intensity: 1,
+    text: 'Coucou — version ultra courte.',
+    responses: ['Coucou.', 'Hi.', 'Salut.', 'OK.'],
+  },
+  {
+    id: 'nu-1d',
+    category: 'presence',
+    intent: 'offer',
+    tone: 'court',
+    intensity: 1,
+    text: 'Dans le coin. Sans plus.',
+    responses: ['Noté.', 'Merci.', 'OK.', 'Là aussi.'],
+  },
+
+  // —— Intensité 2 : engagement clair, pas de crise ——
+  {
+    id: 'nu-2a',
+    category: 'presence',
+    intent: 'offer',
+    tone: 'doux',
+    intensity: 2,
+    text: 'Je peux rester un moment avec ce que tu traverses — sans le minimiser, sans l’amplifier.',
+    responses: [
+      'C’est exactement le niveau qu’il me faut.',
+      'Merci de ne ni minimiser ni amplifier.',
+      'Je reste aussi.',
+      'Ça m’aide à ne pas dramatiser.',
+    ],
+  },
+  {
+    id: 'nu-2b',
+    category: 'corporel',
+    intent: 'offer',
+    tone: 'doux',
+    intensity: 2,
+    text: '[Orientation du buste vers toi, épaules basses — “je suis disponible, pas en alerte.”]',
+    responses: [
+      '[Je relâche un peu les épaules.]',
+      'Disponible reçue.',
+      'Merci pour le calme.',
+      'Je m’approche un peu.',
+    ],
+  },
+  {
+    id: 'nu-2c',
+    category: 'difficile',
+    intent: 'seek',
+    tone: 'neutre',
+    intensity: 2,
+    text: 'Pas le fond du gouffre — mais assez lourd pour ne pas faire semblant que “ça va”.',
+    responses: [
+      'Pas besoin de faire semblant ici.',
+      'Lourd compte, même sans gouffre.',
+      'Je te crois sur ce niveau-là.',
+      'On reste sur du vrai.',
+    ],
+  },
+  {
+    id: 'nu-2d',
+    category: 'checkin',
+    intent: 'offer',
+    tone: 'neutre',
+    intensity: 2,
+    text: 'Prise de nouvelles réelle : tu tiens comment, sur une échelle simple — léger / moyen / dur ?',
+    responses: ['Léger.', 'Moyen.', 'Dur.', 'Je ne sais pas encore.'],
+  },
+
+  // —— Intensité 3 : charge haute, filet, pas de conseils creux ——
+  {
+    id: 'nu-3a',
+    category: 'difficile',
+    intent: 'seek',
+    tone: 'doux',
+    intensity: 3,
+    text: 'Là je suis au bord. J’ai besoin de présence stable, pas de solutions.',
+    responses: [
+      'Présence stable. Pas de solutions.',
+      'Je ne bouge pas.',
+      'Tu n’as pas à expliquer le bord.',
+      'Si danger immédiat : 15 ou 3114. Ici je tiens le lien.',
+    ],
+  },
+  {
+    id: 'nu-3b',
+    category: 'corporel',
+    intent: 'offer',
+    tone: 'doux',
+    intensity: 3,
+    text: '[Ancrage : pieds au sol, respiration lente visible — “tu peux t’aligner sur mon rythme si tu veux.”]',
+    responses: [
+      '[J’essaie d’aligner le souffle.]',
+      'Je regarde juste ta stabilité.',
+      'Pas encore capable, mais merci.',
+      'Ça ralentit un cran.',
+    ],
+  },
+  {
+    id: 'nu-3c',
+    category: 'panique',
+    intent: 'seek',
+    tone: 'doux',
+    intensity: 3,
+    text: 'Le corps a pris le dessus. J’ai besoin qu’on reste concret : souffle, sol, maintenant.',
+    responses: [
+      'Maintenant : expire plus long que l’inspire.',
+      'Nomme 3 objets autour de toi.',
+      'Je reste. Concret.',
+      '3114 si ça ne redescend pas.',
+    ],
+  },
+  {
+    id: 'nu-3d',
+    category: 'deuil',
+    intent: 'seek',
+    tone: 'doux',
+    intensity: 3,
+    text: 'Le manque est immense. Les mots me semblent absurdes.',
+    responses: [
+      'Pas de mots forcés.',
+      'L’immensité a le droit d’être là.',
+      '[Silence partagé.]',
+      'Je reste sans remplir.',
+    ],
+  },
+
+  // —— Non-verbal concret supplémentaire ——
+  {
+    id: 'nv-1',
+    category: 'corporel',
+    intent: 'offer',
+    tone: 'doux',
+    intensity: 1,
+    text: '[Sourire discret, yeux doux — pas un “force le positif”.]',
+    responses: ['Reçu le sourire.', 'Merci.', 'Pas de positif forcé : OK.', 'Ça détend un peu.'],
+  },
+  {
+    id: 'nv-2',
+    category: 'corporel',
+    intent: 'both',
+    tone: 'neutre',
+    intensity: 2,
+    text: '[Pas en arrière de 10 cm — “je te laisse de l’air, je ne disparais pas.”]',
+    responses: [
+      'L’air m’aide.',
+      'Merci de ne pas disparaître.',
+      '[Je ne m’approche pas plus.]',
+      'Distance juste.',
+    ],
+  },
+  {
+    id: 'nv-3',
+    category: 'corporel',
+    intent: 'offer',
+    tone: 'doux',
+    intensity: 2,
+    text: '[Mains visibles, ouvertes — signal de sécurité non verbale.]',
+    responses: ['Signal reçu.', 'Merci.', 'Je baisse un peu la garde.', 'OK.'],
+  },
+  {
+    id: 'nv-4',
+    category: 'micro',
+    intent: 'both',
+    tone: 'court',
+    intensity: 1,
+    text: '…',
+    responses: ['…', 'Je suis là.', 'OK.', 'Continue si tu veux.'],
+  },
+  {
+    id: 'nv-5',
+    category: 'repos',
+    intent: 'offer',
+    tone: 'doux',
+    intensity: 2,
+    text: '[Geste “stop” doux vers la to-do list invisible — permission de pause.]',
+    responses: ['Stop reçu.', 'Pause prise.', 'Merci.', 'J’en avais besoin.'],
+  },
+];
