@@ -1,0 +1,383 @@
+import type { SupportOpening } from './messages-types';
+
+/**
+ * Phrases concrètes inspirées de techniques d’écoute empathique
+ * (validation, reflet, normalisation, présence, sans conseil non demandé).
+ * Langage simple, situations concrètes, patterns répétables.
+ */
+
+const R_VAL = [
+  'Merci. Ça me soulage un peu.',
+  'Reçu. Je me sens un peu moins seul.',
+  'Ça fait du bien d’être entendu.',
+  'Je garde ça.',
+  'Merci d’avoir formulé ça comme ça.',
+];
+
+const R_OFFER = [
+  'Merci.',
+  'Reçu.',
+  'Ça m’aide.',
+  'Je me sens un peu moins seul.',
+  'Merci d’être là.',
+];
+
+export const PART7: SupportOpening[] = [
+  // ——— VALIDATION (refléter le vécu sans minimiser) ———
+  {
+    id: 'emp1',
+    category: 'difficile',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Ce que tu traverses a l’air vraiment lourd. Tu n’exagères pas.',
+    responses: R_VAL,
+  },
+  {
+    id: 'emp2',
+    category: 'difficile',
+    intent: 'offer',
+    tone: 'neutre',
+    text: 'Si c’est difficile aujourd’hui, c’est parce que la situation l’est — pas parce que tu es “faible”.',
+    responses: R_VAL,
+  },
+  {
+    id: 'emp3',
+    category: 'anxiete',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Avoir peur dans l’incertitude, c’est cohérent. Ton corps réagit à quelque chose de réel pour toi.',
+    responses: R_VAL,
+  },
+  {
+    id: 'emp4',
+    category: 'fatigue',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Être épuisé après avoir tenu longtemps, ce n’est pas un échec. C’est une limite atteinte.',
+    responses: R_VAL,
+  },
+  {
+    id: 'emp5',
+    category: 'colere',
+    intent: 'offer',
+    tone: 'neutre',
+    text: 'Ta colère pointe souvent vers quelque chose d’important qui a été touché. Elle a un sens.',
+    responses: R_VAL,
+  },
+  {
+    id: 'emp6',
+    category: 'deuil',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Le chagrin dure parce que le lien comptait. Ce n’est pas “trop long” : c’est à la mesure de ce qui a été perdu.',
+    responses: R_VAL,
+  },
+
+  // ——— REFLET / MIROIR (reformuler le vécu) ———
+  {
+    id: 'emp7',
+    category: 'presence',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Si j’entends bien : tu as besoin qu’on reste, pas qu’on te donne des solutions. Je peux faire ça.',
+    responses: R_OFFER,
+  },
+  {
+    id: 'emp8',
+    category: 'difficile',
+    intent: 'offer',
+    tone: 'neutre',
+    text: 'Tu dis que c’est trop. Je prends ça au sérieux, sans te pousser à “tenir plus”.',
+    responses: R_VAL,
+  },
+  {
+    id: 'emp9',
+    category: 'anxiete',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Quand tout s’accélère dans la tête, un seul point stable peut aider. Je peux être ce point un moment.',
+    responses: R_OFFER,
+  },
+  {
+    id: 'emp10',
+    category: 'nuit',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Les nuits allongent les peurs. Ce n’est pas “dans ta tête” au sens où ce serait faux — c’est le moment qui les grossit.',
+    responses: R_VAL,
+  },
+
+  // ——— NORMALISATION (tu n’es pas bizarre) ———
+  {
+    id: 'emp11',
+    category: 'anxiete',
+    intent: 'offer',
+    tone: 'neutre',
+    text: 'Beaucoup de gens sentent la poitrine serrée avant un truc important. Ce n’est pas rare, et ce n’est pas ridicule.',
+    responses: R_VAL,
+  },
+  {
+    id: 'emp12',
+    category: 'fatigue',
+    intent: 'offer',
+    tone: 'neutre',
+    text: 'Dormir mal plusieurs nuits d’affilée, ça rend tout plus dur. Tu n’imagines pas la fatigue.',
+    responses: R_VAL,
+  },
+  {
+    id: 'emp13',
+    category: 'difficile',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Les jours où on n’arrive plus à faire le minimum existent. Tu n’es pas le seul à les connaître.',
+    responses: R_VAL,
+  },
+  {
+    id: 'emp14',
+    category: 'colere',
+    intent: 'offer',
+    tone: 'neutre',
+    text: 'Être en colère après une injustice, c’est une réaction saine. Tu n’as pas à t’en excuser ici.',
+    responses: R_VAL,
+  },
+
+  // ——— PRÉSENCE SANS CONSEIL ———
+  {
+    id: 'emp15',
+    category: 'presence',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Je ne vais pas te dire quoi faire. Je vais juste rester un peu avec toi dans ce que c’est.',
+    responses: R_OFFER,
+  },
+  {
+    id: 'emp16',
+    category: 'presence',
+    intent: 'offer',
+    tone: 'neutre',
+    text: 'Pas de leçon, pas de “tu devrais”. Juste : je suis là pour ce moment.',
+    responses: R_OFFER,
+  },
+  {
+    id: 'emp17',
+    category: 'douceur',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Tu n’as rien à prouver de ce côté-ci. Tu peux juste être fatigué, triste ou silencieux.',
+    responses: R_OFFER,
+  },
+
+  // ——— SITUATIONS CONCRÈTES ———
+  {
+    id: 'emp18',
+    category: 'motivation',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Avant ton rendez-vous : tu peux arriver stressé et quand même parler clairement. Les deux coexistent.',
+    responses: R_OFFER,
+  },
+  {
+    id: 'emp19',
+    category: 'motivation',
+    intent: 'offer',
+    tone: 'neutre',
+    text: 'Si tu as peur d’oublier ce que tu voulais dire : une note sur ton téléphone, une respiration, puis tu y vas.',
+    responses: R_OFFER,
+  },
+  {
+    id: 'emp20',
+    category: 'matin',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Se lever quand on n’en a pas envie, c’est déjà un acte. Tu n’as pas à être motivé pour commencer.',
+    responses: R_OFFER,
+  },
+  {
+    id: 'emp21',
+    category: 'nuit',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Si tu tournes dans le lit : tu n’es pas obligé de “réussir” à dormir. Repos et sommeil, ce n’est pas toujours la même chose.',
+    responses: R_VAL,
+  },
+  {
+    id: 'emp22',
+    category: 'fatigue',
+    intent: 'offer',
+    tone: 'neutre',
+    text: 'Après une journée de travail + charge mentale, être “vide” le soir est logique. Ce n’est pas un manque de volonté.',
+    responses: R_VAL,
+  },
+  {
+    id: 'emp23',
+    category: 'difficile',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Quand plusieurs problèmes arrivent en même temps, le cerveau sature. Prioriser une seule chose n’est pas de l’abandon du reste.',
+    responses: R_VAL,
+  },
+
+  // ——— DEMANDE DE SOUTIEN (seek) formulée concrètement ———
+  {
+    id: 'emp24',
+    category: 'difficile',
+    intent: 'seek',
+    tone: 'doux',
+    text: 'Aujourd’hui j’ai l’impression de tout porter seul. J’aurais besoin qu’on me dise que je n’exagère pas.',
+    responses: [
+      'Tu n’exagères pas.',
+      'C’est lourd, et c’est réel.',
+      'Tu n’as pas à porter ça seul.',
+      'Je te crois.',
+    ],
+  },
+  {
+    id: 'emp25',
+    category: 'anxiete',
+    intent: 'seek',
+    tone: 'doux',
+    text: 'Mon cœur s’emballe et j’ai du mal à me calmer. J’ai besoin d’une présence calme, pas de conseils.',
+    responses: [
+      'Je reste. Sans conseil.',
+      'Respire. Je suis là.',
+      'Tu n’es pas seul avec ça.',
+      'Présence calme, de mon côté.',
+    ],
+  },
+  {
+    id: 'emp26',
+    category: 'fatigue',
+    intent: 'seek',
+    tone: 'neutre',
+    text: 'Je n’ai plus d’énergie même pour les trucs simples. J’ai besoin qu’on me dise que c’est ok de ralentir.',
+    responses: [
+      'C’est ok de ralentir.',
+      'Tu as le droit de te reposer.',
+      'Ce n’est pas de la paresse.',
+      'Repose-toi. Je ne juge pas.',
+    ],
+  },
+  {
+    id: 'emp27',
+    category: 'deuil',
+    intent: 'seek',
+    tone: 'doux',
+    text: 'Ça fait un moment et le manque est encore là. J’ai besoin qu’on ne me dise pas de “passer à autre chose”.',
+    responses: [
+      'Le manque a le droit de rester.',
+      'Je ne te demande pas d’oublier.',
+      'Ton rythme est le bon.',
+      'Je suis là, sans pression.',
+    ],
+  },
+  {
+    id: 'emp28',
+    category: 'colere',
+    intent: 'seek',
+    tone: 'neutre',
+    text: 'Je suis en colère et j’ai peur qu’on me dise de me calmer. J’ai juste besoin d’être entendu.',
+    responses: [
+      'Je t’entends.',
+      'Ta colère a de la place ici.',
+      'Je ne te dis pas de te calmer.',
+      'C’est reçu, sans jugement.',
+    ],
+  },
+  {
+    id: 'emp29',
+    category: 'nuit',
+    intent: 'seek',
+    tone: 'doux',
+    text: 'Il est tard, je n’arrive pas à dormir, et tout grossit. Un mot simple m’aiderait.',
+    responses: [
+      'Je suis là.',
+      'Tu n’es pas seul cette nuit.',
+      'Ça peut redescendre.',
+      'Présence discrète avec toi.',
+    ],
+  },
+  {
+    id: 'emp30',
+    category: 'motivation',
+    intent: 'seek',
+    tone: 'neutre',
+    text: 'J’ai un entretien demain et j’ai le trac. J’ai besoin qu’on me rappelle que je n’ai pas à être parfait.',
+    responses: [
+      'Tu n’as pas à être parfait.',
+      'Présent et honnête, ça suffit souvent.',
+      'Le trac est normal. Tu peux y aller.',
+      'Je crois que tu peux le faire.',
+    ],
+  },
+
+  // ——— PATTERNS COURTS UTILES ———
+  {
+    id: 'emp31',
+    category: 'presence',
+    intent: 'offer',
+    tone: 'court',
+    text: 'Je te crois.',
+    responses: R_OFFER,
+  },
+  {
+    id: 'emp32',
+    category: 'presence',
+    intent: 'offer',
+    tone: 'court',
+    text: 'Tu n’exagères pas.',
+    responses: R_OFFER,
+  },
+  {
+    id: 'emp33',
+    category: 'douceur',
+    intent: 'offer',
+    tone: 'court',
+    text: 'C’est permis.',
+    responses: R_OFFER,
+  },
+  {
+    id: 'emp34',
+    category: 'courage',
+    intent: 'offer',
+    tone: 'court',
+    text: 'Tu as le droit d’être fatigué et de continuer un peu.',
+    responses: R_OFFER,
+  },
+  {
+    id: 'emp35',
+    category: 'espoir',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Ce moment est dur. Il n’est pas forcément définitif.',
+    responses: R_OFFER,
+  },
+  {
+    id: 'emp36',
+    category: 'remerciement',
+    intent: 'both',
+    tone: 'doux',
+    text: 'Merci d’avoir pris au sérieux ce que je n’arrivais pas à dire clairement.',
+    responses: R_VAL,
+  },
+  {
+    id: 'emp37',
+    category: 'reconnexion',
+    intent: 'seek',
+    tone: 'doux',
+    text: 'Je m’étais éloigné. Je reviens sans grande explication — j’avais juste besoin de silence, puis de lien.',
+    responses: [
+      'Bienvenue.',
+      'Pas besoin d’expliquer.',
+      'Je suis là.',
+      'Reprise en douceur, ok.',
+    ],
+  },
+  {
+    id: 'emp38',
+    category: 'cloture',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'On peut s’arrêter ici sans que ce soit un échec. Le temps qu’on a partagé compte quand même.',
+    responses: R_OFFER,
+  },
+];
