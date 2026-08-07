@@ -13,20 +13,55 @@ export async function POST(request: NextRequest) {
 
     const current = await prisma.pact.findUnique({
       where: { id: pactId },
-      include: { userA: true },
     });
 
     if (!current) {
       return NextResponse.json({ error: 'Pacte introuvable' }, { status: 404 });
     }
 
-    // Already matched
+    // Déjà actif
     if (current.status === 'ACTIVE' && current.userBId) {
       return NextResponse.json({
         matched: true,
         pactId: current.id,
-        status: current.status,
+        status: 'ACTIVE',
       });
+    }
+
+    // Ce pacte a été absorbé (ENDED) : chercher le pacte ACTIVE de cet utilisateur
+    if (current.status === 'ENDED' && current.userAId) {
+      const active = await prisma.pact.findFirst({
+        where: {
+          status: 'ACTIVE',
+          OR: [{ userAId: current.userAId }, { userBId: current.userAId }],
+        },
+        orderBy: { startedAt: 'desc' },
+      });
+      if (active) {
+        return NextResponse.json({
+          matched: true,
+          pactId: active.id,
+          status: 'ACTIVE',
+        });
+      }
+    }
+
+    // L’utilisateur est déjà userB d’un pacte actif (l’autre côté a matché)
+    if (current.userAId) {
+      const asB = await prisma.pact.findFirst({
+        where: {
+          status: 'ACTIVE',
+          userBId: current.userAId,
+        },
+        orderBy: { startedAt: 'desc' },
+      });
+      if (asB) {
+        return NextResponse.json({
+          matched: true,
+          pactId: asB.id,
+          status: 'ACTIVE',
+        });
+      }
     }
 
     if (current.status !== 'WAITING' || !current.userAId) {
@@ -37,7 +72,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Find another WAITING pact with same duration, different user
+    // Chercher un partenaire en attente, même durée, autre utilisateur
     const partner = await prisma.pact.findFirst({
       where: {
         status: 'WAITING',
@@ -62,37 +97,44 @@ export async function POST(request: NextRequest) {
       now.getTime() + current.durationDays * 24 * 60 * 60 * 1000
     );
 
-    // Activate current pact with partner as userB; end the partner waiting pact
-    const [activated] = await prisma.$transaction([
+    // Garder le plus ancien comme pacte actif
+    const primaryId =
+      current.createdAt <= partner.createdAt ? current.id : partner.id;
+    const secondaryId =
+      primaryId === current.id ? partner.id : current.id;
+    const primaryUserA =
+      primaryId === current.id ? current.userAId : partner.userAId;
+    const secondaryUserA =
+      primaryId === current.id ? partner.userAId : current.userAId;
+
+    await prisma.$transaction([
       prisma.pact.update({
-        where: { id: current.id },
+        where: { id: primaryId },
         data: {
-          userBId: partner.userAId,
+          userAId: primaryUserA,
+          userBId: secondaryUserA,
           status: 'ACTIVE',
           startedAt: now,
           endsAt,
         },
       }),
       prisma.pact.update({
-        where: { id: partner.id },
-        data: {
-          status: 'ENDED',
-          // mark as absorbed into the other pact
-        },
+        where: { id: secondaryId },
+        data: { status: 'ENDED' },
       }),
       prisma.user.update({
-        where: { id: current.userAId },
-        data: { activePactId: current.id, waitingSince: null },
+        where: { id: primaryUserA! },
+        data: { activePactId: primaryId, waitingSince: null },
       }),
       prisma.user.update({
-        where: { id: partner.userAId },
-        data: { activePactId: current.id, waitingSince: null },
+        where: { id: secondaryUserA! },
+        data: { activePactId: primaryId, waitingSince: null },
       }),
     ]);
 
     return NextResponse.json({
       matched: true,
-      pactId: activated.id,
+      pactId: primaryId,
       status: 'ACTIVE',
       startedAt: now,
       endsAt,
@@ -115,8 +157,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Introuvable' }, { status: 404 });
     }
 
+    // Même logique bilatérale en GET
+    if (pact.status === 'ACTIVE' && pact.userBId) {
+      return NextResponse.json({
+        matched: true,
+        status: 'ACTIVE',
+        pactId: pact.id,
+      });
+    }
+
+    if (pact.userAId) {
+      const active = await prisma.pact.findFirst({
+        where: {
+          status: 'ACTIVE',
+          OR: [{ userAId: pact.userAId }, { userBId: pact.userAId }],
+        },
+      });
+      if (active) {
+        return NextResponse.json({
+          matched: true,
+          status: 'ACTIVE',
+          pactId: active.id,
+        });
+      }
+    }
+
     return NextResponse.json({
-      matched: pact.status === 'ACTIVE' && !!pact.userBId,
+      matched: false,
       status: pact.status,
       pactId: pact.id,
     });

@@ -35,6 +35,8 @@ function WaitingContent() {
   useEffect(() => {
     if (!pactId) return;
 
+    let cancelled = false;
+
     const tryMatch = async () => {
       try {
         const res = await fetch('/api/match', {
@@ -43,8 +45,11 @@ function WaitingContent() {
           body: JSON.stringify({ pactId }),
         });
         const data = await res.json();
+        if (cancelled) return;
+
         if (data.matched && data.pactId) {
-          setStatus('Quelqu’un est là. Ouverture du pacte…');
+          setStatus('Présence trouvée. Ouverture…');
+          localStorage.setItem('pacte_pactId', data.pactId);
           if (
             typeof Notification !== 'undefined' &&
             Notification.permission === 'granted'
@@ -55,16 +60,22 @@ function WaitingContent() {
           }
           router.push(`/pact/${data.pactId}`);
         } else {
-          setStatus('Toujours en attente d’une autre personne…');
+          setStatus(
+            data.message || 'Toujours en attente d’une autre personne…'
+          );
         }
       } catch {
-        setStatus('Connexion en cours…');
+        if (!cancelled) setStatus('Connexion en cours…');
       }
     };
 
     tryMatch();
-    const interval = setInterval(tryMatch, 8000);
-    return () => clearInterval(interval);
+    // Polling plus fréquent : toutes les 4 secondes
+    const interval = setInterval(tryMatch, 4000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [pactId, router]);
 
   return (
@@ -103,9 +114,10 @@ function WaitingContent() {
             </p>
           )}
 
-          <p className="mt-6 text-xs text-[#a49f96]">
-            Tu peux laisser cet onglet ouvert. Tu seras redirigé dès qu’une
-            présence arrive.
+          <p className="mt-6 text-xs text-[#a49f96] leading-relaxed">
+            Les deux personnes doivent avoir choisi{' '}
+            <strong>la même durée</strong> et utiliser{' '}
+            <strong>deux emails différents</strong>.
           </p>
 
           {email && (
