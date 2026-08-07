@@ -117,7 +117,7 @@ export const GESTURES = [
     group: 'Rituel du soir',
   },
 
-  // —— Matin / démarrage ——
+  // —— Matin ——
   {
     type: 'BONJOUR_DISCRET',
     label: 'Bonjour discret. La journée peut commencer doucement.',
@@ -132,6 +132,30 @@ export const GESTURES = [
     type: 'PREMIER_PAS',
     label: 'Premier pas du jour. Je suis un peu avec toi.',
     group: 'Matin',
+  },
+
+  // —— Départ ——
+  { type: 'AU_REVOIR', label: 'Au revoir.', group: 'Départ' },
+  { type: 'MERCI_ET_ADIEU', label: 'Merci. Et au revoir.', group: 'Départ' },
+  {
+    type: 'BONNE_ROUTE',
+    label: 'Bonne route. Présence gardée en mémoire.',
+    group: 'Départ',
+  },
+  {
+    type: 'JE_CLOS',
+    label: 'Je clos ce pacte en douceur.',
+    group: 'Départ',
+  },
+  {
+    type: 'PAS_UN_ECHEC',
+    label: 'Fin du temps. Ce n’est pas un échec.',
+    group: 'Départ',
+  },
+  {
+    type: 'DERNIER_SIGNE',
+    label: 'Dernier signe. Prends soin de toi.',
+    group: 'Départ',
   },
 
   // —— Lien ——
@@ -162,5 +186,6 @@ export const GESTURE_GROUPS = [
   'Courage',
   'Rituel du soir',
   'Matin',
+  'Départ',
   'Lien',
 ] as const;
