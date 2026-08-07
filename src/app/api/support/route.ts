@@ -4,10 +4,6 @@ import { getMessageById } from '@/lib/messages';
 
 const prisma = new PrismaClient();
 
-/** Limite : 15 messages initiés par utilisateur et par pacte sur 24 h */
-const MAX_MESSAGES_PER_DAY = 15;
-const WINDOW_MS = 24 * 60 * 60 * 1000;
-
 export async function GET(request: NextRequest) {
   try {
     const pactId = request.nextUrl.searchParams.get('pactId');
@@ -32,7 +28,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { pactId, senderUserId, openingId, responseText, messageId } = body;
 
-    // Répondre à un message existant (ne compte pas dans la limite d’envoi)
+    // Répondre à un message existant
     if (messageId && responseText) {
       const existing = await prisma.supportMessage.findUnique({
         where: { id: messageId },
@@ -80,24 +76,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Destinataire introuvable' }, { status: 400 });
     }
 
-    const since = new Date(Date.now() - WINDOW_MS);
-    const recentCount = await prisma.supportMessage.count({
-      where: {
-        pactId,
-        senderUserId,
-        createdAt: { gte: since },
-      },
-    });
-
-    if (recentCount >= MAX_MESSAGES_PER_DAY) {
-      return NextResponse.json(
-        {
-          error: `Limite atteinte : ${MAX_MESSAGES_PER_DAY} messages max par 24 heures`,
-        },
-        { status: 429 }
-      );
-    }
-
+    // Pas de limite de messages — échanges illimités pendant le pacte
     const created = await prisma.supportMessage.create({
       data: {
         pactId,

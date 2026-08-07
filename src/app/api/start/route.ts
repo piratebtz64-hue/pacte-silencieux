@@ -11,7 +11,8 @@ const APP_URL =
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, durationDays } = await request.json();
+    const body = await request.json();
+    const { email, durationDays, forceNew } = body;
 
     if (!email || !durationDays) {
       return NextResponse.json(
@@ -46,15 +47,56 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // IMPORTANT : fermer tous les anciens pactes de cet utilisateur
-    // → évite les matchs fantômes (vieux ACTIVE / WAITING)
+    const now = new Date();
+
+    // Reprendre un pacte ACTIF existant (historique conservé)
+    if (!forceNew) {
+      const active = await prisma.pact.findFirst({
+        where: {
+          status: 'ACTIVE',
+          endsAt: { gt: now },
+          userAId: { not: null },
+          userBId: { not: null },
+          OR: [{ userAId: user.id }, { userBId: user.id }],
+        },
+        orderBy: { startedAt: 'desc' },
+      });
+
+      if (
+        active &&
+        active.userAId &&
+        active.userBId &&
+        active.userAId !== active.userBId
+      ) {
+        return NextResponse.json({
+          message: 'Pacte actif repris — historique conservé',
+          userId: user.id,
+          pactId: active.id,
+          resume: true,
+          emailSent: false,
+          continueUrl: `${APP_URL}/pact/${active.id}`,
+        });
+      }
+    }
+
+    // Fermer seulement les WAITING (pas les ACTIVE encore valides si forceNew)
     await prisma.pact.updateMany({
       where: {
-        status: { in: ['WAITING', 'ACTIVE'] },
+        status: 'WAITING',
         OR: [{ userAId: user.id }, { userBId: user.id }],
       },
       data: { status: 'ENDED' },
     });
+
+    if (forceNew) {
+      await prisma.pact.updateMany({
+        where: {
+          status: 'ACTIVE',
+          OR: [{ userAId: user.id }, { userBId: user.id }],
+        },
+        data: { status: 'ENDED' },
+      });
+    }
 
     await prisma.user.update({
       where: { id: user.id },
@@ -105,6 +147,7 @@ export async function POST(request: NextRequest) {
           : 'Pacte créé — continue sans attendre le mail',
         userId: user.id,
         pactId: pact.id,
+        resume: false,
         emailSent,
         emailWarning,
         continueUrl: `${APP_URL}/waiting`,
