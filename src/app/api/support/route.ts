@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { getMessageById } from '@/lib/messages';
+import { notifyNewActivity } from '@/lib/notify-email';
 
 const prisma = new PrismaClient();
 
@@ -28,7 +29,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { pactId, senderUserId, openingId, responseText, messageId } = body;
 
-    // Répondre à un message existant
     if (messageId && responseText) {
       const existing = await prisma.supportMessage.findUnique({
         where: { id: messageId },
@@ -49,6 +49,18 @@ export async function POST(request: NextRequest) {
         where: { id: messageId },
         data: { responseText, respondedAt: new Date() },
       });
+
+      try {
+        const sender = await prisma.user.findUnique({
+          where: { id: existing.senderUserId },
+          select: { email: true },
+        });
+        if (sender?.email) {
+          await notifyNewActivity(sender.email, existing.pactId);
+        }
+      } catch {
+        /* non bloquant */
+      }
 
       return NextResponse.json({ message: updated });
     }
@@ -76,7 +88,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Destinataire introuvable' }, { status: 400 });
     }
 
-    // Pas de limite de messages — échanges illimités pendant le pacte
     const created = await prisma.supportMessage.create({
       data: {
         pactId,
@@ -86,6 +97,18 @@ export async function POST(request: NextRequest) {
         openingText: opening.text,
       },
     });
+
+    try {
+      const receiver = await prisma.user.findUnique({
+        where: { id: receiverUserId },
+        select: { email: true },
+      });
+      if (receiver?.email) {
+        await notifyNewActivity(receiver.email, pactId);
+      }
+    } catch {
+      /* non bloquant */
+    }
 
     return NextResponse.json({ message: created }, { status: 201 });
   } catch (error) {
