@@ -1,9 +1,8 @@
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 
-const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
