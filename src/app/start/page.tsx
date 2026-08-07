@@ -14,9 +14,10 @@ export default function StartPage() {
     emailSent: boolean;
     warning: string | null;
     pactId: string;
+    resume?: boolean;
   } | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, forceNew = false) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -25,7 +26,11 @@ export default function StartPage() {
       const res = await fetch('/api/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, durationDays: Number(duration) }),
+        body: JSON.stringify({
+          email,
+          durationDays: Number(duration),
+          forceNew,
+        }),
       });
 
       const data = await res.json();
@@ -43,10 +48,17 @@ export default function StartPage() {
         Notification.requestPermission().catch(() => {});
       }
 
+      // Reprise d’un pacte actif → historique intact
+      if (data.resume && data.pactId) {
+        router.push(`/pact/${data.pactId}`);
+        return;
+      }
+
       setDone({
         emailSent: !!data.emailSent,
         warning: data.emailWarning || null,
         pactId: data.pactId,
+        resume: !!data.resume,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
@@ -71,8 +83,8 @@ export default function StartPage() {
           {done.emailSent ? (
             <p className="mt-3 text-[#706b63] dark:text-[#a49f96] leading-relaxed">
               Vérifie ta boîte mail (et les spams). Tu peux aussi continuer tout
-              de suite sans attendre le mail — c’est une option technique, pas
-              une obligation d’attendre.
+              de suite sans attendre le mail — option technique, pas une
+              obligation d’attendre.
             </p>
           ) : (
             <p className="mt-3 text-[#706b63] dark:text-[#a49f96] leading-relaxed">
@@ -90,7 +102,8 @@ export default function StartPage() {
           </button>
 
           <p className="mt-4 text-xs text-[#a49f96]">
-            Garde cet appareil : ta session est enregistrée ici.
+            Garde cet appareil : ta session est enregistrée ici. Tes messages
+            restent liés au pacte tant qu’il est actif.
           </p>
 
           <Link
@@ -118,30 +131,27 @@ export default function StartPage() {
           Gratuit · anonyme · environ 2 minutes pour démarrer
         </p>
 
-        {/* Rôles */}
         <div className="mt-6 p-4 rounded-2xl border border-black/10 dark:border-white/10 bg-white/60 dark:bg-white/5">
           <p className="text-sm font-bold text-[#1f6b67] mb-2">Ton rôle</p>
           <p className="text-sm text-[#706b63] dark:text-[#a49f96] leading-relaxed">
             Tu peux <strong>avoir besoin d’une présence</strong>,{' '}
             <strong>être présent pour quelqu’un</strong>, ou les deux. Le parcours
-            est le même : une seule personne anonyme, la même durée, des messages
-            et gestes déjà écrits.
+            est le même.
           </p>
         </div>
 
-        {/* Confiance */}
         <div className="mt-4 p-4 rounded-2xl border border-[#1f6b67]/20 bg-[#1f6b67]/5">
           <p className="text-sm font-bold mb-2">Ce qui est garanti</p>
           <ul className="text-sm text-[#706b63] dark:text-[#a49f96] space-y-1.5">
             <li>· Aucun échange libre (pas de chat)</li>
             <li>· Aucun nom réel nécessaire</li>
-            <li>· Aucun contact direct entre participants</li>
+            <li>· Historique du pacte conservé tant qu’il est actif</li>
+            <li>· Échanges illimités pendant la durée</li>
             <li>· Tu peux arrêter à tout moment</li>
-            <li>· Signalement possible à tout moment</li>
           </ul>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+        <form onSubmit={(e) => handleSubmit(e, false)} className="mt-8 space-y-6">
           <div>
             <label className="block text-sm font-bold mb-2">Durée</label>
             <div className="grid grid-cols-3 gap-2">
@@ -174,8 +184,8 @@ export default function StartPage() {
               autoComplete="email"
             />
             <p className="mt-1.5 text-xs text-[#a49f96]">
-              Sert au lien de connexion. Tu pourras continuer même si le mail
-              met du temps à arriver (limite technique possible).
+              Si tu as déjà un pacte actif avec cet email, tu seras renvoyé vers
+              lui avec tout l’historique.
             </p>
           </div>
 
@@ -188,7 +198,7 @@ export default function StartPage() {
             disabled={loading}
             className="w-full py-3.5 rounded-full bg-[#1f6b67] text-white font-bold hover:bg-[#184f4d] transition disabled:opacity-60"
           >
-            {loading ? 'Création…' : 'Commencer un pacte de présence'}
+            {loading ? 'Chargement…' : 'Continuer (reprendre ou commencer)'}
           </button>
         </form>
 
