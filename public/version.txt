@@ -1,0 +1,3 @@
+pacte-silencieux production sync
+2026-08-07
+features: design-premium, gestures-expanded, messages-part0-12, selection-empathique, extend-pact, moderation, unlimited-messages, brand-banner
