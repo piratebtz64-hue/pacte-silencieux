@@ -33,12 +33,22 @@ export default function StartPage() {
       localStorage.setItem('pacte_email', email.toLowerCase().trim());
       localStorage.setItem('pacte_duration', duration);
       if (data.userId) localStorage.setItem('pacte_userId', data.userId);
+      if (data.pactId) localStorage.setItem('pacte_pactId', data.pactId);
+
+      // Demander permission notifications (optionnel)
+      if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => {});
+      }
 
       setSent(true);
 
       setTimeout(() => {
-        router.push('/waiting');
-      }, 1500);
+        if (data.pactId) {
+          router.push(`/waiting?pactId=${data.pactId}`);
+        } else {
+          router.push('/waiting');
+        }
+      }, 1800);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
@@ -54,11 +64,9 @@ export default function StartPage() {
           <h1 className="text-2xl font-serif">Lien magique envoyé</h1>
           <p className="mt-2 text-[#706b63] dark:text-[#a49f96]">
             Vérifie ta boîte mail (et les spams). Clique sur le lien pour
-            confirmer et entrer en attente d’appairage.
+            confirmer. Tu seras ensuite placé en attente d’appairage.
           </p>
-          <p className="mt-6 text-sm text-[#a49f96]">
-            Redirection automatique…
-          </p>
+          <p className="mt-6 text-sm text-[#a49f96]">Redirection…</p>
         </div>
       </main>
     );
@@ -126,8 +134,8 @@ export default function StartPage() {
         </form>
 
         <p className="mt-6 text-xs text-[#a49f96] text-center leading-relaxed">
-          Aucun profil public. Ton email sert uniquement à t’authentifier et à
-          te reconnecter à ton pacte. Il n’est jamais partagé.
+          Aucun profil public. Ton email sert uniquement à t’authentifier.
+          Tu peux autoriser les notifications pour être prévenu quand quelqu’un rejoint.
         </p>
       </div>
     </main>
