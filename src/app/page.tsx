@@ -9,8 +9,6 @@ export default function HomePage() {
   return (
     <main className="min-h-screen">
       <Header />
-
-      {/* BANDEAU MARQUE — pleine largeur */}
       <BrandBanner />
 
       {/* HERO */}
@@ -20,20 +18,19 @@ export default function HomePage() {
             <span className="inline-block px-3 py-1 rounded-full bg-[#1f6b67]/10 text-[#1f6b67] text-xs font-bold uppercase tracking-wide">
               gratuit · anonyme · 1 à 7 jours
             </span>
-            <h1 className="mt-5 text-5xl md:text-6xl font-serif leading-tight max-w-[13ch]">
-              Pendant quelques jours, quelqu’un tient avec toi.
+            <h1 className="mt-5 text-4xl md:text-5xl lg:text-6xl font-serif leading-tight max-w-[16ch]">
+              Pendant quelques jours, une personne reste là avec toi.
             </h1>
             <p className="mt-6 text-lg text-[#706b63] dark:text-[#a49f96] max-w-[54ch] leading-relaxed">
-              Pas de profil. Pas de chat libre. Des gestes silencieux, des
-              messages de soutien déjà écrits — pour les jours où parler est trop
-              lourd.
+              Pas de profil. Pas de chat libre. Des gestes et des messages déjà
+              écrits — pour les jours où parler est trop lourd.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-wrap gap-3 items-center">
               <Link
                 href="/start"
                 className="px-6 py-3 rounded-full bg-[#1f6b67] text-white font-bold hover:bg-[#184f4d] transition"
               >
-                Entrer dans un pacte
+                Commencer un pacte de présence
               </Link>
               <Link
                 href="#comment"
@@ -42,8 +39,8 @@ export default function HomePage() {
                 Comment ça marche
               </Link>
             </div>
-            <p className="mt-6 text-xs text-[#a49f96]">
-              100 % gratuit · Aucune publicité · Aucune donnée vendue
+            <p className="mt-3 text-xs text-[#a49f96]">
+              Gratuit · anonyme · environ 2 minutes pour commencer
             </p>
           </div>
 
@@ -73,19 +70,49 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* CONFIANCE */}
+      <section className="py-12 border-t border-black/5 dark:border-white/5 bg-[#1f6b67]/[0.06]">
+        <div className="max-w-3xl mx-auto px-4">
+          <h2 className="text-2xl font-serif">Avant de commencer</h2>
+          <ul className="mt-5 grid sm:grid-cols-2 gap-3 text-sm text-[#706b63] dark:text-[#a49f96]">
+            <li className="p-3 rounded-xl bg-white/70 dark:bg-white/5 border border-black/5">
+              Aucun échange libre — uniquement des phrases choisies
+            </li>
+            <li className="p-3 rounded-xl bg-white/70 dark:bg-white/5 border border-black/5">
+              Aucun nom réel nécessaire
+            </li>
+            <li className="p-3 rounded-xl bg-white/70 dark:bg-white/5 border border-black/5">
+              Aucun contact direct entre participants
+            </li>
+            <li className="p-3 rounded-xl bg-white/70 dark:bg-white/5 border border-black/5">
+              Tu peux arrêter à tout moment
+            </li>
+            <li className="p-3 rounded-xl bg-white/70 dark:bg-white/5 border border-black/5">
+              Signalement possible à tout moment
+            </li>
+            <li className="p-3 rounded-xl bg-white/70 dark:bg-white/5 border border-black/5">
+              Aucune donnée vendue —{' '}
+              <Link href="/confidentialite" className="text-[#1f6b67] underline">
+                confidentialité
+              </Link>
+            </li>
+          </ul>
+        </div>
+      </section>
+
       <section id="comment" className="py-24 border-t border-black/5 dark:border-white/5">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-4xl font-serif max-w-[18ch]">Comment ça marche</h2>
           <p className="mt-3 text-[#706b63] dark:text-[#a49f96] max-w-[52ch] leading-relaxed">
-            Quatre étapes simples. Une présence réelle entre deux personnes qui
-            ne se connaissent pas.
+            Quatre étapes simples. Une présence entre deux personnes qui ne se
+            connaissent pas.
           </p>
           <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
               {
                 n: '1',
                 t: 'Tu choisis une durée',
-                d: '1, 3 ou 7 jours. Tu peux continuer même si le mail met du temps.',
+                d: '1, 3 ou 7 jours. Environ 2 minutes pour démarrer.',
               },
               {
                 n: '2',
@@ -94,12 +121,12 @@ export default function HomePage() {
               },
               {
                 n: '3',
-                t: 'Vous vous tenez',
-                d: 'Gestes silencieux et messages déjà écrits. Réponses parmi des options.',
+                t: 'Vous restez présents',
+                d: 'Gestes et messages déjà écrits. Réponses parmi des options.',
               },
               {
                 n: '4',
-                t: 'Vous vous remerciez',
+                t: 'Vous pouvez vous remercier',
                 d: 'En fin de pacte, un message de remerciement. Optionnel et digne.',
               },
             ].map((s) => (
@@ -222,8 +249,11 @@ export default function HomePage() {
             href="/start"
             className="mt-8 inline-block px-8 py-4 rounded-full bg-[#1f6b67] text-white font-bold hover:bg-[#184f4d] transition text-lg"
           >
-            Commencer un pacte
+            Commencer un pacte de présence
           </Link>
+          <p className="mt-4 text-xs text-[#a49f96]">
+            Gratuit · anonyme · 2 minutes pour commencer
+          </p>
           <p className="mt-6 text-xs text-[#a49f96]">
             En détresse ?{' '}
             <a href="#aide" className="underline hover:text-[#1f6b67]">

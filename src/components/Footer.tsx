@@ -12,7 +12,7 @@ export default function Footer() {
             Un espace d’entraide sociale discrète
           </p>
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-sm">
           <Link href="/start" className="text-[#1f6b67] font-bold hover:underline">
             Commencer
           </Link>
@@ -22,7 +22,26 @@ export default function Footer() {
           <DonationButton />
         </div>
       </div>
-      <p className="mt-8 text-center text-xs text-[#a49f96]">
+
+      <nav className="mt-8 flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-[#a49f96]">
+        <Link href="/confidentialite" className="hover:text-[#1f6b67] hover:underline">
+          Confidentialité
+        </Link>
+        <Link href="/mentions-legales" className="hover:text-[#1f6b67] hover:underline">
+          Mentions légales
+        </Link>
+        <Link href="/cgu" className="hover:text-[#1f6b67] hover:underline">
+          Conditions d’utilisation
+        </Link>
+        <Link href="/contact" className="hover:text-[#1f6b67] hover:underline">
+          Contact
+        </Link>
+        <Link href="/signaler" className="hover:text-[#1f6b67] hover:underline">
+          Signaler un problème
+        </Link>
+      </nav>
+
+      <p className="mt-6 text-center text-xs text-[#a49f96]">
         Ne remplace pas une aide professionnelle · En détresse : 3114 (France)
       </p>
     </footer>

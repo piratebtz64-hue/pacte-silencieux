@@ -15,7 +15,7 @@ export default function Header({ showCta = true }: { showCta?: boolean }) {
               href="/start"
               className="px-4 py-2 rounded-full bg-[#1f6b67] text-white text-sm font-bold hover:bg-[#184f4d] transition"
             >
-              Entrer dans un pacte
+              Commencer un pacte
             </Link>
           )}
           <ThemeToggle />
