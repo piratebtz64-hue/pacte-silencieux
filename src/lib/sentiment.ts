@@ -23,13 +23,15 @@ const KEYWORDS: Record<MessageCategory, string[]> = {
     'trac',
     'motivation',
     'vas-y',
-    'courage',
     'examen',
     'job',
     'embauche',
-    'départ',
     'présentation',
   ],
+  depart: ['au revoir', 'partir', 'départ', 'adieu', 'clôturer', 'terminer le pacte', 'bonne route'],
+  solitude: ['seul', 'seule', 'solitude', 'isolé', 'isolée', 'personne autour', 'vide'],
+  fierte: ['fierté', 'fier', 'fière', 'bravo', 'réussi', 'victoire', 'accompli'],
+  transition: ['changement', 'déménagement', 'transition', 'nouveau', 'nouvelle vie', 'entre-deux', 'vertige'],
 };
 
 export function suggestCategory(text: string): MessageCategory | null {
@@ -69,6 +71,10 @@ export function detectMoodLabel(text: string): string | null {
     reconnexion: 'Envie de reprendre',
     remerciement: 'Envie de remercier',
     motivation: 'Motivation / rendez-vous',
+    depart: 'Fin de cycle / départ',
+    solitude: 'Solitude ressentie',
+    fierte: 'Petite fierté',
+    transition: 'Période de changement',
   };
   return labels[cat] || null;
 }
