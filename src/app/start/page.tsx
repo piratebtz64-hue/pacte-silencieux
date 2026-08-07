@@ -35,7 +35,8 @@ export default function StartPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Une erreur est survenue');
+        const parts = [data.error, data.detail].filter(Boolean);
+        throw new Error(parts.join(' — ') || 'Une erreur est survenue');
       }
 
       localStorage.setItem('pacte_email', email.toLowerCase().trim());
@@ -184,7 +185,7 @@ export default function StartPage() {
           </div>
 
           {error && (
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <p className="text-sm text-red-600 dark:text-red-400 break-words">{error}</p>
           )}
 
           <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
