@@ -13,6 +13,7 @@ function WaitingContent() {
   const [waitingTime, setWaitingTime] = useState('00:00');
   const [status, setStatus] = useState('Recherche d’une présence…');
   const [pactId, setPactId] = useState<string | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
 
   useEffect(() => {
     setEmail(localStorage.getItem('pacte_email'));
@@ -50,18 +51,14 @@ function WaitingContent() {
         if (data.matched && data.pactId) {
           setStatus('Présence trouvée. Ouverture…');
           localStorage.setItem('pacte_pactId', data.pactId);
-          if (
-            typeof Notification !== 'undefined' &&
-            Notification.permission === 'granted'
-          ) {
-            new Notification('Le Pacte silencieux', {
-              body: 'Une présence vous a rejoint.',
-            });
-          }
           router.push(`/pact/${data.pactId}`);
-        } else {
-          setStatus(
-            data.message || 'Toujours en attente d’une autre personne…'
+          return;
+        }
+
+        setStatus(data.message || 'Toujours en attente…');
+        if (data.debug) {
+          setHint(
+            `Ta durée : ${data.debug.myDuration} j · En attente total : ${data.debug.totalWaiting}`
           );
         }
       } catch {
@@ -70,8 +67,7 @@ function WaitingContent() {
     };
 
     tryMatch();
-    // Polling plus fréquent : toutes les 4 secondes
-    const interval = setInterval(tryMatch, 4000);
+    const interval = setInterval(tryMatch, 3000);
     return () => {
       cancelled = true;
       clearInterval(interval);
@@ -89,11 +85,11 @@ function WaitingContent() {
 
           <h1 className="text-3xl font-serif">En attente</h1>
           <p className="mt-4 text-[#706b63] dark:text-[#a49f96] leading-relaxed">
-            Quelqu’un d’autre cherche un pacte
+            Pacte
             {duration
               ? ` de ${duration} jour${Number(duration) > 1 ? 's' : ''}`
               : ''}
-            . L’appairage se fait automatiquement.
+            . Recherche toutes les 3 secondes.
           </p>
 
           <div className="mt-8 p-6 rounded-2xl bg-[#f2eee5] dark:bg-white/5 border border-black/10 dark:border-white/10">
@@ -102,35 +98,42 @@ function WaitingContent() {
             <p className="mt-3 text-sm text-[#706b63] dark:text-[#a49f96]">
               {status}
             </p>
+            {hint && (
+              <p className="mt-2 text-xs text-[#a49f96]">{hint}</p>
+            )}
           </div>
 
           {!pactId && (
-            <p className="mt-6 text-sm text-amber-700 dark:text-amber-300">
-              Session incomplète. Repars depuis{' '}
-              <Link href="/start" className="underline">
-                commencer un pacte
+            <div className="mt-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-sm text-amber-900 dark:text-amber-200">
+              Aucune session trouvée sur cet appareil.{' '}
+              <Link href="/start" className="underline font-bold">
+                Recommencer un pacte
               </Link>
-              .
-            </p>
+            </div>
           )}
 
-          <p className="mt-6 text-xs text-[#a49f96] leading-relaxed">
-            Les deux personnes doivent avoir choisi{' '}
-            <strong>la même durée</strong> et utiliser{' '}
-            <strong>deux emails différents</strong>.
-          </p>
+          <div className="mt-6 text-xs text-[#a49f96] leading-relaxed space-y-1">
+            <p>
+              ✓ Deux <strong>emails différents</strong>
+            </p>
+            <p>
+              ✓ La <strong>même durée</strong> sur les deux téléphones
+            </p>
+            <p>✓ Les deux pages d’attente ouvertes</p>
+          </div>
 
           {email && (
             <p className="mt-4 text-xs text-[#a49f96]">
-              Connecté : <strong>{email}</strong>
+              Cet appareil : <strong>{email}</strong>
+              {duration ? ` · ${duration} j` : ''}
             </p>
           )}
 
           <Link
-            href="/"
-            className="mt-8 inline-block text-sm text-[#706b63] hover:underline"
+            href="/start"
+            className="mt-8 inline-block text-sm text-[#1f6b67] font-bold hover:underline"
           >
-            ← Retour à l’accueil
+            Relancer un nouveau pacte
           </Link>
         </div>
       </section>
