@@ -4,6 +4,10 @@ import { getMessageById } from '@/lib/messages';
 
 const prisma = new PrismaClient();
 
+/** Limite : 15 messages initiés par utilisateur et par pacte sur 24 h */
+const MAX_MESSAGES_PER_DAY = 15;
+const WINDOW_MS = 24 * 60 * 60 * 1000;
+
 export async function GET(request: NextRequest) {
   try {
     const pactId = request.nextUrl.searchParams.get('pactId');
@@ -28,7 +32,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { pactId, senderUserId, openingId, responseText, messageId } = body;
 
-    // Répondre à un message existant
+    // Répondre à un message existant (ne compte pas dans la limite d’envoi)
     if (messageId && responseText) {
       const existing = await prisma.supportMessage.findUnique({
         where: { id: messageId },
@@ -53,7 +57,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: updated });
     }
 
-    // Envoyer un nouveau message d'ouverture
     if (!pactId || !senderUserId || !openingId) {
       return NextResponse.json(
         { error: 'pactId, senderUserId et openingId requis' },
@@ -77,27 +80,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Destinataire introuvable' }, { status: 400 });
     }
 
-    // Rate limit: 1 message initié / 12h par utilisateur dans ce pacte
-    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
-    const recent = await prisma.supportMessage.findFirst({
+    const since = new Date(Date.now() - WINDOW_MS);
+    const recentCount = await prisma.supportMessage.count({
       where: {
         pactId,
         senderUserId,
-        createdAt: { gte: twelveHoursAgo },
-        responseText: null,
+        createdAt: { gte: since },
       },
     });
-    // Allow if last one was responded, or no recent opening
-    const recentAny = await prisma.supportMessage.count({
-      where: {
-        pactId,
-        senderUserId,
-        createdAt: { gte: twelveHoursAgo },
-      },
-    });
-    if (recentAny >= 2) {
+
+    if (recentCount >= MAX_MESSAGES_PER_DAY) {
       return NextResponse.json(
-        { error: 'Limite atteinte : 2 messages max par 12 heures' },
+        {
+          error: `Limite atteinte : ${MAX_MESSAGES_PER_DAY} messages max par 24 heures`,
+        },
         { status: 429 }
       );
     }
