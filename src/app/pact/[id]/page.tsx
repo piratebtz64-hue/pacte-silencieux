@@ -265,6 +265,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
               <p className="text-sm text-[#a49f96] mt-1">
                 {pact.durationDays} jour{pact.durationDays > 1 ? 's' : ''}
                 {pact.status === 'ACTIVE' ? ' · actif' : ' · en attente'}
+                {messages.length > 0 ? ` · ${messages.length} échange${messages.length > 1 ? 's' : ''}` : ''}
               </p>
             </div>
             <span
@@ -498,7 +499,8 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                   </button>
 
                   <p className="text-sm text-[#706b63] mb-3">
-                    <strong>15 messages / 24 h</strong>.
+                    <strong>Échanges illimités</strong> pendant toute la durée du
+                    pacte. L’historique reste dans le Fil.
                   </p>
 
                   <input
