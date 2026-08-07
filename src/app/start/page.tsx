@@ -10,7 +10,11 @@ export default function StartPage() {
   const [duration, setDuration] = useState<'1' | '3' | '7'>('3');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
+  const [done, setDone] = useState<{
+    emailSent: boolean;
+    warning: string | null;
+    pactId: string;
+  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,20 +39,15 @@ export default function StartPage() {
       if (data.userId) localStorage.setItem('pacte_userId', data.userId);
       if (data.pactId) localStorage.setItem('pacte_pactId', data.pactId);
 
-      // Demander permission notifications (optionnel)
       if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
         Notification.requestPermission().catch(() => {});
       }
 
-      setSent(true);
-
-      setTimeout(() => {
-        if (data.pactId) {
-          router.push(`/waiting?pactId=${data.pactId}`);
-        } else {
-          router.push('/waiting');
-        }
-      }, 1800);
+      setDone({
+        emailSent: !!data.emailSent,
+        warning: data.emailWarning || null,
+        pactId: data.pactId,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
@@ -56,17 +55,49 @@ export default function StartPage() {
     }
   };
 
-  if (sent) {
+  const goWaiting = () => {
+    router.push('/waiting');
+  };
+
+  if (done) {
     return (
-      <main className="min-h-screen grid place-items-center">
-        <div className="max-w-md mx-auto px-4 text-center">
-          <div className="text-4xl mb-4">✉️</div>
-          <h1 className="text-2xl font-serif">Lien magique envoyé</h1>
-          <p className="mt-2 text-[#706b63] dark:text-[#a49f96]">
-            Vérifie ta boîte mail (et les spams). Clique sur le lien pour
-            confirmer. Tu seras ensuite placé en attente d’appairage.
+      <main className="min-h-screen grid place-items-center px-4">
+        <div className="max-w-md mx-auto text-center">
+          <div className="text-4xl mb-4">{done.emailSent ? '✉️' : '✅'}</div>
+          <h1 className="text-2xl font-serif">
+            {done.emailSent ? 'Lien magique envoyé' : 'Pacte prêt'}
+          </h1>
+
+          {done.emailSent ? (
+            <p className="mt-3 text-[#706b63] dark:text-[#a49f96] leading-relaxed">
+              Vérifie ta boîte mail (et les spams). Tu peux aussi continuer tout
+              de suite sans attendre le mail.
+            </p>
+          ) : (
+            <p className="mt-3 text-[#706b63] dark:text-[#a49f96] leading-relaxed">
+              {done.warning ||
+                'Tu peux entrer en attente immédiatement, sans cliquer de lien mail.'}
+            </p>
+          )}
+
+          <button
+            type="button"
+            onClick={goWaiting}
+            className="mt-8 w-full py-3.5 rounded-full bg-[#1f6b67] text-white font-bold hover:bg-[#184f4d] transition"
+          >
+            Continuer vers l’attente
+          </button>
+
+          <p className="mt-4 text-xs text-[#a49f96]">
+            Garde cet appareil : ta session est enregistrée ici.
           </p>
-          <p className="mt-6 text-sm text-[#a49f96]">Redirection…</p>
+
+          <Link
+            href="/"
+            className="mt-8 inline-block text-sm text-[#706b63] hover:underline"
+          >
+            ← Accueil
+          </Link>
         </div>
       </main>
     );
@@ -83,7 +114,8 @@ export default function StartPage() {
         </Link>
         <h1 className="mt-6 text-3xl font-serif">Commencer un pacte</h1>
         <p className="mt-2 text-[#706b63] dark:text-[#a49f96]">
-          Choisis une durée et entre ton email pour recevoir un lien magique.
+          Choisis une durée et ton email. Tu pourras continuer même si le mail
+          n’arrive pas tout de suite.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -129,13 +161,13 @@ export default function StartPage() {
             disabled={loading}
             className="w-full py-3 rounded-lg bg-[#1f6b67] text-white font-bold hover:bg-[#184f4d] transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? 'Envoi en cours…' : 'Recevoir le lien magique'}
+            {loading ? 'Création…' : 'Commencer'}
           </button>
         </form>
 
         <p className="mt-6 text-xs text-[#a49f96] text-center leading-relaxed">
-          Aucun profil public. Ton email sert uniquement à t’authentifier.
-          Tu peux autoriser les notifications pour être prévenu quand quelqu’un rejoint.
+          Aucun profil public. Si le lien mail est limité, un bouton te permet
+          d’entrer quand même en attente d’appairage.
         </p>
       </div>
     </main>

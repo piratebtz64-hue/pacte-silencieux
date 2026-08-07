@@ -54,36 +54,47 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const supabase = await createServerSupabaseClient();
+    // Tentative d'envoi du lien magique — NON bloquant
+    let emailSent = false;
+    let emailWarning: string | null = null;
 
-    // URL EXACTE sans query — doit matcher la whitelist Supabase
-    const redirectTo = `${APP_URL}/auth/callback`;
-
-    const { error: authError } = await supabase.auth.signInWithOtp({
-      email: normalizedEmail,
-      options: {
-        emailRedirectTo: redirectTo,
-        shouldCreateUser: true,
-        data: {
-          pactId: pact.id,
-          durationDays,
+    try {
+      const supabase = await createServerSupabaseClient();
+      const { error: authError } = await supabase.auth.signInWithOtp({
+        email: normalizedEmail,
+        options: {
+          emailRedirectTo: `${APP_URL}/auth/callback`,
+          shouldCreateUser: true,
+          data: { pactId: pact.id, durationDays },
         },
-      },
-    });
+      });
 
-    if (authError) {
-      console.error('Supabase auth error:', authError);
-      return NextResponse.json(
-        { error: authError.message || "Erreur lors de l'envoi du lien" },
-        { status: 500 }
-      );
+      if (authError) {
+        console.error('Supabase auth error (non bloquant):', authError);
+        emailWarning =
+          authError.message?.includes('rate') ||
+          authError.message?.includes('limit')
+            ? 'Limite d’emails atteinte. Tu peux continuer sans le mail.'
+            : 'Email non envoyé. Tu peux continuer sans le mail.';
+      } else {
+        emailSent = true;
+      }
+    } catch (e) {
+      console.error('OTP exception (non bloquant):', e);
+      emailWarning = 'Email non envoyé. Tu peux continuer sans le mail.';
     }
 
+    // Toujours OK : l’accès passe par le lien direct / localStorage
     return NextResponse.json(
       {
-        message: 'Lien magique envoyé',
+        message: emailSent
+          ? 'Lien magique envoyé'
+          : 'Pacte créé — continue sans attendre le mail',
         userId: user.id,
         pactId: pact.id,
+        emailSent,
+        emailWarning,
+        continueUrl: `${APP_URL}/waiting`,
       },
       { status: 200 }
     );
