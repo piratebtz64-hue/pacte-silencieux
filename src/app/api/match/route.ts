@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
+import { notifyPactMatched } from '@/lib/notify-email';
 
 const prisma = new PrismaClient();
 
@@ -27,7 +28,6 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     const waitingSinceCutoff = new Date(now.getTime() - WAITING_MAX_MS);
 
-    // Déjà ACTIVE avec DEUX personnes réelles + encore valide
     if (
       current.status === 'ACTIVE' &&
       current.userAId &&
@@ -43,7 +43,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Si ACTIVE invalide (un seul user, ou expiré) → forcer WAITING / ENDED
     if (current.status === 'ACTIVE') {
       await prisma.pact.update({
         where: { id: current.id },
@@ -60,7 +59,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Ne réutiliser un ACTIVE existant QUE s’il a vraiment 2 personnes distinctes
     const alreadyActive = await prisma.pact.findFirst({
       where: {
         status: 'ACTIVE',
@@ -85,7 +83,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Mon pacte doit être WAITING et récent
     let myWaiting = current;
     if (current.status !== 'WAITING' || current.createdAt < waitingSinceCutoff) {
       const recent = await prisma.pact.findFirst({
@@ -109,7 +106,6 @@ export async function POST(request: NextRequest) {
       myWaiting = recent;
     }
 
-    // Expirer les vieux WAITING
     await prisma.pact
       .updateMany({
         where: {
@@ -120,7 +116,6 @@ export async function POST(request: NextRequest) {
       })
       .catch(() => {});
 
-    // Partenaires RÉELS : même durée, autre user, WAITING récent, pas soi-même
     const candidates = await prisma.pact.findMany({
       where: {
         status: 'WAITING',
@@ -134,7 +129,6 @@ export async function POST(request: NextRequest) {
       take: 5,
     });
 
-    // Filtrer encore une fois (sécurité)
     const validPartners = candidates.filter(
       (c) => c.userAId && c.userAId !== userId && c.userAId !== myWaiting.userAId
     );
@@ -211,6 +205,19 @@ export async function POST(request: NextRequest) {
         status: 'WAITING',
         message: 'Nouvelle tentative…',
       });
+    }
+
+    // E-mails non bloquants
+    try {
+      const users = await prisma.user.findMany({
+        where: { id: { in: [primary.userAId!, secondary.userAId!] } },
+        select: { email: true },
+      });
+      await Promise.all(
+        users.map((u) => notifyPactMatched(u.email, primary.id))
+      );
+    } catch (e) {
+      console.error('Notify match:', e);
     }
 
     return NextResponse.json({

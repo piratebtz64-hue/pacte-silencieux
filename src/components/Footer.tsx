@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Logo from './Logo';
 import DonationButton from './DonationButton';
+import ShareButton from './ShareButton';
 
 export default function Footer() {
   return (
@@ -19,6 +20,7 @@ export default function Footer() {
           <Link href="/#aide" className="text-[#706b63] hover:underline">
             Aide
           </Link>
+          <ShareButton label="Partager" />
           <DonationButton />
         </div>
       </div>

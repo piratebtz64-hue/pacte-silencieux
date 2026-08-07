@@ -3,13 +3,15 @@
 import Link from 'next/link';
 import ThemeToggle from './ThemeToggle';
 import Logo from './Logo';
+import ShareButton from './ShareButton';
 
 export default function Header({ showCta = true }: { showCta?: boolean }) {
   return (
     <header className="sticky top-0 z-50 backdrop-blur bg-[color-mix(in_srgb,var(--background)_72%,transparent)] border-b border-black/10 dark:border-white/10">
-      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
         <Logo />
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <ShareButton label="Partager" className="hidden sm:inline-block" />
           {showCta && (
             <Link
               href="/start"
