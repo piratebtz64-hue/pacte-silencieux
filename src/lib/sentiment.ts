@@ -2,12 +2,12 @@ import type { MessageCategory } from './messages';
 
 const KEYWORDS: Record<MessageCategory, string[]> = {
   presence: ['seul', 'seule', 'présence', 'accompagn', 'avec moi', 'invisible', 'personne'],
-  difficile: ['difficile', 'lourd', 'lourde', 'dur', 'dure', 'mal', 'galère', 'pénible', 'trop', 'n\'en peux plus', 'au bout'],
+  difficile: ['difficile', 'lourd', 'lourde', 'dur', 'dure', 'mal', 'galère', 'pénible', 'trop', "n'en peux plus", 'au bout'],
   fatigue: ['fatigué', 'fatiguée', 'épuisé', 'épuisée', 'lasse', 'lassé', 'sommeil', 'dormir', 'crevé', 'crevée', 'épuisement'],
   courage: ['courage', 'force', 'tenir', 'tiens', 'continue', 'bataille', 'combat', 'avancer'],
   gratitude: ['merci', 'reconnaissant', 'reconnaissante', 'gratitude', 'chance', 'reconnaissance'],
-  nuit: ['nuit', 'insomnie', 'minuit', 'soir', 'obscur', '3h', '2h', 'insomnie', 'réveillé'],
-  espoir: ['espoir', 'demain', 'mieux', 'possible', 'avenir', 'lumière', 'espoir'],
+  nuit: ['nuit', 'insomnie', 'minuit', 'soir', 'obscur', '3h', '2h', 'réveillé'],
+  espoir: ['espoir', 'demain', 'mieux', 'possible', 'avenir', 'lumière'],
   anxiete: ['anxiété', 'angoisse', 'stress', 'peur', 'inquiet', 'inquiète', 'panique', 'anxieux', 'anxieuse', 'stressé'],
   douceur: ['doux', 'douce', 'douceur', 'tendre', 'chaleur', 'réconfort', 'câlin'],
   matin: ['matin', 'réveil', 'journée', 'bonjour', 'réveillé'],
@@ -15,6 +15,7 @@ const KEYWORDS: Record<MessageCategory, string[]> = {
   deuil: ['deuil', 'perte', 'manque', 'parti', 'partie', 'chagrin', 'décès', 'absent', 'absente'],
   reconnexion: ['revenir', 'retour', 'reprendre', 'reconnexion', 'reviens', 'de retour'],
   cloture: ['au revoir', 'fin', 'terminer', 'clôturer', 'adieu', 'dernière'],
+  remerciement: ['remercie', 'remerciement', 'merci pour', 'gratitude', 'reconnaissant'],
 };
 
 export function suggestCategory(text: string): MessageCategory | null {
@@ -52,6 +53,7 @@ export function detectMoodLabel(text: string): string | null {
     douceur: 'Besoin de douceur',
     matin: 'Démarrage de journée',
     reconnexion: 'Envie de reprendre',
+    remerciement: 'Envie de remercier',
   };
   return labels[cat] || null;
 }
