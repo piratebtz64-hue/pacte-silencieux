@@ -7,10 +7,20 @@ const prisma = new PrismaClient();
 
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ||
-  'https://pacte-silencieux.vercel.app';
+  'https://pacte-silencieux-fwe6.vercel.app';
 
 export async function POST(request: NextRequest) {
   try {
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json(
+        {
+          error:
+            'Configuration manquante : DATABASE_URL. Dans Vercel → Settings → Environment Variables, ajoute les variables Supabase.',
+        },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     const { email, durationDays, forceNew } = body;
 
@@ -21,95 +31,129 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (![1, 3, 7].includes(durationDays)) {
+    const days = Number(durationDays);
+    if (![1, 3, 7].includes(days)) {
       return NextResponse.json(
         { error: 'Durée invalide. Choisir: 1, 3 ou 7 jours' },
         { status: 400 }
       );
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = String(email).toLowerCase().trim();
     const emailHash = crypto
       .createHash('sha256')
       .update(normalizedEmail)
       .digest('hex');
 
-    let user = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-    });
-
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          email: normalizedEmail,
-          emailHash,
-        },
+    let user;
+    try {
+      user = await prisma.user.findUnique({
+        where: { email: normalizedEmail },
       });
+
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            email: normalizedEmail,
+            emailHash,
+          },
+        });
+      }
+    } catch (dbErr) {
+      console.error('Prisma user error:', dbErr);
+      const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+      return NextResponse.json(
+        {
+          error:
+            'Base de données inaccessible. Vérifie DATABASE_URL et DIRECT_URL sur Vercel (projet fwe6).',
+          detail: msg.slice(0, 200),
+        },
+        { status: 500 }
+      );
     }
 
     const now = new Date();
 
-    // Reprendre un pacte ACTIF existant (historique conservé)
     if (!forceNew) {
-      const active = await prisma.pact.findFirst({
-        where: {
-          status: 'ACTIVE',
-          endsAt: { gt: now },
-          userAId: { not: null },
-          userBId: { not: null },
-          OR: [{ userAId: user.id }, { userBId: user.id }],
-        },
-        orderBy: { startedAt: 'desc' },
-      });
-
-      if (
-        active &&
-        active.userAId &&
-        active.userBId &&
-        active.userAId !== active.userBId
-      ) {
-        return NextResponse.json({
-          message: 'Pacte actif repris — historique conservé',
-          userId: user.id,
-          pactId: active.id,
-          resume: true,
-          emailSent: false,
-          continueUrl: `${APP_URL}/pact/${active.id}`,
+      try {
+        const active = await prisma.pact.findFirst({
+          where: {
+            status: 'ACTIVE',
+            endsAt: { gt: now },
+            userAId: { not: null },
+            userBId: { not: null },
+            OR: [{ userAId: user.id }, { userBId: user.id }],
+          },
+          orderBy: { startedAt: 'desc' },
         });
+
+        if (
+          active &&
+          active.userAId &&
+          active.userBId &&
+          active.userAId !== active.userBId
+        ) {
+          return NextResponse.json({
+            message: 'Pacte actif repris — historique conservé',
+            userId: user.id,
+            pactId: active.id,
+            resume: true,
+            emailSent: false,
+            continueUrl: `${APP_URL}/pact/${active.id}`,
+          });
+        }
+      } catch (e) {
+        console.error('Active pact lookup:', e);
       }
     }
 
-    // Fermer seulement les WAITING (pas les ACTIVE encore valides si forceNew)
-    await prisma.pact.updateMany({
-      where: {
-        status: 'WAITING',
-        OR: [{ userAId: user.id }, { userBId: user.id }],
-      },
-      data: { status: 'ENDED' },
-    });
-
-    if (forceNew) {
+    try {
       await prisma.pact.updateMany({
         where: {
-          status: 'ACTIVE',
+          status: 'WAITING',
           OR: [{ userAId: user.id }, { userBId: user.id }],
         },
         data: { status: 'ENDED' },
       });
+
+      if (forceNew) {
+        await prisma.pact.updateMany({
+          where: {
+            status: 'ACTIVE',
+            OR: [{ userAId: user.id }, { userBId: user.id }],
+          },
+          data: { status: 'ENDED' },
+        });
+      }
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { activePactId: null, waitingSince: new Date() },
+      });
+    } catch (e) {
+      console.error('Pact cleanup:', e);
     }
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { activePactId: null, waitingSince: new Date() },
-    });
-
-    const pact = await prisma.pact.create({
-      data: {
-        durationDays,
-        userAId: user.id,
-        status: 'WAITING',
-      },
-    });
+    let pact;
+    try {
+      pact = await prisma.pact.create({
+        data: {
+          durationDays: days,
+          userAId: user.id,
+          status: 'WAITING',
+        },
+      });
+    } catch (dbErr) {
+      console.error('Pact create:', dbErr);
+      const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+      return NextResponse.json(
+        {
+          error: 'Impossible de créer le pacte.',
+          detail: msg.slice(0, 200),
+        },
+        { status: 500 }
+      );
+    }
 
     let emailSent = false;
     let emailWarning: string | null = null;
@@ -121,7 +165,7 @@ export async function POST(request: NextRequest) {
         options: {
           emailRedirectTo: `${APP_URL}/auth/callback`,
           shouldCreateUser: true,
-          data: { pactId: pact.id, durationDays },
+          data: { pactId: pact.id, durationDays: days },
         },
       });
 
@@ -156,6 +200,10 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('API error:', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    const msg = error instanceof Error ? error.message : String(error);
+    return NextResponse.json(
+      { error: 'Erreur serveur', detail: msg.slice(0, 200) },
+      { status: 500 }
+    );
   }
 }
