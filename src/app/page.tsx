@@ -10,12 +10,8 @@ export default function HomePage() {
     <main className="min-h-screen">
       <Header />
 
-      {/* BANNIÈRE DE MARQUE */}
-      <section className="pt-8 pb-4 px-4">
-        <div className="max-w-3xl mx-auto">
-          <BrandBanner />
-        </div>
-      </section>
+      {/* BANDEAU MARQUE — pleine largeur */}
+      <BrandBanner />
 
       {/* HERO */}
       <section className="min-h-[70vh] grid place-items-center py-12">

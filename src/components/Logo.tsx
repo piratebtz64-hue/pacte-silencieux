@@ -1,35 +1,22 @@
 import Link from 'next/link';
 
-/** Logo officiel : doigt sur la bouche (chut) dans un cercle */
+/** Logo officiel : doigt sur les lèvres (chut) */
 export function ShushIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 64 64"
+      viewBox="0 0 48 48"
       className={className}
       fill="none"
-      xmlns="http://www.w3.org/2000/svg"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden
     >
-      {/* Tête / visage stylisé */}
-      <circle cx="32" cy="28" r="14" stroke="currentColor" strokeWidth="2.2" />
-      {/* Bouche fermée */}
-      <path
-        d="M26 32c2 2.5 4.5 3.5 6 3.5s4-1 6-3.5"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-      {/* Doigt vertical sur la bouche */}
-      <rect
-        x="29.5"
-        y="22"
-        width="5"
-        height="22"
-        rx="2.5"
-        fill="currentColor"
-      />
-      {/* Bout du doigt */}
-      <ellipse cx="32" cy="22" rx="2.8" ry="3.2" fill="currentColor" />
+      <path d="M16 22c3 4 6 5.5 8 5.5s5-1.5 8-5.5" />
+      <path d="M16 22c3-2.5 6-3.5 8-3.5s5 1 8 3.5" />
+      <path d="M24 12v20" strokeWidth="2.4" />
+      <circle cx="24" cy="11" r="2.3" fill="currentColor" stroke="none" />
     </svg>
   );
 }

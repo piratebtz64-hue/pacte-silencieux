@@ -1,67 +1,68 @@
-import { ShushIcon } from './Logo';
-
-/** Bannière de marque inspirée de l’image officielle */
+/** Bandeau de marque — pleine largeur, format slim */
 export default function BrandBanner() {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl"
+      className="relative w-full overflow-hidden"
       style={{
         background:
-          'radial-gradient(ellipse 90% 70% at 50% -5%, #4a5548 0%, #2a322c 35%, #141816 70%, #0a0c0b 100%)',
-        minHeight: '280px',
+          'radial-gradient(ellipse 80% 120% at 50% -20%, #3d4538 0%, #1a1f1a 50%, #0c0e0c 100%)',
       }}
     >
-      {/* Gros faisceau central */}
+      {/* Lumière haute */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'linear-gradient(180deg, rgba(255,236,200,0.22) 0%, rgba(255,236,200,0.08) 28%, transparent 58%)',
+            'linear-gradient(180deg, rgba(255,236,200,0.18) 0%, rgba(255,236,200,0.05) 45%, transparent 100%)',
         }}
       />
-      {/* Rayons latéraux */}
       <div
-        className="pointer-events-none absolute left-1/2 top-0 h-[85%] w-[70%] -translate-x-1/2 opacity-60"
+        className="pointer-events-none absolute left-1/2 top-0 h-full w-[60%] -translate-x-1/2 opacity-50"
         style={{
           background:
-            'conic-gradient(from 195deg at 50% 0%, transparent 0deg, rgba(255,240,210,0.18) 12deg, transparent 28deg, transparent 152deg, rgba(255,240,210,0.14) 168deg, transparent 185deg)',
-        }}
-      />
-      {/* Ligne de lumière verticale douce */}
-      <div
-        className="pointer-events-none absolute left-1/2 top-0 h-full w-px -translate-x-1/2 opacity-30"
-        style={{
-          background:
-            'linear-gradient(to bottom, rgba(255,245,220,0.7), transparent 65%)',
+            'conic-gradient(from 200deg at 50% 0%, transparent 0deg, rgba(255,240,210,0.2) 15deg, transparent 35deg, transparent 145deg, rgba(255,240,210,0.15) 165deg, transparent 185deg)',
         }}
       />
 
-      <div className="relative flex flex-col items-center justify-center px-6 py-16 text-center text-[#f7f2ea]">
-        <h2
-          className="font-serif text-3xl md:text-4xl tracking-wide"
-          style={{ textShadow: '0 2px 24px rgba(0,0,0,0.35)' }}
-        >
-          Le Pacte Silencieux
-        </h2>
-
-        {/* Logo chut */}
-        <div className="mt-7 mb-7 flex justify-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-[#f7f2ea]/45 text-[#f7f2ea] bg-black/20 backdrop-blur-sm">
-            <ShushIcon className="h-9 w-9" />
-          </div>
+      {/* Contenu horizontal compact */}
+      <div className="relative max-w-6xl mx-auto px-4 py-5 sm:py-6 flex items-center justify-center gap-3 sm:gap-4">
+        {/* Logo chut — doigt sur lèvres */}
+        <div className="shrink-0 flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-[#f5f0e8]/40 text-[#f5f0e8]">
+          <svg
+            viewBox="0 0 48 48"
+            className="h-7 w-7"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            {/* Lèvres */}
+            <path d="M16 22c3 4 6 5.5 8 5.5s5-1.5 8-5.5" />
+            <path d="M16 22c3-2.5 6-3.5 8-3.5s5 1 8 3.5" />
+            {/* Doigt */}
+            <path d="M24 12v20" strokeWidth="2.2" />
+            <circle cx="24" cy="11" r="2.2" fill="currentColor" stroke="none" />
+          </svg>
         </div>
 
-        <p className="text-sm md:text-[15px] text-[#f7f2ea]/80 tracking-wide max-w-[22ch]">
-          Un espace d’entraide sociale discrète
-        </p>
+        <div className="text-left min-w-0">
+          <p className="font-serif text-lg sm:text-xl md:text-2xl text-[#f5f0e8] tracking-wide leading-tight">
+            Le Pacte Silencieux
+          </p>
+          <p className="mt-0.5 text-[11px] sm:text-xs text-[#f5f0e8]/70 tracking-wide">
+            Un espace d’entraide sociale discrète
+          </p>
+        </div>
       </div>
 
-      {/* Brume bas */}
+      {/* Brume bas très légère */}
       <div
-        className="pointer-events-none absolute bottom-0 left-0 right-0 h-20"
+        className="pointer-events-none absolute bottom-0 left-0 right-0 h-6 opacity-40"
         style={{
           background:
-            'linear-gradient(to top, rgba(247,242,234,0.12), transparent)',
+            'linear-gradient(to top, rgba(245,240,232,0.1), transparent)',
         }}
       />
     </div>
