@@ -8,7 +8,7 @@ const KEYWORDS: Record<MessageCategory, string[]> = {
   gratitude: ['merci', 'reconnaissant', 'reconnaissante', 'gratitude', 'chance', 'reconnaissance'],
   nuit: ['nuit', 'insomnie', 'minuit', 'soir', 'obscur', '3h', '2h', 'réveillé'],
   espoir: ['espoir', 'demain', 'mieux', 'possible', 'avenir', 'lumière'],
-  anxiete: ['anxiété', 'angoisse', 'stress', 'peur', 'inquiet', 'inquiète', 'panique', 'anxieux', 'anxieuse', 'stressé'],
+  anxiete: ['anxiété', 'angoisse', 'stress', 'peur', 'inquiet', 'inquiète', 'anxieux', 'anxieuse', 'stressé'],
   douceur: ['doux', 'douce', 'douceur', 'tendre', 'chaleur', 'réconfort', 'câlin'],
   matin: ['matin', 'réveil', 'journée', 'bonjour', 'réveillé'],
   colere: ['colère', 'énervé', 'énervée', 'furieux', 'furieuse', 'injuste', 'rage', 'énervement'],
@@ -16,22 +16,14 @@ const KEYWORDS: Record<MessageCategory, string[]> = {
   reconnexion: ['revenir', 'retour', 'reprendre', 'reconnexion', 'reviens', 'de retour'],
   cloture: ['au revoir', 'fin', 'terminer', 'clôturer', 'adieu', 'dernière'],
   remerciement: ['remercie', 'remerciement', 'merci pour', 'gratitude', 'reconnaissant'],
-  motivation: [
-    'entretien',
-    'rendez-vous',
-    'rdv',
-    'trac',
-    'motivation',
-    'vas-y',
-    'examen',
-    'job',
-    'embauche',
-    'présentation',
-  ],
-  depart: ['au revoir', 'partir', 'départ', 'adieu', 'clôturer', 'terminer le pacte', 'bonne route'],
+  motivation: ['entretien', 'rendez-vous', 'rdv', 'trac', 'motivation', 'examen', 'job', 'embauche', 'présentation'],
+  depart: ['au revoir', 'partir', 'départ', 'adieu', 'clôturer', 'bonne route'],
   solitude: ['seul', 'seule', 'solitude', 'isolé', 'isolée', 'personne autour', 'vide'],
   fierte: ['fierté', 'fier', 'fière', 'bravo', 'réussi', 'victoire', 'accompli'],
   transition: ['changement', 'déménagement', 'transition', 'nouveau', 'nouvelle vie', 'entre-deux', 'vertige'],
+  travail: ['travail', 'boulot', 'bureau', 'mails', 'réunion', 'collègue', 'boss', 'overwork', 'charge'],
+  panique: ['panique', 'crise', 'hypervent', 'cœur qui bat', 'attaque', 'peur panique', 'angoisse aiguë'],
+  famille: ['famille', 'parent', 'mère', 'père', 'frère', 'sœur', 'proche', 'conjoint', 'enfant'],
 };
 
 export function suggestCategory(text: string): MessageCategory | null {
@@ -75,6 +67,9 @@ export function detectMoodLabel(text: string): string | null {
     solitude: 'Solitude ressentie',
     fierte: 'Petite fierté',
     transition: 'Période de changement',
+    travail: 'Stress lié au travail',
+    panique: 'Pic d’angoisse possible',
+    famille: 'Lien familial tendu',
   };
   return labels[cat] || null;
 }
