@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState, use, useMemo } from 'react';
+import { useEffect, useState, use, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ExtendPrompt from '@/components/ExtendPrompt';
+import CrisisPanel from '@/components/CrisisPanel';
+import SoundToggle from '@/components/SoundToggle';
 import {
   CATEGORY_LABELS,
   TONE_LABELS,
@@ -17,6 +19,7 @@ import {
   type SupportOpening,
 } from '@/lib/messages';
 import { GESTURES, GESTURE_GROUPS } from '@/lib/gestures';
+import { playSendClick, playSoftChime, isSoundEnabled } from '@/lib/sounds';
 
 const FAV_KEY = 'pacte-favorites';
 
@@ -49,7 +52,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   const [messages, setMessages] = useState<SupportMsg[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<'fil' | 'geste' | 'soutien'>('fil');
+  const [tab, setTab] = useState<'fil' | 'geste' | 'soutien' | 'crise'>('fil');
   const [intent, setIntent] = useState<MessageIntent | 'all'>('all');
   const [selectedCategory, setSelectedCategory] = useState<
     MessageCategory | 'all' | 'fav'
@@ -62,6 +65,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   const [lastSeenCount, setLastSeenCount] = useState(0);
   const [uid, setUid] = useState('');
   const [gestureGroup, setGestureGroup] = useState<string>('all');
+  const prevMsgCount = useRef(0);
 
   useEffect(() => {
     setUid(localStorage.getItem('pacte_userId') || '');
@@ -93,11 +97,16 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
       setPact(await pactRes.json());
       if (msgRes.ok) {
         const msgData = await msgRes.json();
-        setMessages(
-          (msgData.messages || []).filter(
-            (m: SupportMsg) => !m.openingId.startsWith('system:extend:yes') && !m.openingId.startsWith('system:extend:no')
-          )
+        const list = (msgData.messages || []).filter(
+          (m: SupportMsg) =>
+            !m.openingId.startsWith('system:extend:yes') &&
+            !m.openingId.startsWith('system:extend:no')
         );
+        if (list.length > prevMsgCount.current && prevMsgCount.current > 0) {
+          if (isSoundEnabled()) playSoftChime();
+        }
+        prevMsgCount.current = list.length;
+        setMessages(list);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
@@ -108,7 +117,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 12000);
+    const interval = setInterval(load, 10000);
     return () => clearInterval(interval);
   }, [id]);
 
@@ -150,6 +159,13 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
     return GESTURES.filter((g) => g.group === gestureGroup);
   }, [gestureGroup]);
 
+  const daysLeft = useMemo(() => {
+    if (!pact?.endsAt) return null;
+    const ms = new Date(pact.endsAt).getTime() - Date.now();
+    if (ms <= 0) return 0;
+    return Math.ceil(ms / (1000 * 60 * 60 * 24));
+  }, [pact?.endsAt]);
+
   const sendGesture = async (type: string) => {
     const pactId = pact?.id || id;
     if (!pactId) {
@@ -173,9 +189,8 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
         }),
       });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(d.error || d.detail || `Erreur ${res.status}`);
-      }
+      if (!res.ok) throw new Error(d.error || d.detail || `Erreur ${res.status}`);
+      playSendClick();
       setStatusMsg('Geste envoyé.');
       await load();
       setTab('fil');
@@ -187,10 +202,9 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   };
 
   const sendOpening = async (opening: SupportOpening) => {
-    const senderUserId =
-      uid || localStorage.getItem('pacte_userId') || '';
+    const senderUserId = uid || localStorage.getItem('pacte_userId') || '';
     if (!pact || !senderUserId) {
-      setStatusMsg('Session incomplète. Repars depuis /start.');
+      setStatusMsg('Session incomplète. Repars depuis /start avec le même email.');
       return;
     }
     setSending(true);
@@ -207,6 +221,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'Erreur');
+      playSendClick();
       setStatusMsg('Message envoyé.');
       await load();
       setTab('fil');
@@ -228,6 +243,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'Erreur');
+      playSendClick();
       setStatusMsg('Réponse envoyée.');
       await load();
     } catch (e) {
@@ -240,7 +256,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   if (loading) {
     return (
       <main className="min-h-screen grid place-items-center">
-        <p className="text-[#706b63]">Chargement du pacte…</p>
+        <p style={{ color: 'var(--muted)' }}>Chargement du pacte…</p>
       </main>
     );
   }
@@ -248,11 +264,20 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   if (error || !pact) {
     return (
       <main className="min-h-screen grid place-items-center px-4">
-        <div className="text-center">
+        <div className="text-center max-w-sm">
           <h1 className="text-2xl font-serif">Pacte introuvable</h1>
-          <p className="mt-2 text-[#706b63]">{error}</p>
-          <Link href="/" className="mt-6 inline-block text-[#1f6b67] font-bold">
-            Retour
+          <p className="mt-2" style={{ color: 'var(--muted)' }}>
+            {error}
+          </p>
+          <p className="mt-4 text-sm" style={{ color: 'var(--muted)' }}>
+            Pour retrouver un pacte actif : retourne sur{' '}
+            <Link href="/start" className="underline" style={{ color: 'var(--accent)' }}>
+              /start
+            </Link>{' '}
+            avec le <strong>même email</strong>.
+          </p>
+          <Link href="/" className="mt-6 inline-block font-bold" style={{ color: 'var(--accent)' }}>
+            Accueil
           </Link>
         </div>
       </main>
@@ -273,41 +298,69 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
       <section className="flex-1 py-10">
         <div className="max-w-xl mx-auto px-4">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-serif">Votre pacte</h1>
-              <p className="text-sm text-[#a49f96] mt-1">
+              <h1 className="text-2xl font-serif tracking-tight">Votre pacte</h1>
+              <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>
                 {pact.durationDays} jour{pact.durationDays > 1 ? 's' : ''}
-                {pact.status === 'ACTIVE' ? ' · actif' : pact.status === 'ENDED' ? ' · terminé' : ' · en attente'}
+                {pact.status === 'ACTIVE'
+                  ? ' · actif'
+                  : pact.status === 'ENDED'
+                    ? ' · terminé'
+                    : ' · en attente'}
+                {daysLeft !== null && pact.status === 'ACTIVE'
+                  ? ` · ${daysLeft} j restant${daysLeft > 1 ? 's' : ''}`
+                  : ''}
                 {visibleMessages.length > 0
                   ? ` · ${visibleMessages.length} échange${visibleMessages.length > 1 ? 's' : ''}`
                   : ''}
               </p>
             </div>
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-bold ${
-                pact.status === 'ACTIVE'
-                  ? 'bg-[#1f6b67]/15 text-[#1f6b67]'
+            <div className="flex flex-col items-end gap-2">
+              <SoundToggle />
+              <span
+                className="px-3 py-1 rounded-full text-xs font-bold"
+                style={{
+                  background:
+                    pact.status === 'ACTIVE'
+                      ? 'var(--accent-soft)'
+                      : 'var(--card)',
+                  color:
+                    pact.status === 'ACTIVE'
+                      ? 'var(--accent)'
+                      : 'var(--muted)',
+                }}
+              >
+                {pact.status === 'ACTIVE'
+                  ? 'Actif'
                   : pact.status === 'ENDED'
-                    ? 'bg-black/10 text-[#706b63]'
-                    : 'bg-amber-100 text-amber-800'
-              }`}
-            >
-              {pact.status === 'ACTIVE'
-                ? 'Actif'
-                : pact.status === 'ENDED'
-                  ? 'Terminé'
-                  : 'En attente'}
-            </span>
+                    ? 'Terminé'
+                    : 'En attente'}
+              </span>
+            </div>
+          </div>
+
+          <div
+            className="mt-4 p-3 rounded-xl text-xs leading-relaxed"
+            style={{
+              background: 'var(--accent-soft)',
+              color: 'var(--muted)',
+            }}
+          >
+            <strong style={{ color: 'var(--accent)' }}>Reconnexion :</strong>{' '}
+            avec le même email sur /start, tu reprends ce pacte et tout le Fil
+            (historique conservé pendant toute la durée).
           </div>
 
           {statusMsg && (
-            <div className="mt-4 p-3 rounded-lg bg-[#f2eee5] dark:bg-white/5 text-sm text-center">
+            <div
+              className="mt-4 p-3 rounded-lg text-sm text-center"
+              style={{ background: 'var(--card)' }}
+            >
               {statusMsg}
             </div>
           )}
 
-          {/* Prolongation fin de cycle */}
           {uid && (pact.status === 'ACTIVE' || pact.status === 'ENDED') && (
             <ExtendPrompt
               pactId={pact.id || id}
@@ -319,20 +372,30 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
           {pact.status === 'ACTIVE' && (
             <>
-              <div className="mt-8 flex gap-2 border-b border-black/10 dark:border-white/10">
-                {([
-                  ['fil', 'Fil'],
-                  ['geste', 'Geste'],
-                  ['soutien', 'Soutien'],
-                ] as const).map(([key, label]) => (
+              <div
+                className="mt-8 flex gap-1 border-b overflow-x-auto"
+                style={{ borderColor: 'var(--border)' }}
+              >
+                {(
+                  [
+                    ['fil', 'Fil'],
+                    ['geste', 'Geste'],
+                    ['soutien', 'Soutien'],
+                    ['crise', 'Crise'],
+                  ] as const
+                ).map(([key, label]) => (
                   <button
                     key={key}
                     onClick={() => setTab(key)}
-                    className={`relative px-4 py-2 text-sm font-bold rounded-t-lg transition ${
+                    className="relative px-3.5 py-2 text-sm font-bold rounded-t-lg transition shrink-0"
+                    style={
                       tab === key
-                        ? 'bg-[#1f6b67] text-white'
-                        : 'text-[#706b63] hover:bg-black/5'
-                    }`}
+                        ? {
+                            background: 'var(--accent)',
+                            color: '#fff',
+                          }
+                        : { color: 'var(--muted)' }
+                    }
                   >
                     {label}
                     {key === 'fil' && (unreadCount > 0 || pendingForMe > 0) && (
@@ -347,15 +410,24 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
               {tab === 'fil' && (
                 <div className="mt-6 space-y-4">
                   {pendingForMe > 0 && (
-                    <div className="p-3 rounded-lg bg-[#1f6b67]/10 text-sm text-[#1f6b67] text-center">
+                    <div
+                      className="p-3 rounded-lg text-sm text-center"
+                      style={{
+                        background: 'var(--accent-soft)',
+                        color: 'var(--accent)',
+                      }}
+                    >
                       {pendingForMe} message
                       {pendingForMe > 1 ? 's' : ''} en attente de ta réponse
                     </div>
                   )}
                   {visibleMessages.length === 0 && (
-                    <p className="text-sm text-[#a49f96] text-center py-10">
-                      Aucun message. Va dans <strong>Soutien</strong> ou{' '}
-                      <strong>Geste</strong>.
+                    <p
+                      className="text-sm text-center py-10"
+                      style={{ color: 'var(--muted)' }}
+                    >
+                      Aucun message encore. Va dans <strong>Soutien</strong>,{' '}
+                      <strong>Geste</strong> ou <strong>Crise</strong>.
                     </p>
                   )}
                   {visibleMessages.map((m) => {
@@ -374,14 +446,21 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                       <div key={m.id} className="space-y-2">
                         <div
                           className={`p-4 rounded-2xl border ${
-                            isSystem
-                              ? 'bg-[#1f6b67]/5 border-[#1f6b67]/20'
-                              : isMine
-                                ? 'bg-[#1f6b67]/10 border-[#1f6b67]/20 ml-6'
-                                : 'bg-[#f2eee5] dark:bg-white/5 border-black/5 mr-6'
+                            isMine ? 'ml-6' : 'mr-6'
                           }`}
+                          style={{
+                            borderColor: isSystem
+                              ? 'color-mix(in srgb, var(--accent) 25%, transparent)'
+                              : 'var(--border)',
+                            background: isMine
+                              ? 'var(--accent-soft)'
+                              : 'var(--card)',
+                          }}
                         >
-                          <p className="text-xs text-[#a49f96] mb-1">
+                          <p
+                            className="text-xs mb-1"
+                            style={{ color: 'var(--muted)' }}
+                          >
                             {isSystem
                               ? 'Système'
                               : isMine
@@ -400,18 +479,36 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                         {m.responseText && (
                           <div
                             className={`p-4 rounded-2xl border ${
-                              !isMine
-                                ? 'bg-[#1f6b67]/10 border-[#1f6b67]/20 ml-6'
-                                : 'bg-[#f2eee5] dark:bg-white/5 border-black/5 mr-6'
+                              !isMine ? 'ml-6' : 'mr-6'
                             }`}
+                            style={{
+                              borderColor: 'var(--border)',
+                              background: !isMine
+                                ? 'var(--accent-soft)'
+                                : 'var(--card)',
+                            }}
                           >
-                            <p className="text-xs text-[#a49f96] mb-1">Réponse</p>
+                            <p
+                              className="text-xs mb-1"
+                              style={{ color: 'var(--muted)' }}
+                            >
+                              Réponse
+                            </p>
                             <p>{m.responseText}</p>
                           </div>
                         )}
                         {needsResponse && opening && (
-                          <div className="mr-6 p-4 rounded-xl border border-[#1f6b67]/30">
-                            <p className="text-xs font-bold text-[#1f6b67] mb-3">
+                          <div
+                            className="mr-6 p-4 rounded-xl border"
+                            style={{
+                              borderColor:
+                                'color-mix(in srgb, var(--accent) 35%, transparent)',
+                            }}
+                          >
+                            <p
+                              className="text-xs font-bold mb-3"
+                              style={{ color: 'var(--accent)' }}
+                            >
                               Choisir une réponse
                             </p>
                             <div className="space-y-2">
@@ -420,7 +517,8 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                                   key={r}
                                   disabled={sending}
                                   onClick={() => sendResponse(m.id, r)}
-                                  className="w-full text-left px-3 py-2.5 rounded-lg border text-sm hover:border-[#1f6b67] disabled:opacity-50"
+                                  className="w-full text-left px-3 py-2.5 rounded-lg border text-sm disabled:opacity-50"
+                                  style={{ borderColor: 'var(--border)' }}
                                 >
                                   {r}
                                 </button>
@@ -436,19 +534,21 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
               {tab === 'geste' && (
                 <div className="mt-6">
-                  <p className="text-sm text-[#706b63] mb-3">
-                    Un signe simple, sans explication.{' '}
-                    <strong>{GESTURES.length} gestes</strong>.
+                  <p className="text-sm mb-3" style={{ color: 'var(--muted)' }}>
+                    Un signe simple. <strong>{GESTURES.length} gestes</strong>.
                   </p>
                   <div className="flex flex-wrap gap-2 mb-4">
                     <button
                       type="button"
                       onClick={() => setGestureGroup('all')}
-                      className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        gestureGroup === 'all'
-                          ? 'bg-[#1f6b67] text-white'
-                          : 'bg-black/5 text-[#706b63]'
-                      }`}
+                      className="px-3 py-1 rounded-full text-xs font-bold"
+                      style={{
+                        background:
+                          gestureGroup === 'all'
+                            ? 'var(--accent)'
+                            : 'var(--card)',
+                        color: gestureGroup === 'all' ? '#fff' : 'var(--muted)',
+                      }}
                     >
                       Tous
                     </button>
@@ -457,11 +557,12 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                         key={g}
                         type="button"
                         onClick={() => setGestureGroup(g)}
-                        className={`px-3 py-1 rounded-full text-xs font-bold ${
-                          gestureGroup === g
-                            ? 'bg-[#1f6b67] text-white'
-                            : 'bg-black/5 text-[#706b63]'
-                        }`}
+                        className="px-3 py-1 rounded-full text-xs font-bold"
+                        style={{
+                          background:
+                            gestureGroup === g ? 'var(--accent)' : 'var(--card)',
+                          color: gestureGroup === g ? '#fff' : 'var(--muted)',
+                        }}
                       >
                         {g}
                       </button>
@@ -474,9 +575,13 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                         type="button"
                         disabled={sending}
                         onClick={() => sendGesture(g.type)}
-                        className="w-full p-3.5 rounded-xl border border-black/10 text-left font-medium hover:border-[#1f6b67] hover:bg-[#1f6b67]/5 transition disabled:opacity-50"
+                        className="w-full p-3.5 rounded-xl border text-left font-medium disabled:opacity-50"
+                        style={{ borderColor: 'var(--border)' }}
                       >
-                        <span className="text-[10px] uppercase text-[#a49f96] block mb-0.5">
+                        <span
+                          className="text-[10px] uppercase block mb-0.5"
+                          style={{ color: 'var(--muted)' }}
+                        >
                           {g.group}
                         </span>
                         {g.label}
@@ -495,17 +600,29 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                         setIntent('offer');
                         setSelectedCategory('all');
                       }}
-                      className={`p-4 rounded-2xl border text-left transition ${
-                        intent === 'offer'
-                          ? 'border-[#1f6b67] bg-[#1f6b67]/10 ring-2 ring-[#1f6b67]/30'
-                          : 'border-black/10 hover:border-[#1f6b67]/40'
-                      }`}
+                      className="p-4 rounded-2xl border text-left"
+                      style={{
+                        borderColor:
+                          intent === 'offer'
+                            ? 'var(--accent)'
+                            : 'var(--border)',
+                        background:
+                          intent === 'offer'
+                            ? 'var(--accent-soft)'
+                            : 'transparent',
+                      }}
                     >
-                      <span className="block text-sm font-bold text-[#1f6b67]">
+                      <span
+                        className="block text-sm font-bold"
+                        style={{ color: 'var(--accent)' }}
+                      >
                         Je soutiens
                       </span>
-                      <span className="block text-xs text-[#706b63] mt-1">
-                        Présence, courage, motivation…
+                      <span
+                        className="block text-xs mt-1"
+                        style={{ color: 'var(--muted)' }}
+                      >
+                        Présence, courage…
                       </span>
                     </button>
                     <button
@@ -514,34 +631,34 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                         setIntent('seek');
                         setSelectedCategory('all');
                       }}
-                      className={`p-4 rounded-2xl border text-left transition ${
-                        intent === 'seek'
-                          ? 'border-[#1f6b67] bg-[#1f6b67]/10 ring-2 ring-[#1f6b67]/30'
-                          : 'border-black/10 hover:border-[#1f6b67]/40'
-                      }`}
+                      className="p-4 rounded-2xl border text-left"
+                      style={{
+                        borderColor:
+                          intent === 'seek' ? 'var(--accent)' : 'var(--border)',
+                        background:
+                          intent === 'seek'
+                            ? 'var(--accent-soft)'
+                            : 'transparent',
+                      }}
                     >
-                      <span className="block text-sm font-bold text-[#1f6b67]">
+                      <span
+                        className="block text-sm font-bold"
+                        style={{ color: 'var(--accent)' }}
+                      >
                         J’ai besoin de soutien
                       </span>
-                      <span className="block text-xs text-[#706b63] mt-1">
-                        Jour difficile, fatigue, trac…
+                      <span
+                        className="block text-xs mt-1"
+                        style={{ color: 'var(--muted)' }}
+                      >
+                        Jour difficile, trac…
                       </span>
                     </button>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setIntent('all')}
-                    className={`mb-3 text-xs font-bold ${
-                      intent === 'all' ? 'text-[#1f6b67]' : 'text-[#a49f96]'
-                    }`}
-                  >
-                    Voir tous les messages
-                  </button>
-
-                  <p className="text-sm text-[#706b63] mb-3">
-                    <strong>Échanges illimités</strong> pendant toute la durée du
-                    pacte. L’historique reste dans le Fil.
+                  <p className="text-sm mb-3" style={{ color: 'var(--muted)' }}>
+                    <strong>Échanges illimités</strong>. Historique dans le Fil
+                    pendant toute la durée.
                   </p>
 
                   <input
@@ -549,13 +666,14 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                     placeholder="Rechercher…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-[#1f6b67]/30"
+                    className="w-full px-4 py-2.5 rounded-xl border text-sm mb-3"
+                    style={{
+                      borderColor: 'var(--border)',
+                      background: 'var(--card-solid)',
+                    }}
                   />
 
                   <div className="flex flex-wrap gap-2 mb-3">
-                    <span className="text-[10px] uppercase tracking-wide text-[#a49f96] self-center mr-1">
-                      Ton
-                    </span>
                     {(
                       [
                         ['all', 'Tous'],
@@ -568,11 +686,12 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                       <button
                         key={key}
                         onClick={() => setTone(key)}
-                        className={`px-3 py-1 rounded-full text-xs font-bold ${
-                          tone === key
-                            ? 'bg-[#1f6b67] text-white'
-                            : 'bg-black/5 text-[#706b63]'
-                        }`}
+                        className="px-3 py-1 rounded-full text-xs font-bold"
+                        style={{
+                          background:
+                            tone === key ? 'var(--accent)' : 'var(--card)',
+                          color: tone === key ? '#fff' : 'var(--muted)',
+                        }}
                       >
                         {label}
                       </button>
@@ -582,21 +701,29 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                   <div className="flex flex-wrap gap-2 mb-5">
                     <button
                       onClick={() => setSelectedCategory('all')}
-                      className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        selectedCategory === 'all'
-                          ? 'bg-[#1f6b67] text-white'
-                          : 'bg-black/5 text-[#706b63]'
-                      }`}
+                      className="px-3 py-1 rounded-full text-xs font-bold"
+                      style={{
+                        background:
+                          selectedCategory === 'all'
+                            ? 'var(--accent)'
+                            : 'var(--card)',
+                        color:
+                          selectedCategory === 'all' ? '#fff' : 'var(--muted)',
+                      }}
                     >
                       Tous
                     </button>
                     <button
                       onClick={() => setSelectedCategory('fav')}
-                      className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        selectedCategory === 'fav'
-                          ? 'bg-[#1f6b67] text-white'
-                          : 'bg-black/5 text-[#706b63]'
-                      }`}
+                      className="px-3 py-1 rounded-full text-xs font-bold"
+                      style={{
+                        background:
+                          selectedCategory === 'fav'
+                            ? 'var(--accent)'
+                            : 'var(--card)',
+                        color:
+                          selectedCategory === 'fav' ? '#fff' : 'var(--muted)',
+                      }}
                     >
                       ♥ Favoris
                     </button>
@@ -604,11 +731,15 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                       <button
                         key={cat}
                         onClick={() => setSelectedCategory(cat)}
-                        className={`px-3 py-1 rounded-full text-xs font-bold ${
-                          selectedCategory === cat
-                            ? 'bg-[#1f6b67] text-white'
-                            : 'bg-black/5 text-[#706b63]'
-                        }`}
+                        className="px-3 py-1 rounded-full text-xs font-bold"
+                        style={{
+                          background:
+                            selectedCategory === cat
+                              ? 'var(--accent)'
+                              : 'var(--card)',
+                          color:
+                            selectedCategory === cat ? '#fff' : 'var(--muted)',
+                        }}
                       >
                         {CATEGORY_LABELS[cat]}
                       </button>
@@ -621,14 +752,16 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                       return (
                         <div
                           key={m.id}
-                          className="flex gap-2 items-start p-3 rounded-xl border hover:border-[#1f6b67]/40"
+                          className="flex gap-2 items-start p-3 rounded-xl border"
+                          style={{ borderColor: 'var(--border)' }}
                         >
                           <button
                             type="button"
                             onClick={() => toggleFavorite(m.id)}
                             className={`mt-1 text-lg ${
-                              isFav ? 'text-red-500' : 'text-[#a49f96]'
+                              isFav ? 'text-red-500' : ''
                             }`}
+                            style={!isFav ? { color: 'var(--muted)' } : undefined}
                           >
                             {isFav ? '♥' : '♡'}
                           </button>
@@ -638,12 +771,16 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                             onClick={() => sendOpening(m)}
                             className="flex-1 text-left disabled:opacity-50"
                           >
-                            <span className="text-[10px] uppercase text-[#a49f96]">
+                            <span
+                              className="text-[10px] uppercase"
+                              style={{ color: 'var(--muted)' }}
+                            >
                               {CATEGORY_LABELS[m.category]}
                               {m.tone ? ` · ${TONE_LABELS[m.tone]}` : ''}
-                              {m.source ? ` · ${m.source}` : ''}
                             </span>
-                            <p className="mt-0.5 text-sm leading-relaxed">{m.text}</p>
+                            <p className="mt-0.5 text-sm leading-relaxed">
+                              {m.text}
+                            </p>
                           </button>
                         </div>
                       );
@@ -651,10 +788,19 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                   </div>
                 </div>
               )}
+
+              {tab === 'crise' && (
+                <div className="mt-6">
+                  <CrisisPanel onSendGesture={sendGesture} />
+                </div>
+              )}
             </>
           )}
 
-          <p className="mt-12 text-xs text-center text-[#a49f96]">
+          <p
+            className="mt-12 text-xs text-center"
+            style={{ color: 'var(--muted)' }}
+          >
             En cas de détresse : 3114 (France).
           </p>
         </div>
