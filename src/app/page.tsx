@@ -16,12 +16,13 @@ export default function HomePage() {
             <span className="inline-block px-3 py-1 rounded-full bg-[#1f6b67]/10 text-[#1f6b67] text-xs font-bold uppercase tracking-wide">
               gratuit · anonyme · 1 à 7 jours
             </span>
-            <h1 className="mt-5 text-5xl md:text-7xl font-serif leading-tight max-w-[12ch]">
+            <h1 className="mt-5 text-5xl md:text-7xl font-serif leading-tight max-w-[13ch]">
               Pendant quelques jours, quelqu’un tient avec toi.
             </h1>
-            <p className="mt-6 text-lg text-[#706b63] dark:text-[#a49f96] max-w-[52ch] leading-relaxed">
-              Pas de profil. Pas de chat libre. Juste des gestes et des messages
-              de soutien déjà écrits — pour les jours où parler est trop lourd.
+            <p className="mt-6 text-lg text-[#706b63] dark:text-[#a49f96] max-w-[54ch] leading-relaxed">
+              Pas de profil. Pas de chat libre. Des gestes silencieux, des
+              messages de soutien déjà écrits, et des remerciements en fin de
+              pacte — pour les jours où parler est trop lourd.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
@@ -54,14 +55,20 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-[#1f6b67]/8 border border-[#1f6b67]/20 ml-4">
-                <p className="text-sm text-[#1f6b67] mb-1">Tu peux répondre</p>
+                <p className="text-sm text-[#1f6b67] mb-1">Tu choisis une réponse</p>
                 <p className="font-medium leading-snug">
                   « Merci. Ça m’aide un peu. »
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-[#f2eee5] dark:bg-white/5 border border-black/5 dark:border-white/10">
-                <p className="text-sm text-[#a49f96] mb-1">Ou simplement un geste</p>
+                <p className="text-sm text-[#a49f96] mb-1">Ou un geste silencieux</p>
                 <p className="font-medium">Je suis là.</p>
+              </div>
+              <div className="p-4 rounded-xl bg-[#1f6b67]/8 border border-[#1f6b67]/20 ml-4">
+                <p className="text-sm text-[#1f6b67] mb-1">En fin de pacte</p>
+                <p className="font-medium leading-snug">
+                  « Merci d’avoir tenu avec moi. »
+                </p>
               </div>
             </div>
           </div>
@@ -71,26 +78,32 @@ export default function HomePage() {
       {/* COMMENT ÇA MARCHE */}
       <section id="comment" className="py-24 border-t border-black/5 dark:border-white/5">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-4xl font-serif max-w-[16ch]">Comment ça marche</h2>
-          <p className="mt-3 text-[#706b63] dark:text-[#a49f96] max-w-[48ch]">
-            Trois étapes. Aucun spectacle. Une présence réelle.
+          <h2 className="text-4xl font-serif max-w-[18ch]">Comment ça marche</h2>
+          <p className="mt-3 text-[#706b63] dark:text-[#a49f96] max-w-[52ch] leading-relaxed">
+            Quatre étapes simples. Aucun spectacle. Une présence réelle entre
+            deux personnes qui ne se connaissent pas.
           </p>
-          <div className="mt-12 grid md:grid-cols-3 gap-6">
+          <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
               {
                 n: '1',
                 t: 'Tu choisis une durée',
-                d: '1, 3 ou 7 jours. Tu reçois un lien magique par email. Aucun mot de passe.',
+                d: '1, 3 ou 7 jours. Tu reçois un lien magique par email. Aucun mot de passe à retenir.',
               },
               {
                 n: '2',
-                t: 'Tu es relié à une personne',
-                d: 'Quelqu’un d’autre, anonyme, avec la même durée. Pas de profil. Juste un pacte.',
+                t: 'Tu es relié à quelqu’un',
+                d: 'Une autre personne, anonyme, avec la même durée. Pas de profil, pas de photo, pas de nom.',
               },
               {
                 n: '3',
                 t: 'Vous vous tenez',
-                d: 'Gestes silencieux et messages de soutien prédéfinis. Tu choisis, tu envoies, l’autre peut répondre.',
+                d: 'Gestes silencieux et messages de soutien déjà écrits. L’autre répond parmi des options adaptées.',
+              },
+              {
+                n: '4',
+                t: 'Vous vous remerciez',
+                d: 'En fin de pacte, chacun peut envoyer un message de remerciement. Optionnel, simple, digne.',
               },
             ].map((s) => (
               <article
@@ -100,7 +113,7 @@ export default function HomePage() {
                 <span className="inline-flex w-10 h-10 items-center justify-center rounded-full bg-[#1f6b67] text-white font-bold text-sm">
                   {s.n}
                 </span>
-                <h3 className="mt-4 text-xl font-bold">{s.t}</h3>
+                <h3 className="mt-4 text-lg font-bold">{s.t}</h3>
                 <p className="mt-2 text-sm text-[#706b63] dark:text-[#a49f96] leading-relaxed">
                   {s.d}
                 </p>
@@ -110,15 +123,23 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CE QUI EST AUTORISÉ */}
+      {/* CE QUE VOUS POUVEZ FAIRE */}
       <section className="py-24 bg-[#f2eee5]/40 dark:bg-white/[0.02]">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-4xl font-serif max-w-[14ch]">
+          <h2 className="text-4xl font-serif max-w-[16ch]">
             Ce que vous pouvez vous envoyer
           </h2>
-          <div className="mt-10 grid md:grid-cols-2 gap-8">
+          <p className="mt-3 text-[#706b63] dark:text-[#a49f96] max-w-[50ch]">
+            Tout est prédéfini. Aucun texte libre. C’est ce qui protège le cadre
+            et rend l’échange possible même quand on n’a plus les mots.
+          </p>
+
+          <div className="mt-10 grid md:grid-cols-3 gap-6">
             <div className="p-6 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5">
               <h3 className="text-lg font-bold text-[#1f6b67]">Gestes silencieux</h3>
+              <p className="mt-2 text-sm text-[#706b63] dark:text-[#a49f96]">
+                Un signe simple, sans explication.
+              </p>
               <ul className="mt-4 space-y-2 text-sm text-[#706b63] dark:text-[#a49f96]">
                 <li>· Je suis là.</li>
                 <li>· Je tiens.</li>
@@ -126,30 +147,84 @@ export default function HomePage() {
                 <li>· Je veille un peu avec toi.</li>
               </ul>
             </div>
+
             <div className="p-6 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5">
               <h3 className="text-lg font-bold text-[#1f6b67]">Messages de soutien</h3>
-              <p className="mt-4 text-sm text-[#706b63] dark:text-[#a49f96] leading-relaxed">
-                Une cinquantaine de phrases déjà écrites — présence, jour
-                difficile, fatigue, courage, nuit, espoir. L’autre personne
-                reçoit des réponses adaptées à choisir. Pas de texte libre.
+              <p className="mt-2 text-sm text-[#706b63] dark:text-[#a49f96] leading-relaxed">
+                Des dizaines de phrases déjà écrites, classées : présence, jour
+                difficile, fatigue, courage, anxiété, nuit, douceur, deuil…
+              </p>
+              <p className="mt-3 text-sm text-[#706b63] dark:text-[#a49f96] leading-relaxed">
+                Quand tu envoies un message, l’autre personne reçoit{' '}
+                <strong>3 à 5 réponses adaptées</strong> à choisir. Pas de
+                conversation libre — un échange coordonné, contrôlé, humain.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5">
+              <h3 className="text-lg font-bold text-[#1f6b67]">Remerciements</h3>
+              <p className="mt-2 text-sm text-[#706b63] dark:text-[#a49f96] leading-relaxed">
+                En fin de pacte, une trentaine de messages pour dire merci.
+              </p>
+              <p className="mt-3 text-sm text-[#706b63] dark:text-[#a49f96] leading-relaxed">
+                Se faire remercier, c’est aussi se sentir utile. Optionnel, simple,
+                digne — pour fermer le chapitre proprement.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* POURQUOI */}
+      {/* CE QUE CE N’EST PAS */}
       <section className="py-24">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-4xl font-serif max-w-[14ch]">Ce que ce n’est pas</h2>
+          <div className="mt-10 grid md:grid-cols-3 gap-5">
+            {[
+              {
+                t: 'Pas un chat',
+                d: 'Aucun message libre. Uniquement des phrases choisies à l’avance.',
+              },
+              {
+                t: 'Pas un réseau social',
+                d: 'Pas de profil, pas de fil, pas de likes, pas de followers.',
+              },
+              {
+                t: 'Pas une rencontre',
+                d: 'Une seule personne, un temps limité, puis chacun reprend sa route.',
+              },
+            ].map((item) => (
+              <article
+                key={item.t}
+                className="p-6 rounded-2xl border border-black/10 dark:border-white/10 bg-white/50 dark:bg-white/5"
+              >
+                <h3 className="text-lg font-bold">{item.t}</h3>
+                <p className="mt-2 text-sm text-[#706b63] dark:text-[#a49f96] leading-relaxed">
+                  {item.d}
+                </p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* POURQUOI */}
+      <section className="py-24 border-t border-black/5 dark:border-white/5">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-4xl font-serif max-w-[14ch]">
             Pourquoi ce site existe
           </h2>
-          <p className="mt-5 text-lg text-[#706b63] dark:text-[#a49f96] max-w-[54ch] leading-relaxed">
+          <p className="mt-5 text-lg text-[#706b63] dark:text-[#a49f96] max-w-[56ch] leading-relaxed">
             Beaucoup de jours sont trop lourds pour parler. Et pourtant, être
             seul avec ça est encore plus lourd. Le Pacte silencieux offre une
             présence minimale, digne, gratuite — sans exiger que tu te racontes.
           </p>
-          <p className="mt-4 text-sm text-[#a49f96] max-w-[48ch]">
+          <p className="mt-4 text-lg text-[#706b63] dark:text-[#a49f96] max-w-[56ch] leading-relaxed">
+            Tu n’as pas à performer. Tu n’as pas à expliquer. Tu choisis un
+            geste ou une phrase, et quelqu’un de l’autre côté peut te répondre
+            dans le même langage.
+          </p>
+          <p className="mt-6 text-sm text-[#a49f96] max-w-[48ch]">
             Ce n’est pas un substitut à une aide professionnelle. Si tu traverses
             une détresse importante, contacte des ressources adaptées (en France
             : 3114).
@@ -160,10 +235,13 @@ export default function HomePage() {
       {/* CTA FINAL */}
       <section className="py-20 border-t border-black/5 dark:border-white/5">
         <div className="max-w-3xl mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-serif">
+          <h2 className="text-3xl md:text-4xl font-serif leading-snug">
             Tu n’as pas à parler. Quelqu’un peut quand même rester un peu avec
             toi.
           </h2>
+          <p className="mt-4 text-[#706b63] dark:text-[#a49f96]">
+            Gratuit. Anonyme. Sans chat libre.
+          </p>
           <Link
             href="/start"
             className="mt-8 inline-block px-8 py-4 rounded-full bg-[#1f6b67] text-white font-bold hover:bg-[#184f4d] transition text-lg"
