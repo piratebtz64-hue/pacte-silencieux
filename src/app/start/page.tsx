@@ -48,7 +48,6 @@ export default function StartPage() {
         Notification.requestPermission().catch(() => {});
       }
 
-      // Reprise d’un pacte actif → historique intact
       if (data.resume && data.pactId) {
         router.push(`/pact/${data.pactId}`);
         return;
@@ -67,48 +66,43 @@ export default function StartPage() {
     }
   };
 
-  const goWaiting = () => {
-    router.push('/waiting');
-  };
-
   if (done) {
     return (
-      <main className="min-h-screen grid place-items-center px-4">
-        <div className="max-w-md mx-auto text-center">
-          <div className="text-4xl mb-4">{done.emailSent ? '✉️' : '✅'}</div>
-          <h1 className="text-2xl font-serif">
-            {done.emailSent ? 'Lien envoyé par e-mail' : 'Pacte prêt'}
+      <main className="min-h-screen grid place-items-center px-4 py-16">
+        <div className="max-w-md w-full text-center animate-fade-up">
+          <div
+            className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full text-2xl"
+            style={{
+              background: 'var(--accent-soft)',
+              color: 'var(--accent)',
+              boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent)',
+            }}
+          >
+            {done.emailSent ? '✉' : '✓'}
+          </div>
+          <h1 className="font-serif text-3xl tracking-tight">
+            {done.emailSent ? 'Lien envoyé' : 'Pacte prêt'}
           </h1>
-
-          {done.emailSent ? (
-            <p className="mt-3 text-[#706b63] dark:text-[#a49f96] leading-relaxed">
-              Vérifie ta boîte mail (et les spams). Tu peux aussi continuer tout
-              de suite sans attendre le mail — option technique, pas une
-              obligation d’attendre.
-            </p>
-          ) : (
-            <p className="mt-3 text-[#706b63] dark:text-[#a49f96] leading-relaxed">
-              {done.warning ||
+          <p className="mt-3 leading-relaxed" style={{ color: 'var(--muted)' }}>
+            {done.emailSent
+              ? 'Vérifie ta boîte mail (et les spams). Tu peux aussi continuer tout de suite sans attendre.'
+              : done.warning ||
                 'Tu peux entrer en attente immédiatement, sans cliquer de lien mail.'}
-            </p>
-          )}
-
+          </p>
           <button
             type="button"
-            onClick={goWaiting}
-            className="mt-8 w-full py-3.5 rounded-full bg-[#1f6b67] text-white font-bold hover:bg-[#184f4d] transition"
+            onClick={() => router.push('/waiting')}
+            className="btn-primary mt-8 w-full"
           >
             Continuer vers l’attente
           </button>
-
-          <p className="mt-4 text-xs text-[#a49f96]">
-            Garde cet appareil : ta session est enregistrée ici. Tes messages
-            restent liés au pacte tant qu’il est actif.
+          <p className="mt-4 text-xs" style={{ color: 'var(--muted)' }}>
+            Garde cet appareil : ta session et ton historique y sont liés.
           </p>
-
           <Link
             href="/"
-            className="mt-8 inline-block text-sm text-[#706b63] hover:underline"
+            className="mt-8 inline-block text-sm underline"
+            style={{ color: 'var(--muted)' }}
           >
             ← Accueil
           </Link>
@@ -118,53 +112,72 @@ export default function StartPage() {
   }
 
   return (
-    <main className="min-h-screen py-10">
-      <div className="max-w-md mx-auto px-4 w-full">
+    <main className="min-h-screen py-12 md:py-16">
+      <div className="max-w-md mx-auto px-4 w-full animate-fade-up">
         <Link
           href="/"
-          className="text-sm text-[#706b63] dark:text-[#a49f96] hover:underline"
+          className="text-sm transition-colors hover:text-[var(--accent)]"
+          style={{ color: 'var(--muted)' }}
         >
           ← Retour
         </Link>
-        <h1 className="mt-6 text-3xl font-serif">Commencer un pacte de présence</h1>
-        <p className="mt-2 text-[#706b63] dark:text-[#a49f96]">
-          Gratuit · anonyme · environ 2 minutes pour démarrer
+        <h1 className="mt-6 font-serif text-3xl md:text-4xl tracking-tight">
+          Commencer un pacte de présence
+        </h1>
+        <p className="mt-2 text-sm" style={{ color: 'var(--muted)' }}>
+          Gratuit · anonyme · environ 2 minutes
         </p>
 
-        <div className="mt-6 p-4 rounded-2xl border border-black/10 dark:border-white/10 bg-white/60 dark:bg-white/5">
-          <p className="text-sm font-bold text-[#1f6b67] mb-2">Ton rôle</p>
-          <p className="text-sm text-[#706b63] dark:text-[#a49f96] leading-relaxed">
-            Tu peux <strong>avoir besoin d’une présence</strong>,{' '}
-            <strong>être présent pour quelqu’un</strong>, ou les deux. Le parcours
-            est le même.
+        <div className="card-premium mt-8 p-5">
+          <p className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>
+            Ton rôle
+          </p>
+          <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+            Tu peux <strong style={{ color: 'var(--foreground)' }}>avoir besoin d’une présence</strong>,{' '}
+            <strong style={{ color: 'var(--foreground)' }}>en offrir une</strong>, ou les deux. Même parcours.
           </p>
         </div>
 
-        <div className="mt-4 p-4 rounded-2xl border border-[#1f6b67]/20 bg-[#1f6b67]/5">
-          <p className="text-sm font-bold mb-2">Ce qui est garanti</p>
-          <ul className="text-sm text-[#706b63] dark:text-[#a49f96] space-y-1.5">
+        <div
+          className="mt-3 p-5 rounded-[var(--radius)] border"
+          style={{
+            borderColor: 'color-mix(in srgb, var(--accent) 22%, transparent)',
+            background: 'var(--accent-soft)',
+          }}
+        >
+          <p className="text-sm font-semibold">Ce qui est garanti</p>
+          <ul className="mt-2 text-sm space-y-1.5" style={{ color: 'var(--muted)' }}>
             <li>· Aucun échange libre (pas de chat)</li>
             <li>· Aucun nom réel nécessaire</li>
-            <li>· Historique du pacte conservé tant qu’il est actif</li>
+            <li>· Historique conservé tant que le pacte est actif</li>
             <li>· Échanges illimités pendant la durée</li>
-            <li>· Tu peux arrêter à tout moment</li>
+            <li>· Arrêt possible à tout moment</li>
           </ul>
         </div>
 
         <form onSubmit={(e) => handleSubmit(e, false)} className="mt-8 space-y-6">
           <div>
-            <label className="block text-sm font-bold mb-2">Durée</label>
-            <div className="grid grid-cols-3 gap-2">
+            <label className="block text-sm font-semibold mb-2.5">Durée</label>
+            <div className="grid grid-cols-3 gap-2.5">
               {(['1', '3', '7'] as const).map((d) => (
                 <button
                   key={d}
                   type="button"
                   onClick={() => setDuration(d)}
-                  className={`py-3 rounded-lg border transition ${
+                  className="py-3.5 rounded-xl border text-sm font-semibold transition-all"
+                  style={
                     duration === d
-                      ? 'bg-[#1f6b67] text-white border-[#1f6b67]'
-                      : 'bg-white dark:bg-white/5 border-black/10 dark:border-white/10 hover:border-[#1f6b67]/40'
-                  }`}
+                      ? {
+                          background: 'var(--accent)',
+                          color: '#fff',
+                          borderColor: 'var(--accent)',
+                          boxShadow: '0 8px 20px var(--glow)',
+                        }
+                      : {
+                          background: 'var(--card)',
+                          borderColor: 'var(--border)',
+                        }
+                  }
                 >
                   {d} jour{Number(d) > 1 ? 's' : ''}
                 </button>
@@ -173,19 +186,25 @@ export default function StartPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-bold mb-2">Email</label>
+            <label className="block text-sm font-semibold mb-2.5">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#1f6b67]/40"
+              className="w-full px-4 py-3.5 rounded-xl border text-sm transition-shadow focus:outline-none focus:ring-2"
+              style={{
+                borderColor: 'var(--border)',
+                background: 'var(--card-solid)',
+                // @ts-expect-error css var
+                '--tw-ring-color': 'var(--glow)',
+              }}
               placeholder="ton@email.com"
               autoComplete="email"
             />
-            <p className="mt-1.5 text-xs text-[#a49f96]">
-              Si tu as déjà un pacte actif avec cet email, tu seras renvoyé vers
-              lui avec tout l’historique.
+            <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
+              Si un pacte actif existe avec cet email, tu le reprends avec tout
+              l’historique.
             </p>
           </div>
 
@@ -193,19 +212,15 @@ export default function StartPage() {
             <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 rounded-full bg-[#1f6b67] text-white font-bold hover:bg-[#184f4d] transition disabled:opacity-60"
-          >
+          <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
             {loading ? 'Chargement…' : 'Continuer (reprendre ou commencer)'}
           </button>
         </form>
 
-        <p className="mt-6 text-xs text-[#a49f96] text-center leading-relaxed">
+        <p className="mt-8 text-xs text-center leading-relaxed" style={{ color: 'var(--muted)' }}>
           En continuant, tu acceptes les{' '}
           <Link href="/cgu" className="underline">
-            conditions d’utilisation
+            conditions
           </Link>{' '}
           et la{' '}
           <Link href="/confidentialite" className="underline">

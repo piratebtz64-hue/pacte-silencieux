@@ -7,63 +7,97 @@ import BrandBanner from '@/components/BrandBanner';
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen flex flex-col">
       <Header />
       <BrandBanner />
 
       {/* HERO */}
-      <section className="min-h-[70vh] grid place-items-center py-12">
-        <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <span className="inline-block px-3 py-1 rounded-full bg-[#1f6b67]/10 text-[#1f6b67] text-xs font-bold uppercase tracking-wide">
-              gratuit · anonyme · 1 à 7 jours
-            </span>
-            <h1 className="mt-5 text-4xl md:text-5xl lg:text-6xl font-serif leading-tight max-w-[16ch]">
+      <section className="relative py-16 md:py-24 lg:py-28">
+        <div className="max-w-6xl mx-auto px-4 grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+          <div className="lg:col-span-7 animate-fade-up">
+            <span className="badge">gratuit · anonyme · 1 à 7 jours</span>
+            <h1 className="mt-6 font-serif text-[2.35rem] sm:text-5xl lg:text-[3.35rem] leading-[1.12] tracking-tight max-w-[16ch]">
               Pendant quelques jours, une personne reste là avec toi.
             </h1>
-            <p className="mt-6 text-lg text-[#706b63] dark:text-[#a49f96] max-w-[54ch] leading-relaxed">
+            <p
+              className="mt-6 text-lg leading-relaxed max-w-[40ch]"
+              style={{ color: 'var(--muted)' }}
+            >
               Pas de profil. Pas de chat libre. Des gestes et des messages déjà
               écrits — pour les jours où parler est trop lourd.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3 items-center">
-              <Link
-                href="/start"
-                className="px-6 py-3 rounded-full bg-[#1f6b67] text-white font-bold hover:bg-[#184f4d] transition"
-              >
+            <div className="mt-9 flex flex-wrap gap-3 items-center">
+              <Link href="/start" className="btn-primary">
                 Commencer un pacte de présence
               </Link>
-              <Link
-                href="#comment"
-                className="px-6 py-3 rounded-full border border-black/10 dark:border-white/10 bg-white/60 dark:bg-white/5"
-              >
+              <Link href="#comment" className="btn-ghost">
                 Comment ça marche
               </Link>
             </div>
-            <p className="mt-3 text-xs text-[#a49f96]">
+            <p className="mt-4 text-xs tracking-wide" style={{ color: 'var(--muted)' }}>
               Gratuit · anonyme · environ 2 minutes pour commencer
             </p>
           </div>
 
-          <div className="p-8 rounded-2xl border border-black/10 dark:border-white/10 bg-white/60 dark:bg-white/5 shadow-lg">
-            <div className="text-xs uppercase text-[#a49f96] mb-4 tracking-wide">
-              Exemple d’échange
-            </div>
-            <div className="space-y-3">
-              <div className="p-4 rounded-xl bg-[#f2eee5] dark:bg-white/5 border border-black/5 dark:border-white/10">
-                <p className="text-sm text-[#a49f96] mb-1">Quelqu’un t’écrit</p>
-                <p className="font-medium leading-snug">
-                  « Si c’est lourd aujourd’hui, tu n’as pas à le porter seul. »
-                </p>
-              </div>
-              <div className="p-4 rounded-xl bg-[#1f6b67]/8 border border-[#1f6b67]/20 ml-4">
-                <p className="text-sm text-[#1f6b67] mb-1">Tu choisis une réponse</p>
-                <p className="font-medium leading-snug">
-                  « Merci. Ça m’aide un peu. »
-                </p>
-              </div>
-              <div className="p-4 rounded-xl bg-[#f2eee5] dark:bg-white/5 border border-black/5 dark:border-white/10">
-                <p className="text-sm text-[#a49f96] mb-1">Ou un geste silencieux</p>
-                <p className="font-medium">Je suis là.</p>
+          <div className="lg:col-span-5 animate-fade-up animate-delay-2">
+            <div className="card-premium p-7 md:p-8 relative overflow-hidden">
+              <div
+                className="pointer-events-none absolute -top-20 -right-20 h-40 w-40 rounded-full opacity-40"
+                style={{
+                  background:
+                    'radial-gradient(circle, var(--accent-soft), transparent 70%)',
+                }}
+              />
+              <p
+                className="text-[10px] uppercase tracking-[0.16em] font-bold mb-5"
+                style={{ color: 'var(--muted)' }}
+              >
+                Exemple d’échange
+              </p>
+              <div className="space-y-3.5">
+                <div
+                  className="p-4 rounded-2xl border"
+                  style={{
+                    borderColor: 'var(--border)',
+                    background: 'var(--card-solid)',
+                  }}
+                >
+                  <p className="text-[11px] mb-1.5" style={{ color: 'var(--muted)' }}>
+                    Quelqu’un t’écrit
+                  </p>
+                  <p className="text-[0.95rem] leading-snug font-medium">
+                    « Si c’est lourd aujourd’hui, tu n’as pas à le porter seul. »
+                  </p>
+                </div>
+                <div
+                  className="p-4 rounded-2xl ml-3 border"
+                  style={{
+                    borderColor: 'color-mix(in srgb, var(--accent) 25%, transparent)',
+                    background: 'var(--accent-soft)',
+                  }}
+                >
+                  <p
+                    className="text-[11px] mb-1.5 font-medium"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    Tu choisis une réponse
+                  </p>
+                  <p className="text-[0.95rem] leading-snug font-medium">
+                    « Merci. Ça m’aide un peu. »
+                  </p>
+                </div>
+                <div
+                  className="p-4 rounded-2xl border"
+                  style={{
+                    borderColor: 'var(--border)',
+                    background: 'var(--card-solid)',
+                  }}
+                >
+                  <p className="text-[11px] mb-1.5" style={{ color: 'var(--muted)' }}>
+                    Ou un geste silencieux
+                  </p>
+                  <p className="text-[0.95rem] font-medium">Je suis là.</p>
+                </div>
               </div>
             </div>
           </div>
@@ -71,74 +105,85 @@ export default function HomePage() {
       </section>
 
       {/* CONFIANCE */}
-      <section className="py-12 border-t border-black/5 dark:border-white/5 bg-[#1f6b67]/[0.06]">
-        <div className="max-w-3xl mx-auto px-4">
-          <h2 className="text-2xl font-serif">Avant de commencer</h2>
-          <ul className="mt-5 grid sm:grid-cols-2 gap-3 text-sm text-[#706b63] dark:text-[#a49f96]">
-            <li className="p-3 rounded-xl bg-white/70 dark:bg-white/5 border border-black/5">
-              Aucun échange libre — uniquement des phrases choisies
-            </li>
-            <li className="p-3 rounded-xl bg-white/70 dark:bg-white/5 border border-black/5">
-              Aucun nom réel nécessaire
-            </li>
-            <li className="p-3 rounded-xl bg-white/70 dark:bg-white/5 border border-black/5">
-              Aucun contact direct entre participants
-            </li>
-            <li className="p-3 rounded-xl bg-white/70 dark:bg-white/5 border border-black/5">
-              Tu peux arrêter à tout moment
-            </li>
-            <li className="p-3 rounded-xl bg-white/70 dark:bg-white/5 border border-black/5">
-              Signalement possible à tout moment
-            </li>
-            <li className="p-3 rounded-xl bg-white/70 dark:bg-white/5 border border-black/5">
-              Aucune donnée vendue —{' '}
-              <Link href="/confidentialite" className="text-[#1f6b67] underline">
-                confidentialité
-              </Link>
-            </li>
-          </ul>
+      <section className="py-14" style={{ background: 'var(--accent-soft)' }}>
+        <div className="max-w-4xl mx-auto px-4">
+          <h2 className="font-serif text-2xl md:text-3xl tracking-tight">
+            Avant de commencer
+          </h2>
+          <div className="mt-7 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[
+              'Aucun échange libre — phrases choisies',
+              'Aucun nom réel nécessaire',
+              'Aucun contact direct',
+              'Arrêt possible à tout moment',
+              'Signalement disponible',
+              'Aucune donnée vendue',
+            ].map((t) => (
+              <div
+                key={t}
+                className="card-premium px-4 py-3.5 text-sm leading-snug"
+              >
+                {t}
+              </div>
+            ))}
+          </div>
+          <p className="mt-5 text-xs" style={{ color: 'var(--muted)' }}>
+            Détails :{' '}
+            <Link href="/confidentialite" className="underline" style={{ color: 'var(--accent)' }}>
+              confidentialité
+            </Link>
+          </p>
         </div>
       </section>
 
-      <section id="comment" className="py-24 border-t border-black/5 dark:border-white/5">
+      {/* COMMENT */}
+      <section id="comment" className="py-20 md:py-28">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-4xl font-serif max-w-[18ch]">Comment ça marche</h2>
-          <p className="mt-3 text-[#706b63] dark:text-[#a49f96] max-w-[52ch] leading-relaxed">
+          <h2 className="font-serif text-3xl md:text-4xl tracking-tight max-w-[16ch]">
+            Comment ça marche
+          </h2>
+          <p className="mt-3 max-w-[42ch] leading-relaxed" style={{ color: 'var(--muted)' }}>
             Quatre étapes simples. Une présence entre deux personnes qui ne se
             connaissent pas.
           </p>
-          <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
               {
-                n: '1',
+                n: '01',
                 t: 'Tu choisis une durée',
                 d: '1, 3 ou 7 jours. Environ 2 minutes pour démarrer.',
               },
               {
-                n: '2',
+                n: '02',
                 t: 'Tu es relié à quelqu’un',
-                d: 'Une autre personne, anonyme, avec la même durée. Pas de profil.',
+                d: 'Une autre personne, anonyme, même durée. Pas de profil.',
               },
               {
-                n: '3',
+                n: '03',
                 t: 'Vous restez présents',
                 d: 'Gestes et messages déjà écrits. Réponses parmi des options.',
               },
               {
-                n: '4',
-                t: 'Vous pouvez vous remercier',
-                d: 'En fin de pacte, un message de remerciement. Optionnel et digne.',
+                n: '04',
+                t: 'Vous pouvez prolonger',
+                d: 'En fin de cycle, Oui / Non des deux côtés pour +7 jours.',
               },
             ].map((s) => (
               <article
                 key={s.n}
-                className="p-6 rounded-2xl border border-black/10 dark:border-white/10 bg-white/50 dark:bg-white/5"
+                className="card-premium card-premium-lift p-6"
               >
-                <span className="inline-flex w-10 h-10 items-center justify-center rounded-full bg-[#1f6b67] text-white font-bold text-sm">
+                <span
+                  className="text-xs font-bold tracking-[0.12em]"
+                  style={{ color: 'var(--accent)' }}
+                >
                   {s.n}
                 </span>
-                <h3 className="mt-4 text-lg font-bold">{s.t}</h3>
-                <p className="mt-2 text-sm text-[#706b63] dark:text-[#a49f96] leading-relaxed">
+                <h3 className="mt-4 text-lg font-semibold tracking-tight">{s.t}</h3>
+                <p
+                  className="mt-2 text-sm leading-relaxed"
+                  style={{ color: 'var(--muted)' }}
+                >
                   {s.d}
                 </p>
               </article>
@@ -147,10 +192,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="py-24">
+      {/* CE QUE CE N’EST PAS */}
+      <section className="py-16 md:py-20">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-4xl font-serif max-w-[14ch]">Ce que ce n’est pas</h2>
-          <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <h2 className="font-serif text-3xl md:text-4xl tracking-tight max-w-[14ch]">
+            Ce que ce n’est pas
+          </h2>
+          <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
               {
                 t: 'Pas un chat',
@@ -166,15 +214,15 @@ export default function HomePage() {
               },
               {
                 t: 'Pas un professionnel',
-                d: 'Ne remplace ni une assistante sociale, ni un psychologue, ni un médecin.',
+                d: 'Ne remplace ni assistante sociale, ni psychologue, ni médecin.',
               },
             ].map((item) => (
-              <article
-                key={item.t}
-                className="p-6 rounded-2xl border border-black/10 dark:border-white/10 bg-white/50 dark:bg-white/5"
-              >
-                <h3 className="text-lg font-bold">{item.t}</h3>
-                <p className="mt-2 text-sm text-[#706b63] dark:text-[#a49f96] leading-relaxed">
+              <article key={item.t} className="card-premium p-6">
+                <h3 className="text-lg font-semibold tracking-tight">{item.t}</h3>
+                <p
+                  className="mt-2 text-sm leading-relaxed"
+                  style={{ color: 'var(--muted)' }}
+                >
                   {item.d}
                 </p>
               </article>
@@ -183,55 +231,62 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* AIDE */}
       <section
         id="aide"
-        className="py-20 border-t border-black/5 dark:border-white/5 bg-[#1f6b67]/[0.06]"
+        className="py-16 md:py-20 border-y"
+        style={{
+          borderColor: 'var(--border)',
+          background: 'var(--accent-soft)',
+        }}
       >
         <div className="max-w-3xl mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-serif">
+          <h2 className="font-serif text-3xl md:text-4xl tracking-tight leading-snug">
             Important : ce site n’est pas une aide professionnelle
           </h2>
-          <div className="mt-6 space-y-4 text-[#706b63] dark:text-[#a49f96] leading-relaxed">
+          <div
+            className="mt-6 space-y-3 text-[0.95rem] leading-relaxed"
+            style={{ color: 'var(--muted)' }}
+          >
             <p>
-              <strong className="text-inherit">
+              <strong style={{ color: 'var(--foreground)' }}>
                 Le Pacte silencieux ne remplace pas une assistante sociale
               </strong>
               , un travailleur social, un psychologue ou un médecin.
             </p>
             <p>
               C’est un espace de présence anonyme entre pairs, avec des messages
-              déjà écrits. Ce n’est ni un suivi, ni un diagnostic, ni une prise
-              en charge.
+              déjà écrits. Ni suivi, ni diagnostic, ni prise en charge.
             </p>
           </div>
-          <div className="mt-10 p-6 rounded-2xl border border-[#1f6b67]/25 bg-white/80 dark:bg-white/5">
-            <h3 className="text-lg font-bold text-[#1f6b67]">
+          <div className="card-premium mt-10 p-6 md:p-8">
+            <h3
+              className="text-base font-semibold"
+              style={{ color: 'var(--accent)' }}
+            >
               En cas de détresse (France)
             </h3>
-            <ul className="mt-5 space-y-3 text-sm">
-              <li>
-                <strong className="text-[#1f6b67]">3114</strong> — Prévention du
-                suicide (24h/24)
-              </li>
-              <li>
-                <strong className="text-[#1f6b67]">15</strong> — SAMU
-              </li>
-              <li>
-                <strong className="text-[#1f6b67]">112</strong> — Urgences
-              </li>
-              <li>
-                <strong className="text-[#1f6b67]">119</strong> — Enfance en danger
-              </li>
-              <li>
-                <strong className="text-[#1f6b67]">3919</strong> — Violences faites
-                aux femmes
-              </li>
-              <li>
-                <strong className="text-[#1f6b67]">0 800 23 13 13</strong> — Fil
-                Santé Jeunes
-              </li>
+            <ul className="mt-5 space-y-2.5 text-sm">
+              {[
+                ['3114', 'Prévention du suicide (24h/24)'],
+                ['15', 'SAMU'],
+                ['112', 'Urgences'],
+                ['119', 'Enfance en danger'],
+                ['3919', 'Violences faites aux femmes'],
+                ['0 800 23 13 13', 'Fil Santé Jeunes'],
+              ].map(([n, label]) => (
+                <li key={n} className="flex gap-3">
+                  <strong
+                    className="shrink-0 tabular-nums"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    {n}
+                  </strong>
+                  <span style={{ color: 'var(--muted)' }}>— {label}</span>
+                </li>
+              ))}
             </ul>
-            <p className="mt-5 text-xs text-[#a49f96]">
+            <p className="mt-5 text-xs" style={{ color: 'var(--muted)' }}>
               En urgence immédiate : 15 ou 112. Ce site n’est pas un service
               d’urgence.
             </p>
@@ -239,24 +294,22 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="py-20 border-t border-black/5 dark:border-white/5">
-        <div className="max-w-3xl mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-serif leading-snug">
+      {/* CTA FINAL */}
+      <section className="py-20 md:py-28">
+        <div className="max-w-2xl mx-auto px-4 text-center">
+          <h2 className="font-serif text-3xl md:text-4xl leading-snug tracking-tight">
             Tu n’as pas à parler. Quelqu’un peut quand même rester un peu avec
             toi.
           </h2>
-          <Link
-            href="/start"
-            className="mt-8 inline-block px-8 py-4 rounded-full bg-[#1f6b67] text-white font-bold hover:bg-[#184f4d] transition text-lg"
-          >
+          <Link href="/start" className="btn-primary mt-10 inline-flex text-base">
             Commencer un pacte de présence
           </Link>
-          <p className="mt-4 text-xs text-[#a49f96]">
+          <p className="mt-4 text-xs" style={{ color: 'var(--muted)' }}>
             Gratuit · anonyme · 2 minutes pour commencer
           </p>
-          <p className="mt-6 text-xs text-[#a49f96]">
+          <p className="mt-6 text-xs" style={{ color: 'var(--muted)' }}>
             En détresse ?{' '}
-            <a href="#aide" className="underline hover:text-[#1f6b67]">
+            <a href="#aide" className="underline" style={{ color: 'var(--accent)' }}>
               Voir les numéros d’aide
             </a>
           </p>
