@@ -21,7 +21,11 @@ export type MessageCategory =
   | 'transition'
   | 'travail'
   | 'panique'
-  | 'famille';
+  | 'famille'
+  | 'salutation'
+  | 'checkin'
+  | 'limites'
+  | 'repos';
 
 export type MessageIntent = 'offer' | 'seek' | 'both';
 export type MessageTone = 'doux' | 'neutre' | 'energique' | 'court';
@@ -60,6 +64,10 @@ export const CATEGORY_LABELS: Record<MessageCategory, string> = {
   travail: 'Travail / stress',
   panique: 'Crise / panique',
   famille: 'Famille / proche',
+  salutation: 'Salutations',
+  checkin: 'Prise de nouvelles',
+  limites: 'Limites / espace',
+  repos: 'Repos / pause',
 };
 
 export const TONE_LABELS: Record<MessageTone, string> = {
@@ -81,6 +89,8 @@ export const OFFER_CATEGORIES: MessageCategory[] = [
   'motivation',
   'depart',
   'fierte',
+  'salutation',
+  'checkin',
 ];
 
 export const SEEK_CATEGORIES: MessageCategory[] = [
@@ -96,30 +106,25 @@ export const SEEK_CATEGORIES: MessageCategory[] = [
   'travail',
   'panique',
   'famille',
+  'limites',
+  'repos',
 ];
 
 export function getIntentForCategory(category: MessageCategory): MessageIntent {
-  if (OFFER_CATEGORIES.includes(category) && !SEEK_CATEGORIES.includes(category)) {
+  if (OFFER_CATEGORIES.includes(category) && !SEEK_CATEGORIES.includes(category))
     return 'offer';
-  }
-  if (SEEK_CATEGORIES.includes(category) && !OFFER_CATEGORIES.includes(category)) {
+  if (SEEK_CATEGORIES.includes(category) && !OFFER_CATEGORIES.includes(category))
     return 'seek';
-  }
   return 'both';
 }
 
 export function getDefaultTone(category: MessageCategory): MessageTone {
-  if (category === 'motivation' || category === 'courage' || category === 'fierte')
-    return 'energique';
+  if (['motivation', 'courage', 'fierte'].includes(category)) return 'energique';
   if (
-    category === 'douceur' ||
-    category === 'nuit' ||
-    category === 'deuil' ||
-    category === 'depart' ||
-    category === 'solitude' ||
-    category === 'panique'
+    ['douceur', 'nuit', 'deuil', 'depart', 'solitude', 'panique', 'repos', 'salutation'].includes(
+      category
+    )
   )
     return 'doux';
-  if (category === 'travail' || category === 'colere') return 'neutre';
   return 'neutre';
 }
