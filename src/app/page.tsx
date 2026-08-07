@@ -88,7 +88,7 @@ export default function HomePage() {
               {
                 n: '1',
                 t: 'Tu choisis une durée',
-                d: '1, 3 ou 7 jours. Tu reçois un lien magique par email. Aucun mot de passe à retenir.',
+                d: '1, 3 ou 7 jours. Tu peux continuer même si le mail met du temps.',
               },
               {
                 n: '2',
@@ -151,24 +151,17 @@ export default function HomePage() {
             <div className="p-6 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5">
               <h3 className="text-lg font-bold text-[#1f6b67]">Messages de soutien</h3>
               <p className="mt-2 text-sm text-[#706b63] dark:text-[#a49f96] leading-relaxed">
-                Des dizaines de phrases déjà écrites, classées : présence, jour
-                difficile, fatigue, courage, anxiété, nuit, douceur, deuil…
-              </p>
-              <p className="mt-3 text-sm text-[#706b63] dark:text-[#a49f96] leading-relaxed">
-                Quand tu envoies un message, l’autre personne reçoit{' '}
-                <strong>3 à 5 réponses adaptées</strong> à choisir. Pas de
-                conversation libre — un échange coordonné, contrôlé, humain.
+                Des phrases déjà écrites : présence, jour difficile, fatigue,
+                motivation, anxiété, nuit… L’autre répond parmi des options
+                adaptées.
               </p>
             </div>
 
             <div className="p-6 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5">
               <h3 className="text-lg font-bold text-[#1f6b67]">Remerciements</h3>
               <p className="mt-2 text-sm text-[#706b63] dark:text-[#a49f96] leading-relaxed">
-                En fin de pacte, une trentaine de messages pour dire merci.
-              </p>
-              <p className="mt-3 text-sm text-[#706b63] dark:text-[#a49f96] leading-relaxed">
-                Se faire remercier, c’est aussi se sentir utile. Optionnel, simple,
-                digne — pour fermer le chapitre proprement.
+                En fin de pacte, des messages pour dire merci. Optionnel, simple,
+                digne.
               </p>
             </div>
           </div>
@@ -179,7 +172,7 @@ export default function HomePage() {
       <section className="py-24">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-4xl font-serif max-w-[14ch]">Ce que ce n’est pas</h2>
-          <div className="mt-10 grid md:grid-cols-3 gap-5">
+          <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
               {
                 t: 'Pas un chat',
@@ -193,6 +186,10 @@ export default function HomePage() {
                 t: 'Pas une rencontre',
                 d: 'Une seule personne, un temps limité, puis chacun reprend sa route.',
               },
+              {
+                t: 'Pas un professionnel',
+                d: 'Ce site ne remplace ni une assistante sociale, ni un psychologue, ni un médecin.',
+              },
             ].map((item) => (
               <article
                 key={item.t}
@@ -204,6 +201,104 @@ export default function HomePage() {
                 </p>
               </article>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CADRE & AIDE — TRÈS IMPORTANT */}
+      <section
+        id="aide"
+        className="py-20 border-t border-black/5 dark:border-white/5 bg-[#1f6b67]/[0.06]"
+      >
+        <div className="max-w-3xl mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-serif">
+            Important : ce site n’est pas une aide professionnelle
+          </h2>
+
+          <div className="mt-6 space-y-4 text-[#706b63] dark:text-[#a49f96] leading-relaxed">
+            <p>
+              <strong className="text-inherit">
+                Le Pacte silencieux ne remplace pas une assistante sociale
+              </strong>
+              , un travailleur social, un psychologue, un psychiatre ou tout
+              autre professionnel de l’accompagnement ou du soin.
+            </p>
+            <p>
+              C’est un espace de{' '}
+              <strong className="text-inherit">présence anonyme entre pairs</strong>
+              , avec des messages déjà écrits. Ce n’est{' '}
+              <strong className="text-inherit">ni un suivi</strong>,{' '}
+              <strong className="text-inherit">ni un diagnostic</strong>,{' '}
+              <strong className="text-inherit">ni une prise en charge</strong>.
+            </p>
+            <p>
+              Si tu es en difficulté sociale, administrative, familiale ou de
+              santé, adresse-toi de préférence à un professionnel ou à une
+              structure de proximité (CCAS, association, médecin, etc.).
+            </p>
+          </div>
+
+          <div className="mt-10 p-6 rounded-2xl border border-[#1f6b67]/25 bg-white/80 dark:bg-white/5">
+            <h3 className="text-lg font-bold text-[#1f6b67]">
+              En cas de détresse (France)
+            </h3>
+            <p className="mt-2 text-sm text-[#706b63] dark:text-[#a49f96]">
+              Ces numéros sont gratuits, anonymes, 24h/24 quand indiqué.
+            </p>
+            <ul className="mt-5 space-y-3 text-sm">
+              <li className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
+                <span className="font-bold text-[#1f6b67] shrink-0 tabular-nums">
+                  3114
+                </span>
+                <span className="text-[#706b63] dark:text-[#a49f96]">
+                  Numéro national de prévention du suicide — 24h/24, 7j/7
+                </span>
+              </li>
+              <li className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
+                <span className="font-bold text-[#1f6b67] shrink-0 tabular-nums">
+                  15
+                </span>
+                <span className="text-[#706b63] dark:text-[#a49f96]">
+                  SAMU — urgence médicale
+                </span>
+              </li>
+              <li className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
+                <span className="font-bold text-[#1f6b67] shrink-0 tabular-nums">
+                  112
+                </span>
+                <span className="text-[#706b63] dark:text-[#a49f96]">
+                  Urgences (numéro européen)
+                </span>
+              </li>
+              <li className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
+                <span className="font-bold text-[#1f6b67] shrink-0 tabular-nums">
+                  119
+                </span>
+                <span className="text-[#706b63] dark:text-[#a49f96]">
+                  Enfance en danger
+                </span>
+              </li>
+              <li className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
+                <span className="font-bold text-[#1f6b67] shrink-0 tabular-nums">
+                  3919
+                </span>
+                <span className="text-[#706b63] dark:text-[#a49f96]">
+                  Violences faites aux femmes (écoute, info, orientation)
+                </span>
+              </li>
+              <li className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
+                <span className="font-bold text-[#1f6b67] shrink-0">
+                  0 800 23 13 13
+                </span>
+                <span className="text-[#706b63] dark:text-[#a49f96]">
+                  Fil Santé Jeunes — jusqu’à 25 ans
+                </span>
+              </li>
+            </ul>
+            <p className="mt-5 text-xs text-[#a49f96] leading-relaxed">
+              En situation d’urgence immédiate, appelle le 15 ou le 112. Le
+              Pacte silencieux n’est pas un service d’urgence.
+            </p>
           </div>
         </div>
       </section>
@@ -224,11 +319,6 @@ export default function HomePage() {
             geste ou une phrase, et quelqu’un de l’autre côté peut te répondre
             dans le même langage.
           </p>
-          <p className="mt-6 text-sm text-[#a49f96] max-w-[48ch]">
-            Ce n’est pas un substitut à une aide professionnelle. Si tu traverses
-            une détresse importante, contacte des ressources adaptées (en France
-            : 3114).
-          </p>
         </div>
       </section>
 
@@ -240,7 +330,7 @@ export default function HomePage() {
             toi.
           </h2>
           <p className="mt-4 text-[#706b63] dark:text-[#a49f96]">
-            Gratuit. Anonyme. Sans chat libre.
+            Gratuit. Anonyme. Sans chat libre. Sans remplacer un professionnel.
           </p>
           <Link
             href="/start"
@@ -248,6 +338,12 @@ export default function HomePage() {
           >
             Commencer un pacte
           </Link>
+          <p className="mt-6 text-xs text-[#a49f96]">
+            En détresse ?{' '}
+            <a href="#aide" className="underline hover:text-[#1f6b67]">
+              Voir les numéros d’aide
+            </a>
+          </p>
         </div>
       </section>
 
