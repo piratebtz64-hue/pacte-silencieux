@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, useMemo } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -8,6 +8,7 @@ import {
   SUPPORT_MESSAGES,
   CATEGORY_LABELS,
   getMessageById,
+  searchMessages,
   type MessageCategory,
   type SupportOpening,
 } from '@/lib/messages';
@@ -18,6 +19,8 @@ const GESTURES = [
   { type: 'AUJOURDHUI_FRAGILE', label: 'Aujourd’hui c’est fragile.' },
   { type: 'JE_VEILLE_AVEC_TOI', label: 'Je veille un peu avec toi.' },
 ];
+
+const FAV_KEY = 'pacte-favorites';
 
 interface Pact {
   id: string;
@@ -49,13 +52,33 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<'fil' | 'geste' | 'soutien'>('fil');
-  const [selectedCategory, setSelectedCategory] = useState<MessageCategory | 'all'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<MessageCategory | 'all' | 'fav'>('all');
+  const [search, setSearch] = useState('');
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [lastSeenCount, setLastSeenCount] = useState(0);
 
-  // En prod on récupérera l'userId depuis la session Supabase.
-  // Pour l'instant on utilise userA comme expéditeur par défaut si connecté via lien.
   const currentUserId = pact?.userAId || pact?.userBId || '';
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(FAV_KEY);
+      if (raw) setFavorites(JSON.parse(raw));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const toggleFavorite = (msgId: string) => {
+    setFavorites((prev) => {
+      const next = prev.includes(msgId)
+        ? prev.filter((x) => x !== msgId)
+        : [...prev, msgId];
+      localStorage.setItem(FAV_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
 
   const load = async () => {
     try {
@@ -79,9 +102,32 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 20000);
+    const interval = setInterval(load, 15000);
     return () => clearInterval(interval);
   }, [id]);
+
+  useEffect(() => {
+    if (tab === 'fil') setLastSeenCount(messages.length);
+  }, [tab, messages.length]);
+
+  const unreadCount = Math.max(0, messages.length - lastSeenCount);
+
+  const pendingForMe = messages.filter(
+    (m) =>
+      m.receiverUserId === currentUserId &&
+      !m.responseText &&
+      m.senderUserId !== currentUserId
+  ).length;
+
+  const filteredOpenings = useMemo(() => {
+    let list = search ? searchMessages(search) : SUPPORT_MESSAGES;
+    if (selectedCategory === 'fav') {
+      list = list.filter((m) => favorites.includes(m.id));
+    } else if (selectedCategory !== 'all') {
+      list = list.filter((m) => m.category === selectedCategory);
+    }
+    return list;
+  }, [search, selectedCategory, favorites]);
 
   const sendGesture = async (type: string) => {
     if (!pact || !currentUserId) return;
@@ -122,7 +168,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'Erreur');
-      setStatusMsg('Message envoyé.');
+      setStatusMsg('Message envoyé. Tu pourras en renvoyer dans quelques heures.');
       await load();
       setTab('fil');
     } catch (e) {
@@ -151,11 +197,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
       setSending(false);
     }
   };
-
-  const filteredOpenings =
-    selectedCategory === 'all'
-      ? SUPPORT_MESSAGES
-      : SUPPORT_MESSAGES.filter((m) => m.category === selectedCategory);
 
   if (loading) {
     return (
@@ -219,7 +260,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
           {pact.status === 'ACTIVE' && (
             <>
-              {/* Tabs */}
               <div className="mt-8 flex gap-2 border-b border-black/10 dark:border-white/10 pb-px">
                 {([
                   ['fil', 'Fil'],
@@ -229,20 +269,29 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                   <button
                     key={key}
                     onClick={() => setTab(key)}
-                    className={`px-4 py-2 text-sm font-bold rounded-t-lg transition ${
+                    className={`relative px-4 py-2 text-sm font-bold rounded-t-lg transition ${
                       tab === key
                         ? 'bg-[#1f6b67] text-white'
                         : 'text-[#706b63] hover:bg-black/5 dark:hover:bg-white/5'
                     }`}
                   >
                     {label}
+                    {key === 'fil' && (unreadCount > 0 || pendingForMe > 0) && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] grid place-items-center">
+                        {pendingForMe || unreadCount}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
 
-              {/* FIL */}
               {tab === 'fil' && (
                 <div className="mt-6 space-y-4">
+                  {pendingForMe > 0 && (
+                    <div className="p-3 rounded-lg bg-[#1f6b67]/10 border border-[#1f6b67]/20 text-sm text-[#1f6b67] text-center">
+                      {pendingForMe} message{pendingForMe > 1 ? 's' : ''} en attente de ta réponse
+                    </div>
+                  )}
                   {messages.length === 0 && (
                     <p className="text-sm text-[#a49f96] text-center py-10">
                       Aucun message pour l’instant.
@@ -253,7 +302,9 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                   {messages.map((m) => {
                     const isMine = m.senderUserId === currentUserId;
                     const needsResponse =
-                      !isMine && !m.responseText && m.receiverUserId === currentUserId;
+                      !isMine &&
+                      !m.responseText &&
+                      m.receiverUserId === currentUserId;
                     const opening = getMessageById(m.openingId);
 
                     return (
@@ -315,7 +366,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                 </div>
               )}
 
-              {/* GESTES */}
               {tab === 'geste' && (
                 <div className="mt-6 space-y-3">
                   <p className="text-sm text-[#706b63] dark:text-[#a49f96] mb-4">
@@ -334,13 +384,20 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                 </div>
               )}
 
-              {/* SOUTIEN */}
               {tab === 'soutien' && (
                 <div className="mt-6">
-                  <p className="text-sm text-[#706b63] dark:text-[#a49f96] mb-4">
-                    Choisis un message. L’autre personne pourra répondre parmi des
-                    options adaptées.
+                  <p className="text-sm text-[#706b63] dark:text-[#a49f96] mb-3">
+                    Choisis un message. L’autre pourra répondre parmi des options.
+                    Limite : 2 messages / 12 h.
                   </p>
+
+                  <input
+                    type="search"
+                    placeholder="Rechercher un message…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1f6b67]/30 mb-4"
+                  />
 
                   <div className="flex flex-wrap gap-2 mb-5">
                     <button
@@ -352,6 +409,16 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                       }`}
                     >
                       Tous
+                    </button>
+                    <button
+                      onClick={() => setSelectedCategory('fav')}
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        selectedCategory === 'fav'
+                          ? 'bg-[#1f6b67] text-white'
+                          : 'bg-black/5 dark:bg-white/10 text-[#706b63]'
+                      }`}
+                    >
+                      ♥ Favoris ({favorites.length})
                     </button>
                     {(Object.keys(CATEGORY_LABELS) as MessageCategory[]).map(
                       (cat) => (
@@ -371,19 +438,42 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                   </div>
 
                   <div className="space-y-2 max-h-[28rem] overflow-y-auto pr-1">
-                    {filteredOpenings.map((m) => (
-                      <button
-                        key={m.id}
-                        disabled={sending}
-                        onClick={() => sendOpening(m)}
-                        className="w-full text-left p-4 rounded-xl border border-black/10 dark:border-white/10 hover:border-[#1f6b67] hover:bg-[#1f6b67]/5 transition disabled:opacity-50"
-                      >
-                        <span className="text-[10px] uppercase tracking-wide text-[#a49f96]">
-                          {CATEGORY_LABELS[m.category]}
-                        </span>
-                        <p className="mt-1 text-sm leading-relaxed">{m.text}</p>
-                      </button>
-                    ))}
+                    {filteredOpenings.length === 0 && (
+                      <p className="text-sm text-[#a49f96] text-center py-8">
+                        Aucun message trouvé.
+                      </p>
+                    )}
+                    {filteredOpenings.map((m) => {
+                      const isFav = favorites.includes(m.id);
+                      return (
+                        <div
+                          key={m.id}
+                          className="flex gap-2 items-start p-3 rounded-xl border border-black/10 dark:border-white/10 hover:border-[#1f6b67]/40 transition"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleFavorite(m.id)}
+                            className={`mt-1 text-lg leading-none shrink-0 ${
+                              isFav ? 'text-red-500' : 'text-[#a49f96]'
+                            }`}
+                            aria-label={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+                          >
+                            {isFav ? '♥' : '♡'}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={sending}
+                            onClick={() => sendOpening(m)}
+                            className="flex-1 text-left disabled:opacity-50"
+                          >
+                            <span className="text-[10px] uppercase tracking-wide text-[#a49f96]">
+                              {CATEGORY_LABELS[m.category]}
+                            </span>
+                            <p className="mt-0.5 text-sm leading-relaxed">{m.text}</p>
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
