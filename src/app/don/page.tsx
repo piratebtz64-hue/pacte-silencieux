@@ -22,8 +22,9 @@ export default function DonPage() {
           <h1 className="mt-8 text-3xl md:text-4xl font-serif">Faire un don</h1>
 
           <p className="mt-4 text-[#706b63] dark:text-[#a49f96] leading-relaxed">
-            Le site est gratuit. Un don aide uniquement à le faire vivre
-            (hébergement, emails). Aucune obligation.
+            Le site est gratuit. Un don aide uniquement à faire vivre{' '}
+            <strong>Le Pacte silencieux</strong> (hébergement, emails). Aucune
+            obligation.
           </p>
 
           <div className="mt-10">
