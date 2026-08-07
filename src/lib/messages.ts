@@ -2,28 +2,34 @@ import type {
   MessageCategory,
   MessageIntent,
   MessageTone,
+  MessageIntensity,
   SupportOpening,
 } from './messages-types';
 import {
   CATEGORY_LABELS,
   TONE_LABELS,
+  INTENSITY_LABELS,
   getIntentForCategory,
   getDefaultTone,
+  getDefaultIntensity,
 } from './messages-types';
 
 export type {
   MessageCategory,
   MessageIntent,
   MessageTone,
+  MessageIntensity,
   SupportOpening,
 } from './messages-types';
 export {
   CATEGORY_LABELS,
   TONE_LABELS,
+  INTENSITY_LABELS,
   OFFER_CATEGORIES,
   SEEK_CATEGORIES,
   getIntentForCategory,
   getDefaultTone,
+  getDefaultIntensity,
 } from './messages-types';
 
 import { PART0 } from './messages-part0';
@@ -41,6 +47,7 @@ import { PART11 } from './messages-part11';
 import { PART12 } from './messages-part12';
 import { PART13 } from './messages-part13';
 import { PART14 } from './messages-part14';
+import { PART15 } from './messages-part15';
 
 export const SUPPORT_MESSAGES: SupportOpening[] = [
   ...PART0,
@@ -58,10 +65,12 @@ export const SUPPORT_MESSAGES: SupportOpening[] = [
   ...PART12,
   ...PART13,
   ...PART14,
+  ...PART15,
 ].map((m) => ({
   ...m,
   intent: m.intent || getIntentForCategory(m.category),
   tone: m.tone || getDefaultTone(m.category),
+  intensity: m.intensity ?? getDefaultIntensity(m.category),
 }));
 
 export function getMessageById(id: string): SupportOpening | undefined {
@@ -83,6 +92,7 @@ export function filterMessages(options: {
   intent?: MessageIntent | 'all';
   category?: MessageCategory | 'all' | 'fav';
   tone?: MessageTone | 'all';
+  intensity?: MessageIntensity | 'all';
   search?: string;
   favorites?: string[];
 }): SupportOpening[] {
@@ -90,6 +100,7 @@ export function filterMessages(options: {
     intent = 'all',
     category = 'all',
     tone = 'all',
+    intensity = 'all',
     search = '',
     favorites = [],
   } = options;
@@ -104,6 +115,10 @@ export function filterMessages(options: {
 
   if (tone !== 'all') {
     list = list.filter((m) => m.tone === tone);
+  }
+
+  if (intensity !== 'all') {
+    list = list.filter((m) => (m.intensity ?? 2) === intensity);
   }
 
   const q = search.toLowerCase().trim();
