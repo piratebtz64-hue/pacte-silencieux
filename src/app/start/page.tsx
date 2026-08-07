@@ -100,17 +100,19 @@ export default function StartPage() {
         <h1 className="mt-6 font-serif text-3xl md:text-4xl tracking-tight">
           Commencer un pacte de présence
         </h1>
-        <p className="mt-2 text-sm" style={{ color: 'var(--muted)' }}>
-          Gratuit · anonyme · environ 2 minutes
+        <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+          Tu n’as pas besoin de tout expliquer. Juste choisir une durée et
+          rester un peu avec quelqu’un — discrètement.
         </p>
 
         <div className="card-premium mt-8 p-5">
           <p className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>
-            Ton rôle
+            Ce n’est pas un test
           </p>
           <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-            Tu peux avoir besoin d’une présence, en offrir une, ou les deux. Même
-            parcours.
+            Que tu aies besoin d’une présence, que tu veuilles en offrir une, ou
+            les deux : même parcours. Il n’y a pas de bonne ou de mauvaise
+            raison d’être ici.
           </p>
         </div>
 

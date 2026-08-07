@@ -17,16 +17,17 @@ export default function HomePage() {
           <div className="lg:col-span-7 animate-fade-up">
             <span className="badge">gratuit · anonyme · 1 à 7 jours</span>
             <h1 className="mt-6 font-serif text-[2.35rem] sm:text-5xl lg:text-[3.25rem] leading-[1.12] tracking-tight max-w-[20ch]">
-              Si tu n’as pas envie de parler à quelqu’un, ou que tu n’as personne
-              pour te soutenir en ce moment.
+              Si tu n’as pas envie de parler, ou que tu n’as personne pour te
+              soutenir en ce moment.
             </h1>
             <p
               className="mt-6 text-lg leading-relaxed max-w-[42ch]"
               style={{ color: 'var(--muted)' }}
             >
-              Ici, une présence anonyme peut rester un peu avec toi. Pas de
-              profil, pas de chat libre — des gestes et des messages déjà écrits,
-              pour les jours où tu as besoin d’un soutien discret.
+              Tu n’as pas à forcer une conversation. Ici, une présence anonyme
+              peut rester un peu avec toi — des gestes et des messages déjà
+              écrits, pour les jours où tu te sens un peu à l’écart, sans que ce
+              soit un échec.
             </p>
             <div className="mt-9 flex flex-wrap gap-3 items-center">
               <Link href="/start" className="btn-primary">
@@ -100,12 +101,55 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Moment doux — pas un test */}
+      <section className="py-16 md:py-20">
+        <div className="max-w-3xl mx-auto px-4">
+          <Reveal>
+            <h2 className="font-serif text-2xl md:text-3xl tracking-tight">
+              Comment tu te sens en ce moment ?
+            </h2>
+            <p className="mt-3 leading-relaxed" style={{ color: 'var(--muted)' }}>
+              Il n’y a pas de bonne ou de mauvaise réponse. C’est juste pour te
+              rappeler que ce que tu traverses a de la place ici.
+            </p>
+          </Reveal>
+          <div className="mt-8 space-y-3">
+            {[
+              'Tu te sens un peu seul·e en ce moment ?',
+              'Tu aimerais sentir qu’il y a quelqu’un, même sans parler beaucoup ?',
+              'Aujourd’hui, c’est plutôt léger, moyen, ou très lourd ?',
+              'Est-ce qu’un instant de présence, sans rien “réussir”, pourrait t’aider ?',
+            ].map((q, i) => (
+              <Reveal key={q} delay={i * 60}>
+                <div className="card-premium px-5 py-4 text-sm leading-relaxed">
+                  {q}
+                </div>
+              </Reveal>
+            ))}
+          </div>
+          <Reveal delay={280}>
+            <p className="mt-6 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+              Merci d’avoir pris ce moment. Quel que soit ce que tu ressens, tu
+              as le droit d’avoir besoin d’un peu de présence.
+            </p>
+            <Link href="/start" className="btn-primary mt-6 inline-flex !text-sm">
+              Continuer vers un pacte
+            </Link>
+          </Reveal>
+        </div>
+      </section>
+
       <section className="py-14" style={{ background: 'var(--accent-soft)' }}>
         <div className="max-w-4xl mx-auto px-4">
           <Reveal>
             <h2 className="font-serif text-2xl md:text-3xl tracking-tight">
               Avant de commencer
             </h2>
+            <p className="mt-3 text-sm leading-relaxed max-w-[48ch]" style={{ color: 'var(--muted)' }}>
+              Parfois on se sent à l’écart non pas parce qu’on n’aime personne,
+              mais parce qu’on n’a personne de disponible *là, tout de suite*.
+              Ce n’est pas un échec. C’est un moment.
+            </p>
           </Reveal>
           <div className="mt-7 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
@@ -237,8 +281,12 @@ export default function HomePage() {
           <div className="max-w-2xl mx-auto px-4 text-center">
             <h2 className="font-serif text-3xl md:text-4xl leading-snug tracking-tight">
               Pas envie de parler, ou personne autour pour te soutenir ? Ce pacte
-              peut t’offrir une présence discrète, le temps qu’il faut.
+              peut t’offrir une présence discrète — le temps qu’il faut.
             </h2>
+            <p className="mt-4 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+              Tu n’as pas besoin de tout expliquer, ni de “travailler sur toi”.
+              Juste, si tu en as besoin, quelqu’un peut rester un peu avec toi.
+            </p>
             <Link href="/start" className="btn-primary mt-10 inline-flex text-base">
               Commencer un pacte de présence
             </Link>
