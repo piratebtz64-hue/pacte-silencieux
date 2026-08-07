@@ -25,10 +25,15 @@ export type MessageCategory =
   | 'salutation'
   | 'checkin'
   | 'limites'
-  | 'repos';
+  | 'repos'
+  | 'micro'
+  | 'corporel';
 
 export type MessageIntent = 'offer' | 'seek' | 'both';
 export type MessageTone = 'doux' | 'neutre' | 'energique' | 'court';
+
+/** Intensité émotionnelle / engagement du message */
+export type MessageIntensity = 1 | 2 | 3;
 
 export interface SupportOpening {
   id: string;
@@ -37,6 +42,8 @@ export interface SupportOpening {
   responses: string[];
   intent?: MessageIntent;
   tone?: MessageTone;
+  /** 1 = léger / micro · 2 = moyen · 3 = profond */
+  intensity?: MessageIntensity;
   source?: string;
 }
 
@@ -68,6 +75,8 @@ export const CATEGORY_LABELS: Record<MessageCategory, string> = {
   checkin: 'Prise de nouvelles',
   limites: 'Limites / espace',
   repos: 'Repos / pause',
+  micro: 'Micro-lien',
+  corporel: 'Langage du corps',
 };
 
 export const TONE_LABELS: Record<MessageTone, string> = {
@@ -75,6 +84,12 @@ export const TONE_LABELS: Record<MessageTone, string> = {
   neutre: 'Neutre',
   energique: 'Énergique',
   court: 'Court',
+};
+
+export const INTENSITY_LABELS: Record<MessageIntensity, string> = {
+  1: 'Léger',
+  2: 'Moyen',
+  3: 'Profond',
 };
 
 export const OFFER_CATEGORIES: MessageCategory[] = [
@@ -91,6 +106,8 @@ export const OFFER_CATEGORIES: MessageCategory[] = [
   'fierte',
   'salutation',
   'checkin',
+  'micro',
+  'corporel',
 ];
 
 export const SEEK_CATEGORIES: MessageCategory[] = [
@@ -121,10 +138,25 @@ export function getIntentForCategory(category: MessageCategory): MessageIntent {
 export function getDefaultTone(category: MessageCategory): MessageTone {
   if (['motivation', 'courage', 'fierte'].includes(category)) return 'energique';
   if (
-    ['douceur', 'nuit', 'deuil', 'depart', 'solitude', 'panique', 'repos', 'salutation'].includes(
-      category
-    )
+    [
+      'douceur',
+      'nuit',
+      'deuil',
+      'depart',
+      'solitude',
+      'panique',
+      'repos',
+      'salutation',
+      'micro',
+      'corporel',
+    ].includes(category)
   )
     return 'doux';
   return 'neutre';
+}
+
+export function getDefaultIntensity(category: MessageCategory): MessageIntensity {
+  if (['micro', 'salutation', 'checkin', 'corporel'].includes(category)) return 1;
+  if (['panique', 'deuil', 'colere', 'difficile'].includes(category)) return 3;
+  return 2;
 }
