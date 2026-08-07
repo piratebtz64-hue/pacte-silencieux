@@ -16,6 +16,20 @@ const KEYWORDS: Record<MessageCategory, string[]> = {
   reconnexion: ['revenir', 'retour', 'reprendre', 'reconnexion', 'reviens', 'de retour'],
   cloture: ['au revoir', 'fin', 'terminer', 'clôturer', 'adieu', 'dernière'],
   remerciement: ['remercie', 'remerciement', 'merci pour', 'gratitude', 'reconnaissant'],
+  motivation: [
+    'entretien',
+    'rendez-vous',
+    'rdv',
+    'trac',
+    'motivation',
+    'vas-y',
+    'courage',
+    'examen',
+    'job',
+    'embauche',
+    'départ',
+    'présentation',
+  ],
 };
 
 export function suggestCategory(text: string): MessageCategory | null {
@@ -54,6 +68,7 @@ export function detectMoodLabel(text: string): string | null {
     matin: 'Démarrage de journée',
     reconnexion: 'Envie de reprendre',
     remerciement: 'Envie de remercier',
+    motivation: 'Motivation / rendez-vous',
   };
   return labels[cat] || null;
 }
