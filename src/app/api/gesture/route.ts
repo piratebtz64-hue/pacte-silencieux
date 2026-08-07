@@ -3,12 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const prisma = new PrismaClient();
 
-const VALID = [
-  'JE_SUIS_LA',
-  'JE_TIENS',
-  'AUJOURDHUI_FRAGILE',
-  'JE_VEILLE_AVEC_TOI',
-] as const;
+const GESTURE_LABELS: Record<string, string> = {
+  JE_SUIS_LA: 'Je suis là.',
+  JE_TIENS: 'Je tiens.',
+  AUJOURDHUI_FRAGILE: 'Aujourd’hui c’est fragile.',
+  JE_VEILLE_AVEC_TOI: 'Je veille un peu avec toi.',
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,33 +16,21 @@ export async function POST(request: NextRequest) {
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json(
-        { error: 'Corps de requête invalide' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Requête invalide' }, { status: 400 });
     }
 
-    const pactId = String(body.pactId || body.pact_id || '').trim();
+    const pactId = String(body.pactId || '').trim();
     const gestureType = String(
-      body.type || body.gestureType || body.gesture_type || ''
+      body.type || body.gestureType || ''
     ).trim();
-    const senderUserId = String(body.senderUserId || body.sender_user_id || '').trim();
+    let senderUserId = String(body.senderUserId || '').trim();
 
     if (!pactId) {
-      return NextResponse.json(
-        { error: 'ID de pacte manquant' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'ID de pacte manquant' }, { status: 400 });
     }
-    if (!gestureType) {
+    if (!gestureType || !GESTURE_LABELS[gestureType]) {
       return NextResponse.json(
-        { error: 'Type de geste manquant' },
-        { status: 400 }
-      );
-    }
-    if (!VALID.includes(gestureType as (typeof VALID)[number])) {
-      return NextResponse.json(
-        { error: `Type de geste invalide: ${gestureType}` },
+        { error: 'Type de geste invalide' },
         { status: 400 }
       );
     }
@@ -59,33 +47,52 @@ export async function POST(request: NextRequest) {
     }
     if (!pact.userAId || !pact.userBId) {
       return NextResponse.json(
-        { error: 'Pacte incomplet (en attente de la 2e personne)' },
+        { error: 'Pacte incomplet' },
         { status: 400 }
       );
     }
 
-    let senderId = senderUserId;
-    if (senderId !== pact.userAId && senderId !== pact.userBId) {
-      senderId = pact.userAId;
+    if (senderUserId !== pact.userAId && senderUserId !== pact.userBId) {
+      senderUserId = pact.userAId;
     }
-    const receiverId =
-      senderId === pact.userAId ? pact.userBId : pact.userAId;
+    const receiverUserId =
+      senderUserId === pact.userAId ? pact.userBId : pact.userAId;
 
-    const gesture = await prisma.gesture.create({
+    const label = GESTURE_LABELS[gestureType];
+
+    // Enregistrement fiable via SupportMessage (même table que les messages)
+    // openingId préfixé gesture: pour les distinguer dans le fil
+    const message = await prisma.supportMessage.create({
       data: {
         pactId,
-        senderUserId: senderId,
-        receiverUserId: receiverId,
-        type: gestureType as (typeof VALID)[number],
+        senderUserId,
+        receiverUserId,
+        openingId: `gesture:${gestureType}`,
+        openingText: label,
+        responseText: null,
       },
     });
 
+    // Best-effort aussi dans la table Gesture si elle existe
+    try {
+      await prisma.gesture.create({
+        data: {
+          pactId,
+          senderUserId,
+          receiverUserId,
+          type: gestureType as 'JE_SUIS_LA' | 'JE_TIENS' | 'AUJOURDHUI_FRAGILE' | 'JE_VEILLE_AVEC_TOI',
+        },
+      });
+    } catch {
+      // ignore si table/enum KO
+    }
+
     return NextResponse.json(
-      { ok: true, gesture, message: 'Geste envoyé' },
+      { ok: true, message, gestureLabel: label },
       { status: 201 }
     );
   } catch (error) {
-    console.error('Gesture API error:', error);
+    console.error('Gesture error:', error);
     return NextResponse.json(
       {
         error: 'Erreur serveur',
@@ -102,10 +109,16 @@ export async function GET(request: NextRequest) {
     if (!pactId) {
       return NextResponse.json({ error: 'pactId requis' }, { status: 400 });
     }
-    const gestures = await prisma.gesture.findMany({
-      where: { pactId },
+
+    // Gestes = messages dont openingId commence par gesture:
+    const gestures = await prisma.supportMessage.findMany({
+      where: {
+        pactId,
+        openingId: { startsWith: 'gesture:' },
+      },
       orderBy: { createdAt: 'asc' },
     });
+
     return NextResponse.json({ gestures });
   } catch (error) {
     console.error('Gesture GET error:', error);
