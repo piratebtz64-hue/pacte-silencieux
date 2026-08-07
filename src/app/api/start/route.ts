@@ -5,6 +5,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const prisma = new PrismaClient();
 
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ||
+  'https://pacte-silencieux.vercel.app';
+
 export async function POST(request: NextRequest) {
   try {
     const { email, durationDays } = await request.json();
@@ -28,12 +32,10 @@ export async function POST(request: NextRequest) {
       .update(email.toLowerCase().trim())
       .digest('hex');
 
-    // Vérifier si l'utilisateur existe déjà
     let user = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
     });
 
-    // Créer l'utilisateur s'il n'existe pas
     if (!user) {
       user = await prisma.user.create({
         data: {
@@ -43,7 +45,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Créer un nouveau pact en attente
     const pact = await prisma.pact.create({
       data: {
         durationDays,
@@ -52,21 +53,21 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Envoyer le lien magique via Supabase Auth
     const supabase = await createServerSupabaseClient();
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const redirectTo = `${APP_URL}/auth/callback?pactId=${pact.id}`;
 
     const { error: authError } = await supabase.auth.signInWithOtp({
       email: email.toLowerCase().trim(),
       options: {
-        emailRedirectTo: `${baseUrl}/auth/callback?pactId=${pact.id}`,
+        emailRedirectTo: redirectTo,
+        shouldCreateUser: true,
       },
     });
 
     if (authError) {
       console.error('Supabase auth error:', authError);
       return NextResponse.json(
-        { error: 'Erreur lors de l\'envoi du lien' },
+        { error: authError.message || "Erreur lors de l'envoi du lien" },
         { status: 500 }
       );
     }
@@ -81,9 +82,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('API error:', error);
-    return NextResponse.json(
-      { error: 'Erreur serveur' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
