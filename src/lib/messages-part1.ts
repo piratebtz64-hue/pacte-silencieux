@@ -1,0 +1,31 @@
+import type { SupportOpening } from './messages-types';
+
+/** Lot 2 — anxiété, douceur, matin, colère, deuil, reconnexion, clôture */
+export const PART1: SupportOpening[] = [
+  { id: 'an1', category: 'anxiete', text: 'Si ton esprit tourne trop vite, tu peux poser une chose à la fois.', responses: ['Une chose à la fois.', 'Merci.', 'Je ralentis le tour.', 'Reçu.'] },
+  { id: 'an2', category: 'anxiete', text: 'L’inquiétude n’est pas une faiblesse. C’est une alerte fatiguée.', responses: ['Alerte fatiguée, oui.', 'Merci de le dire ainsi.', 'Je l’écoute moins fort.', 'Reçu.'] },
+  { id: 'an3', category: 'anxiete', text: 'Tu n’as pas à anticiper toutes les catastrophes ce soir.', responses: ['Je lâche l’anticipation un peu.', 'Merci.', 'Pas toutes ce soir.', 'Reçu.'] },
+  { id: 'an4', category: 'anxiete', text: 'Respire. Pas pour tout régler. Juste pour rester.', responses: ['Je respire pour rester.', 'Merci.', 'Respiration simple.', 'Reçu.'] },
+  { id: 'an5', category: 'anxiete', text: 'Les pensées anxieuses mentent souvent. Tu peux douter d’elles un peu.', responses: ['Je doute d’elles un peu.', 'Merci.', 'Moins de crédit aux pensées.', 'Reçu.'] },
+  { id: 'do1', category: 'douceur', text: 'Sois un peu plus doux avec toi, si tu peux.', responses: ['J’essaie.', 'Merci pour le rappel.', 'Douceur acceptée.', 'Reçu.'] },
+  { id: 'do2', category: 'douceur', text: 'Tu mérites la même patience que tu offres aux autres.', responses: ['Je me la dois aussi.', 'Merci.', 'Patience pour moi.', 'Reçu.'] },
+  { id: 'do3', category: 'douceur', text: 'Il n’y a pas de honte à avoir besoin de chaleur.', responses: ['Besoin de chaleur ok.', 'Merci.', 'Pas de honte.', 'Reçu.'] },
+  { id: 'do4', category: 'douceur', text: 'Tu as le droit d’être fragile sans te juger.', responses: ['Fragile sans jugement.', 'Merci.', 'Je me juge moins.', 'Reçu.'] },
+  { id: 'ma1', category: 'matin', text: 'Bonjour. Tu n’as pas à être prêt. Juste à commencer doucement.', responses: ['Début doux.', 'Merci.', 'Pas prêt, mais là.', 'Reçu.'] },
+  { id: 'ma2', category: 'matin', text: 'Ce matin peut être minimal. Ce n’est pas un échec.', responses: ['Minimal ok.', 'Merci.', 'Pas un échec.', 'Reçu.'] },
+  { id: 'ma3', category: 'matin', text: 'Bonne journée — ou journée supportable. Les deux sont valides.', responses: ['Supportable suffit.', 'Merci.', 'Valide.', 'Reçu.'] },
+  { id: 'col1', category: 'colere', text: 'Ta colère a le droit d’exister. Elle n’a pas à être polie.', responses: ['Elle n’est pas polie, non.', 'Merci de l’autoriser.', 'Colère reçue.', 'Reçu.'] },
+  { id: 'col2', category: 'colere', text: 'Tu peux être en colère sans devoir tout détruire.', responses: ['Colère sans destruction.', 'Merci.', 'Je la contiens un peu.', 'Reçu.'] },
+  { id: 'col3', category: 'colere', text: 'Ce qui t’a blessé compte. Même si personne n’a vu.', responses: ['Ça compte, oui.', 'Merci de le valider.', 'Blessure vue.', 'Reçu.'] },
+  { id: 'col4', category: 'colere', text: 'Tu n’es pas « trop sensible ». Tu as été trop peu respecté peut-être.', responses: ['Peut-être, oui.', 'Merci de le formuler ainsi.', 'Respect manquant nommé.', 'Reçu.'] },
+  { id: 'deu1', category: 'deuil', text: 'La perte laisse un vide. Tu n’as pas à le remplir tout de suite.', responses: ['Le vide est là.', 'Merci de ne pas forcer.', 'Pas tout de suite.', 'Reçu.'] },
+  { id: 'deu2', category: 'deuil', text: 'Ce qui manque a le droit de manquer encore.', responses: ['Ça manque encore.', 'Merci.', 'Droit de manquer.', 'Reçu.'] },
+  { id: 'deu3', category: 'deuil', text: 'Tu as le droit d’être triste longtemps. Il n’y a pas de délai correct.', responses: ['Pas de délai.', 'Merci.', 'Tristesse autorisée.', 'Reçu.'] },
+  { id: 'deu4', category: 'deuil', text: 'Je ne remplis pas le vide. Je m’assieds un peu à côté.', responses: ['À côté, merci.', 'Présence sans combler.', 'Assis avec moi.', 'Reçu.'] },
+  { id: 'rec1', category: 'reconnexion', text: 'Revenir ici est déjà un geste. Merci d’être revenu.', responses: ['Merci de l’accueillir.', 'Je suis revenu.', 'Geste reçu.', 'Reçu.'] },
+  { id: 'rec2', category: 'reconnexion', text: 'Tu peux reprendre sans rattraper tout le retard.', responses: ['Sans rattraper.', 'Merci.', 'Reprise simple.', 'Reçu.'] },
+  { id: 'rec3', category: 'reconnexion', text: 'On repart de maintenant. Pas besoin de tout raconter.', responses: ['Maintenant suffit.', 'Merci.', 'Sans tout raconter.', 'Reçu.'] },
+  { id: 'clo1', category: 'cloture', text: 'Merci d’avoir tenu avec moi ces jours-ci.', responses: ['Merci à toi aussi.', 'Ça a compté.', 'Je n’oublierai pas ce silence.', 'Reçu avec gratitude.'] },
+  { id: 'clo2', category: 'cloture', text: 'Ce pacte se termine, mais la présence a existé.', responses: ['Oui, elle a existé.', 'Merci.', 'Je la garde.', 'Reçu.'] },
+  { id: 'clo3', category: 'cloture', text: 'Je te souhaite une suite un peu plus douce.', responses: ['À toi aussi.', 'Merci pour ce vœu.', 'J’essaie.', 'Reçu.'] },
+];
