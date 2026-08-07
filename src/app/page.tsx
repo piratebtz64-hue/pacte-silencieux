@@ -16,15 +16,17 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-4 grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           <div className="lg:col-span-7 animate-fade-up">
             <span className="badge">gratuit · anonyme · 1 à 7 jours</span>
-            <h1 className="mt-6 font-serif text-[2.35rem] sm:text-5xl lg:text-[3.35rem] leading-[1.12] tracking-tight max-w-[16ch]">
-              Pendant quelques jours, une personne reste là avec toi.
+            <h1 className="mt-6 font-serif text-[2.35rem] sm:text-5xl lg:text-[3.35rem] leading-[1.12] tracking-tight max-w-[18ch]">
+              Si tu n’as personne à qui parler en ce moment, quelqu’un peut quand
+              même rester un peu avec toi.
             </h1>
             <p
-              className="mt-6 text-lg leading-relaxed max-w-[40ch]"
+              className="mt-6 text-lg leading-relaxed max-w-[42ch]"
               style={{ color: 'var(--muted)' }}
             >
-              Pas de profil. Pas de chat libre. Des gestes et des messages déjà
-              écrits — pour les jours où parler est trop lourd.
+              Pas besoin de tout expliquer. Pas de profil, pas de chat libre.
+              Des gestes et des messages déjà écrits — une présence discrète,
+              pour les moments où tu te sens seul·e avec ce que tu traverses.
             </p>
             <div className="mt-9 flex flex-wrap gap-3 items-center">
               <Link href="/start" className="btn-primary">
@@ -132,7 +134,8 @@ export default function HomePage() {
             </h2>
             <p className="mt-3 max-w-[42ch] leading-relaxed" style={{ color: 'var(--muted)' }}>
               Quatre étapes simples. Une présence entre deux personnes qui ne se
-              connaissent pas.
+              connaissent pas — utile aussi quand tu n’as personne à qui en
+              parler autour de toi.
             </p>
           </Reveal>
           <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -199,7 +202,9 @@ export default function HomePage() {
               <strong style={{ color: 'var(--foreground)' }}>
                 Le Pacte silencieux ne remplace pas une assistante sociale
               </strong>
-              , un psychologue ou un médecin. Présence anonyme entre pairs uniquement.
+              , un psychologue ou un médecin. C’est un soutien entre pairs, discret,
+              quand tu n’as peut-être personne de disponible autour de toi à ce
+              moment-là.
             </p>
           </Reveal>
           <Reveal delay={80}>
@@ -233,7 +238,8 @@ export default function HomePage() {
         <Reveal>
           <div className="max-w-2xl mx-auto px-4 text-center">
             <h2 className="font-serif text-3xl md:text-4xl leading-snug tracking-tight">
-              Tu n’as pas à parler. Quelqu’un peut quand même rester un peu avec toi.
+              Si tu n’as personne à qui parler tout de suite, ce pacte peut être
+              un soutien — discret, anonyme, le temps qu’il faut.
             </h2>
             <Link href="/start" className="btn-primary mt-10 inline-flex text-base">
               Commencer un pacte de présence
