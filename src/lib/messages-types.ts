@@ -13,10 +13,14 @@ export type MessageCategory =
   | 'deuil'
   | 'reconnexion'
   | 'cloture'
-  | 'remerciement';
+  | 'remerciement'
+  | 'motivation';
 
-/** Intention du message : offrir du soutien ou en demander */
+/** Intention : offrir / demander / les deux */
 export type MessageIntent = 'offer' | 'seek' | 'both';
+
+/** Ton du message */
+export type MessageTone = 'doux' | 'neutre' | 'energique' | 'court';
 
 export interface SupportOpening {
   id: string;
@@ -24,6 +28,9 @@ export interface SupportOpening {
   text: string;
   responses: string[];
   intent?: MessageIntent;
+  tone?: MessageTone;
+  /** Attribution courte pour citations (optionnel) */
+  source?: string;
 }
 
 export const CATEGORY_LABELS: Record<MessageCategory, string> = {
@@ -42,9 +49,16 @@ export const CATEGORY_LABELS: Record<MessageCategory, string> = {
   reconnexion: 'Reconnexion',
   cloture: 'Clôture',
   remerciement: 'Remerciement',
+  motivation: 'Motivation',
 };
 
-/** Catégories plutôt « j’offre du soutien » */
+export const TONE_LABELS: Record<MessageTone, string> = {
+  doux: 'Doux',
+  neutre: 'Neutre',
+  energique: 'Énergique',
+  court: 'Court',
+};
+
 export const OFFER_CATEGORIES: MessageCategory[] = [
   'presence',
   'courage',
@@ -54,9 +68,9 @@ export const OFFER_CATEGORIES: MessageCategory[] = [
   'matin',
   'remerciement',
   'cloture',
+  'motivation',
 ];
 
-/** Catégories plutôt « j’ai besoin de soutien » */
 export const SEEK_CATEGORIES: MessageCategory[] = [
   'difficile',
   'fatigue',
@@ -75,4 +89,10 @@ export function getIntentForCategory(category: MessageCategory): MessageIntent {
     return 'seek';
   }
   return 'both';
+}
+
+export function getDefaultTone(category: MessageCategory): MessageTone {
+  if (category === 'motivation' || category === 'courage') return 'energique';
+  if (category === 'douceur' || category === 'nuit' || category === 'deuil') return 'doux';
+  return 'neutre';
 }
