@@ -27,19 +27,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
     const emailHash = crypto
       .createHash('sha256')
-      .update(email.toLowerCase().trim())
+      .update(normalizedEmail)
       .digest('hex');
 
     let user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+      where: { email: normalizedEmail },
     });
 
     if (!user) {
       user = await prisma.user.create({
         data: {
-          email: email.toLowerCase().trim(),
+          email: normalizedEmail,
           emailHash,
         },
       });
@@ -54,13 +55,19 @@ export async function POST(request: NextRequest) {
     });
 
     const supabase = await createServerSupabaseClient();
-    const redirectTo = `${APP_URL}/auth/callback?pactId=${pact.id}`;
+
+    // URL EXACTE sans query — doit matcher la whitelist Supabase
+    const redirectTo = `${APP_URL}/auth/callback`;
 
     const { error: authError } = await supabase.auth.signInWithOtp({
-      email: email.toLowerCase().trim(),
+      email: normalizedEmail,
       options: {
         emailRedirectTo: redirectTo,
         shouldCreateUser: true,
+        data: {
+          pactId: pact.id,
+          durationDays,
+        },
       },
     });
 

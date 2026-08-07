@@ -5,12 +5,8 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const pactId = searchParams.get('pactId');
-  const next = searchParams.get('next') ?? '/waiting';
-
-  const redirectTo = pactId
-    ? `${origin}/waiting?pactId=${pactId}`
-    : `${origin}${next}`;
+  const token_hash = searchParams.get('token_hash');
+  const type = searchParams.get('type');
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseKey =
@@ -29,30 +25,30 @@ export async function GET(request: NextRequest) {
             cookieStore.set(name, value, options)
           );
         } catch {
-          // ignore
+          /* ignore in edge */
         }
       },
     },
   });
 
+  let ok = false;
+
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      return NextResponse.redirect(redirectTo);
-    }
-  }
-
-  const token_hash = searchParams.get('token_hash');
-  const type = searchParams.get('type');
-
-  if (token_hash && type) {
+    ok = !error;
+    if (error) console.error('exchangeCodeForSession', error);
+  } else if (token_hash && type) {
     const { error } = await supabase.auth.verifyOtp({
-      type: type as any,
+      type: type as 'email' | 'magiclink',
       token_hash,
     });
-    if (!error) {
-      return NextResponse.redirect(redirectTo);
-    }
+    ok = !error;
+    if (error) console.error('verifyOtp', error);
+  }
+
+  if (ok) {
+    // pactId est côté client (localStorage) — on envoie vers waiting
+    return NextResponse.redirect(`${origin}/waiting`);
   }
 
   return NextResponse.redirect(`${origin}/start?error=auth`);
