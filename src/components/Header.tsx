@@ -7,17 +7,23 @@ import ShareButton from './ShareButton';
 
 export default function Header({ showCta = true }: { showCta?: boolean }) {
   return (
-    <header className="sticky top-0 z-50 backdrop-blur bg-[color-mix(in_srgb,var(--background)_72%,transparent)] border-b border-black/10 dark:border-white/10">
-      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+    <header
+      className="sticky top-0 z-50 border-b"
+      style={{
+        borderColor: 'var(--border)',
+        background:
+          'color-mix(in srgb, var(--background) 78%, transparent)',
+        backdropFilter: 'blur(16px) saturate(1.2)',
+        WebkitBackdropFilter: 'blur(16px) saturate(1.2)',
+      }}
+    >
+      <div className="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between gap-2">
         <Logo />
         <div className="flex items-center gap-2 sm:gap-3">
           <ShareButton label="Partager" className="hidden sm:inline-block" />
           {showCta && (
-            <Link
-              href="/start"
-              className="px-4 py-2 rounded-full bg-[#1f6b67] text-white text-sm font-bold hover:bg-[#184f4d] transition"
-            >
-              Commencer un pacte
+            <Link href="/start" className="btn-primary !py-2 !px-4 !text-sm">
+              Commencer
             </Link>
           )}
           <ThemeToggle />

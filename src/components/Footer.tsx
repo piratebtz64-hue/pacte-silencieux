@@ -5,47 +5,61 @@ import ShareButton from './ShareButton';
 
 export default function Footer() {
   return (
-    <footer className="border-t border-black/10 dark:border-white/10 py-10">
-      <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-6">
-        <div className="flex flex-col items-center sm:items-start gap-2">
-          <Logo />
-          <p className="text-xs text-[#a49f96]">
-            Un espace d’entraide sociale discrète
-          </p>
+    <footer
+      className="border-t mt-auto"
+      style={{ borderColor: 'var(--border)' }}
+    >
+      <div className="max-w-6xl mx-auto px-4 py-14">
+        <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-10">
+          <div className="flex flex-col items-center md:items-start gap-3 max-w-xs text-center md:text-left">
+            <Logo />
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+              Présence anonyme entre pairs. Messages déjà écrits. Aucun chat
+              libre.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link href="/start" className="btn-primary !py-2.5 !px-5 !text-sm">
+              Commencer
+            </Link>
+            <Link href="/#aide" className="btn-ghost !py-2.5 !px-5 !text-sm">
+              Aide
+            </Link>
+            <ShareButton label="Partager" />
+            <DonationButton />
+          </div>
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-sm">
-          <Link href="/start" className="text-[#1f6b67] font-bold hover:underline">
-            Commencer
-          </Link>
-          <Link href="/#aide" className="text-[#706b63] hover:underline">
-            Aide
-          </Link>
-          <ShareButton label="Partager" />
-          <DonationButton />
-        </div>
+
+        <div className="divider my-10" />
+
+        <nav
+          className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs"
+          style={{ color: 'var(--muted)' }}
+        >
+          {[
+            ['/confidentialite', 'Confidentialité'],
+            ['/mentions-legales', 'Mentions légales'],
+            ['/cgu', 'Conditions d’utilisation'],
+            ['/contact', 'Contact'],
+            ['/signaler', 'Signaler un problème'],
+          ].map(([href, label]) => (
+            <Link
+              key={href}
+              href={href}
+              className="hover:text-[var(--accent)] transition-colors"
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+
+        <p
+          className="mt-8 text-center text-xs"
+          style={{ color: 'var(--muted)' }}
+        >
+          Ne remplace pas une aide professionnelle · En détresse : 3114 (France)
+        </p>
       </div>
-
-      <nav className="mt-8 flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-[#a49f96]">
-        <Link href="/confidentialite" className="hover:text-[#1f6b67] hover:underline">
-          Confidentialité
-        </Link>
-        <Link href="/mentions-legales" className="hover:text-[#1f6b67] hover:underline">
-          Mentions légales
-        </Link>
-        <Link href="/cgu" className="hover:text-[#1f6b67] hover:underline">
-          Conditions d’utilisation
-        </Link>
-        <Link href="/contact" className="hover:text-[#1f6b67] hover:underline">
-          Contact
-        </Link>
-        <Link href="/signaler" className="hover:text-[#1f6b67] hover:underline">
-          Signaler un problème
-        </Link>
-      </nav>
-
-      <p className="mt-6 text-center text-xs text-[#a49f96]">
-        Ne remplace pas une aide professionnelle · En détresse : 3114 (France)
-      </p>
     </footer>
   );
 }
