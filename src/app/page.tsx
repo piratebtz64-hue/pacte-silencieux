@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BrandBanner from '@/components/BrandBanner';
+import Reveal from '@/components/Reveal';
 
 export default function HomePage() {
   return (
@@ -11,7 +12,6 @@ export default function HomePage() {
       <Header />
       <BrandBanner />
 
-      {/* HERO */}
       <section className="relative py-16 md:py-24 lg:py-28">
         <div className="max-w-6xl mx-auto px-4 grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           <div className="lg:col-span-7 animate-fade-up">
@@ -42,7 +42,7 @@ export default function HomePage() {
           <div className="lg:col-span-5 animate-fade-up animate-delay-2">
             <div className="card-premium p-7 md:p-8 relative overflow-hidden">
               <div
-                className="pointer-events-none absolute -top-20 -right-20 h-40 w-40 rounded-full opacity-40"
+                className="pointer-events-none absolute -top-20 -right-20 h-40 w-40 rounded-full opacity-50"
                 style={{
                   background:
                     'radial-gradient(circle, var(--accent-soft), transparent 70%)',
@@ -56,7 +56,7 @@ export default function HomePage() {
               </p>
               <div className="space-y-3.5">
                 <div
-                  className="p-4 rounded-2xl border"
+                  className="p-4 rounded-2xl border animate-fade-up animate-delay-1"
                   style={{
                     borderColor: 'var(--border)',
                     background: 'var(--card-solid)',
@@ -70,9 +70,10 @@ export default function HomePage() {
                   </p>
                 </div>
                 <div
-                  className="p-4 rounded-2xl ml-3 border"
+                  className="p-4 rounded-2xl ml-3 border animate-fade-up animate-delay-2"
                   style={{
-                    borderColor: 'color-mix(in srgb, var(--accent) 25%, transparent)',
+                    borderColor:
+                      'color-mix(in srgb, var(--accent) 25%, transparent)',
                     background: 'var(--accent-soft)',
                   }}
                 >
@@ -87,7 +88,7 @@ export default function HomePage() {
                   </p>
                 </div>
                 <div
-                  className="p-4 rounded-2xl border"
+                  className="p-4 rounded-2xl border animate-fade-up animate-delay-3"
                   style={{
                     borderColor: 'var(--border)',
                     background: 'var(--card-solid)',
@@ -104,12 +105,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CONFIANCE */}
       <section className="py-14" style={{ background: 'var(--accent-soft)' }}>
         <div className="max-w-4xl mx-auto px-4">
-          <h2 className="font-serif text-2xl md:text-3xl tracking-tight">
-            Avant de commencer
-          </h2>
+          <Reveal>
+            <h2 className="font-serif text-2xl md:text-3xl tracking-tight">
+              Avant de commencer
+            </h2>
+          </Reveal>
           <div className="mt-7 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
               'Aucun échange libre — phrases choisies',
@@ -118,34 +120,37 @@ export default function HomePage() {
               'Arrêt possible à tout moment',
               'Signalement disponible',
               'Aucune donnée vendue',
-            ].map((t) => (
-              <div
-                key={t}
-                className="card-premium px-4 py-3.5 text-sm leading-snug"
-              >
-                {t}
-              </div>
+            ].map((t, i) => (
+              <Reveal key={t} delay={i * 60}>
+                <div className="card-premium card-premium-lift px-4 py-3.5 text-sm leading-snug h-full">
+                  {t}
+                </div>
+              </Reveal>
             ))}
           </div>
           <p className="mt-5 text-xs" style={{ color: 'var(--muted)' }}>
             Détails :{' '}
-            <Link href="/confidentialite" className="underline" style={{ color: 'var(--accent)' }}>
+            <Link href="/confidentialite" className="link-lux">
               confidentialité
             </Link>
           </p>
         </div>
       </section>
 
-      {/* COMMENT */}
       <section id="comment" className="py-20 md:py-28">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-serif text-3xl md:text-4xl tracking-tight max-w-[16ch]">
-            Comment ça marche
-          </h2>
-          <p className="mt-3 max-w-[42ch] leading-relaxed" style={{ color: 'var(--muted)' }}>
-            Quatre étapes simples. Une présence entre deux personnes qui ne se
-            connaissent pas.
-          </p>
+          <Reveal>
+            <h2 className="font-serif text-3xl md:text-4xl tracking-tight max-w-[16ch]">
+              Comment ça marche
+            </h2>
+            <p
+              className="mt-3 max-w-[42ch] leading-relaxed"
+              style={{ color: 'var(--muted)' }}
+            >
+              Quatre étapes simples. Une présence entre deux personnes qui ne se
+              connaissent pas.
+            </p>
+          </Reveal>
           <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
               {
@@ -168,36 +173,38 @@ export default function HomePage() {
                 t: 'Vous pouvez prolonger',
                 d: 'En fin de cycle, Oui / Non des deux côtés pour +7 jours.',
               },
-            ].map((s) => (
-              <article
-                key={s.n}
-                className="card-premium card-premium-lift p-6"
-              >
-                <span
-                  className="text-xs font-bold tracking-[0.12em]"
-                  style={{ color: 'var(--accent)' }}
-                >
-                  {s.n}
-                </span>
-                <h3 className="mt-4 text-lg font-semibold tracking-tight">{s.t}</h3>
-                <p
-                  className="mt-2 text-sm leading-relaxed"
-                  style={{ color: 'var(--muted)' }}
-                >
-                  {s.d}
-                </p>
-              </article>
+            ].map((s, i) => (
+              <Reveal key={s.n} delay={i * 80}>
+                <article className="card-premium card-premium-lift p-6 h-full">
+                  <span
+                    className="text-xs font-bold tracking-[0.12em]"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    {s.n}
+                  </span>
+                  <h3 className="mt-4 text-lg font-semibold tracking-tight">
+                    {s.t}
+                  </h3>
+                  <p
+                    className="mt-2 text-sm leading-relaxed"
+                    style={{ color: 'var(--muted)' }}
+                  >
+                    {s.d}
+                  </p>
+                </article>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CE QUE CE N’EST PAS */}
       <section className="py-16 md:py-20">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-serif text-3xl md:text-4xl tracking-tight max-w-[14ch]">
-            Ce que ce n’est pas
-          </h2>
+          <Reveal>
+            <h2 className="font-serif text-3xl md:text-4xl tracking-tight max-w-[14ch]">
+              Ce que ce n’est pas
+            </h2>
+          </Reveal>
           <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
               {
@@ -216,22 +223,25 @@ export default function HomePage() {
                 t: 'Pas un professionnel',
                 d: 'Ne remplace ni assistante sociale, ni psychologue, ni médecin.',
               },
-            ].map((item) => (
-              <article key={item.t} className="card-premium p-6">
-                <h3 className="text-lg font-semibold tracking-tight">{item.t}</h3>
-                <p
-                  className="mt-2 text-sm leading-relaxed"
-                  style={{ color: 'var(--muted)' }}
-                >
-                  {item.d}
-                </p>
-              </article>
+            ].map((item, i) => (
+              <Reveal key={item.t} delay={i * 70}>
+                <article className="card-premium card-premium-lift p-6 h-full">
+                  <h3 className="text-lg font-semibold tracking-tight">
+                    {item.t}
+                  </h3>
+                  <p
+                    className="mt-2 text-sm leading-relaxed"
+                    style={{ color: 'var(--muted)' }}
+                  >
+                    {item.d}
+                  </p>
+                </article>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
-      {/* AIDE */}
       <section
         id="aide"
         className="py-16 md:py-20 border-y"
@@ -241,79 +251,88 @@ export default function HomePage() {
         }}
       >
         <div className="max-w-3xl mx-auto px-4">
-          <h2 className="font-serif text-3xl md:text-4xl tracking-tight leading-snug">
-            Important : ce site n’est pas une aide professionnelle
-          </h2>
-          <div
-            className="mt-6 space-y-3 text-[0.95rem] leading-relaxed"
-            style={{ color: 'var(--muted)' }}
-          >
-            <p>
-              <strong style={{ color: 'var(--foreground)' }}>
-                Le Pacte silencieux ne remplace pas une assistante sociale
-              </strong>
-              , un travailleur social, un psychologue ou un médecin.
-            </p>
-            <p>
-              C’est un espace de présence anonyme entre pairs, avec des messages
-              déjà écrits. Ni suivi, ni diagnostic, ni prise en charge.
-            </p>
-          </div>
-          <div className="card-premium mt-10 p-6 md:p-8">
-            <h3
-              className="text-base font-semibold"
-              style={{ color: 'var(--accent)' }}
+          <Reveal>
+            <h2 className="font-serif text-3xl md:text-4xl tracking-tight leading-snug">
+              Important : ce site n’est pas une aide professionnelle
+            </h2>
+            <div
+              className="mt-6 space-y-3 text-[0.95rem] leading-relaxed"
+              style={{ color: 'var(--muted)' }}
             >
-              En cas de détresse (France)
-            </h3>
-            <ul className="mt-5 space-y-2.5 text-sm">
-              {[
-                ['3114', 'Prévention du suicide (24h/24)'],
-                ['15', 'SAMU'],
-                ['112', 'Urgences'],
-                ['119', 'Enfance en danger'],
-                ['3919', 'Violences faites aux femmes'],
-                ['0 800 23 13 13', 'Fil Santé Jeunes'],
-              ].map(([n, label]) => (
-                <li key={n} className="flex gap-3">
-                  <strong
-                    className="shrink-0 tabular-nums"
-                    style={{ color: 'var(--accent)' }}
-                  >
-                    {n}
-                  </strong>
-                  <span style={{ color: 'var(--muted)' }}>— {label}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-5 text-xs" style={{ color: 'var(--muted)' }}>
-              En urgence immédiate : 15 ou 112. Ce site n’est pas un service
-              d’urgence.
-            </p>
-          </div>
+              <p>
+                <strong style={{ color: 'var(--foreground)' }}>
+                  Le Pacte silencieux ne remplace pas une assistante sociale
+                </strong>
+                , un travailleur social, un psychologue ou un médecin.
+              </p>
+              <p>
+                C’est un espace de présence anonyme entre pairs, avec des
+                messages déjà écrits. Ni suivi, ni diagnostic, ni prise en
+                charge.
+              </p>
+            </div>
+          </Reveal>
+          <Reveal delay={100}>
+            <div className="card-premium mt-10 p-6 md:p-8">
+              <h3
+                className="text-base font-semibold"
+                style={{ color: 'var(--accent)' }}
+              >
+                En cas de détresse (France)
+              </h3>
+              <ul className="mt-5 space-y-2.5 text-sm">
+                {[
+                  ['3114', 'Prévention du suicide (24h/24)'],
+                  ['15', 'SAMU'],
+                  ['112', 'Urgences'],
+                  ['119', 'Enfance en danger'],
+                  ['3919', 'Violences faites aux femmes'],
+                  ['0 800 23 13 13', 'Fil Santé Jeunes'],
+                ].map(([n, label]) => (
+                  <li key={n} className="flex gap-3">
+                    <strong
+                      className="shrink-0 tabular-nums"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      {n}
+                    </strong>
+                    <span style={{ color: 'var(--muted)' }}>— {label}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-5 text-xs" style={{ color: 'var(--muted)' }}>
+                En urgence immédiate : 15 ou 112. Ce site n’est pas un service
+                d’urgence.
+              </p>
+            </div>
+          </Reveal>
         </div>
       </section>
 
-      {/* CTA FINAL */}
       <section className="py-20 md:py-28">
-        <div className="max-w-2xl mx-auto px-4 text-center">
-          <h2 className="font-serif text-3xl md:text-4xl leading-snug tracking-tight">
-            Tu n’as pas à parler. Quelqu’un peut quand même rester un peu avec
-            toi.
-          </h2>
-          <Link href="/start" className="btn-primary mt-10 inline-flex text-base">
-            Commencer un pacte de présence
-          </Link>
-          <p className="mt-4 text-xs" style={{ color: 'var(--muted)' }}>
-            Gratuit · anonyme · 2 minutes pour commencer
-          </p>
-          <p className="mt-6 text-xs" style={{ color: 'var(--muted)' }}>
-            En détresse ?{' '}
-            <a href="#aide" className="underline" style={{ color: 'var(--accent)' }}>
-              Voir les numéros d’aide
-            </a>
-          </p>
-        </div>
+        <Reveal>
+          <div className="max-w-2xl mx-auto px-4 text-center">
+            <h2 className="font-serif text-3xl md:text-4xl leading-snug tracking-tight">
+              Tu n’as pas à parler. Quelqu’un peut quand même rester un peu avec
+              toi.
+            </h2>
+            <Link
+              href="/start"
+              className="btn-primary mt-10 inline-flex text-base"
+            >
+              Commencer un pacte de présence
+            </Link>
+            <p className="mt-4 text-xs" style={{ color: 'var(--muted)' }}>
+              Gratuit · anonyme · 2 minutes pour commencer
+            </p>
+            <p className="mt-6 text-xs" style={{ color: 'var(--muted)' }}>
+              En détresse ?{' '}
+              <a href="#aide" className="link-lux">
+                Voir les numéros d’aide
+              </a>
+            </p>
+          </div>
+        </Reveal>
       </section>
 
       <Footer />
