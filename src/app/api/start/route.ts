@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ||
-  'https://pacte-silencieux-fwe6.vercel.app';
+  'https://pacte-silencieux.vercel.app';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'Configuration manquante : DATABASE_URL. Dans Vercel → Settings → Environment Variables, ajoute les variables Supabase.',
+            'Configuration manquante : DATABASE_URL. Vérifie les variables d’environnement Vercel.',
         },
         { status: 500 }
       );
@@ -64,8 +64,7 @@ export async function POST(request: NextRequest) {
       const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
       return NextResponse.json(
         {
-          error:
-            'Base de données inaccessible. Vérifie DATABASE_URL et DIRECT_URL sur Vercel (projet fwe6).',
+          error: 'Base de données inaccessible.',
           detail: msg.slice(0, 200),
         },
         { status: 500 }
