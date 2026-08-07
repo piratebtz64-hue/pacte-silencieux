@@ -9,32 +9,35 @@ datasource db {
 }
 
 model User {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  emailHash        String    @unique
-  createdAt        DateTime  @default(now())
-  lastActiveAt     DateTime  @default(now())
+  id               String           @id @default(cuid())
+  email            String           @unique
+  emailHash        String           @unique
+  createdAt        DateTime         @default(now())
+  lastActiveAt     DateTime         @default(now())
   activePactId     String?
-  pactsAsUserA     Pact[]    @relation("PactUserA")
-  pactsAsUserB     Pact[]    @relation("PactUserB")
-  gesturesSent     Gesture[] @relation("GestureSender")
-  gesturesReceived Gesture[] @relation("GestureReceiver")
-  reports          Report[]
   waitingSince     DateTime?
+  pactsAsUserA     Pact[]           @relation("PactUserA")
+  pactsAsUserB     Pact[]           @relation("PactUserB")
+  gesturesSent     Gesture[]        @relation("GestureSender")
+  gesturesReceived Gesture[]        @relation("GestureReceiver")
+  reports          Report[]
+  supportSent      SupportMessage[] @relation("SupportSender")
+  supportReceived  SupportMessage[] @relation("SupportReceiver")
 }
 
 model Pact {
-  id           String      @id @default(cuid())
-  createdAt    DateTime    @default(now())
-  startedAt    DateTime?
-  endsAt       DateTime?
-  durationDays Int
-  status       PactStatus  @default(WAITING)
-  userAId      String?
-  userBId      String?
-  userA        User?       @relation("PactUserA", fields: [userAId], references: [id])
-  userB        User?       @relation("PactUserB", fields: [userBId], references: [id])
-  gestures     Gesture[]
+  id              String           @id @default(cuid())
+  createdAt       DateTime         @default(now())
+  startedAt       DateTime?
+  endsAt          DateTime?
+  durationDays    Int
+  status          PactStatus       @default(WAITING)
+  userAId         String?
+  userBId         String?
+  userA           User?            @relation("PactUserA", fields: [userAId], references: [id])
+  userB           User?            @relation("PactUserB", fields: [userBId], references: [id])
+  gestures        Gesture[]
+  supportMessages SupportMessage[]
 }
 
 enum PactStatus {
@@ -44,16 +47,16 @@ enum PactStatus {
 }
 
 model Gesture {
-  id             String       @id @default(cuid())
+  id             String      @id @default(cuid())
   pactId         String
-  pact           Pact         @relation(fields: [pactId], references: [id], onDelete: Cascade)
+  pact           Pact        @relation(fields: [pactId], references: [id], onDelete: Cascade)
   senderUserId   String
-  senderUser     User         @relation("GestureSender", fields: [senderUserId], references: [id])
+  senderUser     User        @relation("GestureSender", fields: [senderUserId], references: [id])
   receiverUserId String
-  receiverUser   User         @relation("GestureReceiver", fields: [receiverUserId], references: [id])
+  receiverUser   User        @relation("GestureReceiver", fields: [receiverUserId], references: [id])
   type           GestureType
   seenAt         DateTime?
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime    @default(now())
 }
 
 enum GestureType {
@@ -61,6 +64,21 @@ enum GestureType {
   JE_TIENS
   AUJOURDHUI_FRAGILE
   JE_VEILLE_AVEC_TOI
+}
+
+model SupportMessage {
+  id             String    @id @default(cuid())
+  pactId         String
+  pact           Pact      @relation(fields: [pactId], references: [id], onDelete: Cascade)
+  senderUserId   String
+  senderUser     User      @relation("SupportSender", fields: [senderUserId], references: [id])
+  receiverUserId String
+  receiverUser   User      @relation("SupportReceiver", fields: [receiverUserId], references: [id])
+  openingId      String
+  openingText    String
+  responseText   String?
+  respondedAt    DateTime?
+  createdAt      DateTime  @default(now())
 }
 
 model Report {
