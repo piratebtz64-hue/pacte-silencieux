@@ -2,35 +2,38 @@ import type { MessageCategory } from './messages';
 
 const KEYWORDS: Record<MessageCategory, string[]> = {
   presence: ['seul', 'seule', 'présence', 'accompagn', 'avec moi', 'invisible', 'personne'],
-  difficile: ['difficile', 'lourd', 'lourde', 'dur', 'dure', 'mal', 'galère', 'pénible', 'trop', "n'en peux plus", 'au bout'],
-  fatigue: ['fatigué', 'fatiguée', 'épuisé', 'épuisée', 'lasse', 'lassé', 'sommeil', 'dormir', 'crevé', 'crevée', 'épuisement'],
-  courage: ['courage', 'force', 'tenir', 'tiens', 'continue', 'bataille', 'combat', 'avancer'],
-  gratitude: ['merci', 'reconnaissant', 'reconnaissante', 'gratitude', 'chance', 'reconnaissance'],
-  nuit: ['nuit', 'insomnie', 'minuit', 'soir', 'obscur', '3h', '2h', 'réveillé'],
-  espoir: ['espoir', 'demain', 'mieux', 'possible', 'avenir', 'lumière'],
-  anxiete: ['anxiété', 'angoisse', 'stress', 'peur', 'inquiet', 'inquiète', 'anxieux', 'anxieuse', 'stressé'],
-  douceur: ['doux', 'douce', 'douceur', 'tendre', 'chaleur', 'réconfort', 'câlin'],
-  matin: ['matin', 'réveil', 'journée', 'bonjour', 'réveillé'],
-  colere: ['colère', 'énervé', 'énervée', 'furieux', 'furieuse', 'injuste', 'rage', 'énervement'],
-  deuil: ['deuil', 'perte', 'manque', 'parti', 'partie', 'chagrin', 'décès', 'absent', 'absente'],
-  reconnexion: ['revenir', 'retour', 'reprendre', 'reconnexion', 'reviens', 'de retour'],
-  cloture: ['au revoir', 'fin', 'terminer', 'clôturer', 'adieu', 'dernière'],
-  remerciement: ['remercie', 'remerciement', 'merci pour', 'gratitude', 'reconnaissant'],
-  motivation: ['entretien', 'rendez-vous', 'rdv', 'trac', 'motivation', 'examen', 'job', 'embauche', 'présentation'],
-  depart: ['au revoir', 'partir', 'départ', 'adieu', 'clôturer', 'bonne route'],
-  solitude: ['seul', 'seule', 'solitude', 'isolé', 'isolée', 'personne autour', 'vide'],
-  fierte: ['fierté', 'fier', 'fière', 'bravo', 'réussi', 'victoire', 'accompli'],
-  transition: ['changement', 'déménagement', 'transition', 'nouveau', 'nouvelle vie', 'entre-deux', 'vertige'],
-  travail: ['travail', 'boulot', 'bureau', 'mails', 'réunion', 'collègue', 'boss', 'overwork', 'charge'],
-  panique: ['panique', 'crise', 'hypervent', 'cœur qui bat', 'attaque', 'peur panique', 'angoisse aiguë'],
-  famille: ['famille', 'parent', 'mère', 'père', 'frère', 'sœur', 'proche', 'conjoint', 'enfant'],
+  difficile: ['difficile', 'lourd', 'lourde', 'dur', 'dure', 'mal', 'galère', 'pénible', 'trop'],
+  fatigue: ['fatigué', 'fatiguée', 'épuisé', 'épuisée', 'crevé', 'crevée', 'épuisement'],
+  courage: ['courage', 'force', 'tenir', 'continue', 'avancer'],
+  gratitude: ['merci', 'reconnaissant', 'gratitude'],
+  nuit: ['nuit', 'insomnie', 'minuit', 'soir', '3h'],
+  espoir: ['espoir', 'demain', 'mieux', 'avenir', 'lumière'],
+  anxiete: ['anxiété', 'angoisse', 'stress', 'peur', 'inquiet'],
+  douceur: ['doux', 'douce', 'douceur', 'tendre', 'réconfort'],
+  matin: ['matin', 'réveil', 'journée', 'bonjour'],
+  colere: ['colère', 'énervé', 'furieux', 'rage'],
+  deuil: ['deuil', 'perte', 'manque', 'chagrin', 'décès'],
+  reconnexion: ['revenir', 'retour', 'reprendre', 'reviens'],
+  cloture: ['fin', 'terminer', 'clôturer', 'dernière'],
+  remerciement: ['remercie', 'remerciement', 'merci pour'],
+  motivation: ['entretien', 'rendez-vous', 'trac', 'motivation', 'examen'],
+  depart: ['au revoir', 'partir', 'départ', 'adieu', 'bonne route'],
+  solitude: ['solitude', 'isolé', 'isolée', 'vide'],
+  fierte: ['fierté', 'fier', 'fière', 'bravo', 'réussi'],
+  transition: ['changement', 'déménagement', 'transition', 'vertige'],
+  travail: ['travail', 'boulot', 'mails', 'réunion', 'collègue'],
+  panique: ['panique', 'crise', 'hypervent', 'attaque'],
+  famille: ['famille', 'parent', 'mère', 'père', 'proche'],
+  salutation: ['bonjour', 'bonsoir', 'salut', 'hello', 'coucou'],
+  checkin: ['check-in', 'checkin', 'nouvelles', 'tu es là', 'point'],
+  limites: ['limite', 'limites', 'non', 'espace', 'frontière', 'protéger'],
+  repos: ['repos', 'pause', 'dormir', 'récupérer', 'rien faire'],
 };
 
 export function suggestCategory(text: string): MessageCategory | null {
   const lower = text.toLowerCase();
   let best: MessageCategory | null = null;
   let bestScore = 0;
-
   for (const [cat, words] of Object.entries(KEYWORDS) as [MessageCategory, string[]][]) {
     let score = 0;
     for (const w of words) {
@@ -41,7 +44,6 @@ export function suggestCategory(text: string): MessageCategory | null {
       best = cat;
     }
   }
-
   return bestScore > 0 ? best : null;
 }
 
@@ -50,26 +52,20 @@ export function detectMoodLabel(text: string): string | null {
   if (!cat) return null;
   const labels: Partial<Record<MessageCategory, string>> = {
     presence: 'Besoin de présence',
-    difficile: 'Jour difficile ressenti',
-    fatigue: 'Fatigue détectée',
-    courage: 'Besoin de courage',
-    nuit: 'Nuit / solitude',
-    anxiete: 'Anxiété possible',
-    colere: 'Colère présente',
-    deuil: 'Perte / chagrin',
-    espoir: 'Ouverture vers l’espoir',
-    douceur: 'Besoin de douceur',
-    matin: 'Démarrage de journée',
-    reconnexion: 'Envie de reprendre',
-    remerciement: 'Envie de remercier',
-    motivation: 'Motivation / rendez-vous',
-    depart: 'Fin de cycle / départ',
-    solitude: 'Solitude ressentie',
-    fierte: 'Petite fierté',
-    transition: 'Période de changement',
-    travail: 'Stress lié au travail',
-    panique: 'Pic d’angoisse possible',
-    famille: 'Lien familial tendu',
+    difficile: 'Jour difficile',
+    fatigue: 'Fatigue',
+    courage: 'Courage',
+    nuit: 'Nuit',
+    anxiete: 'Anxiété',
+    colere: 'Colère',
+    deuil: 'Deuil',
+    remerciement: 'Remerciement',
+    salutation: 'Salutation',
+    checkin: 'Prise de nouvelles',
+    limites: 'Besoin de limites',
+    repos: 'Besoin de repos',
+    panique: 'Pic d’angoisse',
+    travail: 'Stress travail',
   };
   return labels[cat] || null;
 }
@@ -77,7 +73,6 @@ export function detectMoodLabel(text: string): string | null {
 export function suggestCategoriesFromText(text: string, limit = 3): MessageCategory[] {
   const lower = text.toLowerCase();
   const scores: { cat: MessageCategory; score: number }[] = [];
-
   for (const [cat, words] of Object.entries(KEYWORDS) as [MessageCategory, string[]][]) {
     let score = 0;
     for (const w of words) {
@@ -85,7 +80,6 @@ export function suggestCategoriesFromText(text: string, limit = 3): MessageCateg
     }
     if (score > 0) scores.push({ cat, score });
   }
-
   return scores
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)

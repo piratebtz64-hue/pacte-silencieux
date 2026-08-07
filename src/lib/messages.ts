@@ -40,6 +40,7 @@ import { PART10 } from './messages-part10';
 import { PART11 } from './messages-part11';
 import { PART12 } from './messages-part12';
 import { PART13 } from './messages-part13';
+import { PART14 } from './messages-part14';
 
 export const SUPPORT_MESSAGES: SupportOpening[] = [
   ...PART0,
@@ -56,6 +57,7 @@ export const SUPPORT_MESSAGES: SupportOpening[] = [
   ...PART11,
   ...PART12,
   ...PART13,
+  ...PART14,
 ].map((m) => ({
   ...m,
   intent: m.intent || getIntentForCategory(m.category),
