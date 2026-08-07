@@ -65,8 +65,10 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   const [sending, setSending] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [lastSeenCount, setLastSeenCount] = useState(0);
+  const [uid, setUid] = useState('');
 
   useEffect(() => {
+    setUid(localStorage.getItem('pacte_userId') || '');
     try {
       const raw = localStorage.getItem(FAV_KEY);
       if (raw) setFavorites(JSON.parse(raw));
@@ -114,11 +116,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
     if (tab === 'fil') setLastSeenCount(messages.length);
   }, [tab, messages.length]);
 
-  const uid =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('pacte_userId') || ''
-      : '';
-
   const unreadCount = Math.max(0, messages.length - lastSeenCount);
   const pendingForMe = messages.filter(
     (m) =>
@@ -147,21 +144,39 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   }, [intent]);
 
   const sendGesture = async (type: string) => {
-    if (!pact || !uid) {
-      setStatusMsg('Session incomplète. Repars depuis /start.');
+    const pactId = pact?.id || id;
+    if (!pactId) {
+      setStatusMsg('Pacte introuvable. Recharge la page.');
       return;
     }
+    if (!type) {
+      setStatusMsg('Type de geste manquant.');
+      return;
+    }
+
+    // Si pas d’userId local, on envoie quand même (API fallback userA)
+    const senderUserId =
+      uid ||
+      localStorage.getItem('pacte_userId') ||
+      pact?.userAId ||
+      '';
+
     setSending(true);
     setStatusMsg(null);
     try {
       const res = await fetch('/api/gesture', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pactId: id, type, senderUserId: uid }),
+        body: JSON.stringify({
+          pactId,
+          type,
+          gestureType: type,
+          senderUserId,
+        }),
       });
+      const d = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.error || 'Erreur');
+        throw new Error(d.error || d.detail || `Erreur ${res.status}`);
       }
       setStatusMsg('Geste envoyé.');
       setTab('fil');
@@ -173,7 +188,9 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   };
 
   const sendOpening = async (opening: SupportOpening) => {
-    if (!pact || !uid) {
+    const senderUserId =
+      uid || localStorage.getItem('pacte_userId') || '';
+    if (!pact || !senderUserId) {
       setStatusMsg('Session incomplète. Repars depuis /start.');
       return;
     }
@@ -184,8 +201,8 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          pactId: id,
-          senderUserId: uid,
+          pactId: pact.id || id,
+          senderUserId,
           openingId: opening.id,
         }),
       });
@@ -311,7 +328,8 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                   )}
                   {messages.length === 0 && (
                     <p className="text-sm text-[#a49f96] text-center py-10">
-                      Aucun message. Va dans <strong>Soutien</strong>.
+                      Aucun message. Va dans <strong>Soutien</strong> ou{' '}
+                      <strong>Geste</strong>.
                     </p>
                   )}
                   {messages.map((m) => {
@@ -381,12 +399,16 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
               {tab === 'geste' && (
                 <div className="mt-6 space-y-3">
+                  <p className="text-sm text-[#706b63] mb-2">
+                    Un signe simple, sans explication.
+                  </p>
                   {GESTURES.map((g) => (
                     <button
                       key={g.type}
+                      type="button"
                       disabled={sending}
                       onClick={() => sendGesture(g.type)}
-                      className="w-full p-4 rounded-xl border text-left font-medium hover:border-[#1f6b67] disabled:opacity-50"
+                      className="w-full p-4 rounded-xl border border-black/10 text-left font-medium hover:border-[#1f6b67] hover:bg-[#1f6b67]/5 transition disabled:opacity-50"
                     >
                       {g.label}
                     </button>
@@ -448,9 +470,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                   </button>
 
                   <p className="text-sm text-[#706b63] mb-3">
-                    Inclut <strong>Motivation</strong> (entretien, rendez-vous),
-                    phrases <strong>courtes</strong> et citations.{' '}
-                    <strong>15 / 24 h</strong>.
+                    <strong>15 messages / 24 h</strong>.
                   </p>
 
                   <input
@@ -461,7 +481,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                     className="w-full px-4 py-2.5 rounded-xl border text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-[#1f6b67]/30"
                   />
 
-                  {/* Filtre ton */}
                   <div className="flex flex-wrap gap-2 mb-3">
                     <span className="text-[10px] uppercase tracking-wide text-[#a49f96] self-center mr-1">
                       Ton
@@ -489,7 +508,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                     ))}
                   </div>
 
-                  {/* Catégories */}
                   <div className="flex flex-wrap gap-2 mb-5">
                     <button
                       onClick={() => setSelectedCategory('all')}
@@ -527,11 +545,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                   </div>
 
                   <div className="space-y-2 max-h-[28rem] overflow-y-auto">
-                    {filteredOpenings.length === 0 && (
-                      <p className="text-sm text-[#a49f96] text-center py-8">
-                        Aucun message avec ces filtres.
-                      </p>
-                    )}
                     {filteredOpenings.map((m) => {
                       const isFav = favorites.includes(m.id);
                       return (
