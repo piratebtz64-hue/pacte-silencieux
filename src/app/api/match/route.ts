@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const prisma = new PrismaClient();
 
-/** Un pacte en attente expire après 45 minutes sans match */
-const WAITING_MAX_MS = 45 * 60 * 1000;
+/** Un pacte en attente expire après 20 minutes sans match */
+const WAITING_MAX_MS = 20 * 60 * 1000;
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,10 +27,12 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     const waitingSinceCutoff = new Date(now.getTime() - WAITING_MAX_MS);
 
-    // Déjà actif ET encore en cours (pas un vieux test)
+    // Déjà ACTIVE avec DEUX personnes réelles + encore valide
     if (
       current.status === 'ACTIVE' &&
+      current.userAId &&
       current.userBId &&
+      current.userAId !== current.userBId &&
       current.endsAt &&
       current.endsAt > now
     ) {
@@ -38,6 +40,14 @@ export async function POST(request: NextRequest) {
         matched: true,
         pactId: current.id,
         status: 'ACTIVE',
+      });
+    }
+
+    // Si ACTIVE invalide (un seul user, ou expiré) → forcer WAITING / ENDED
+    if (current.status === 'ACTIVE') {
+      await prisma.pact.update({
+        where: { id: current.id },
+        data: { status: 'ENDED' },
       });
     }
 
@@ -50,16 +60,24 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Pacte actif RÉCENT pour cet user (encore valide dans le temps)
+    // Ne réutiliser un ACTIVE existant QUE s’il a vraiment 2 personnes distinctes
     const alreadyActive = await prisma.pact.findFirst({
       where: {
         status: 'ACTIVE',
         endsAt: { gt: now },
+        userAId: { not: null },
+        userBId: { not: null },
         OR: [{ userAId: userId }, { userBId: userId }],
       },
       orderBy: { startedAt: 'desc' },
     });
-    if (alreadyActive) {
+
+    if (
+      alreadyActive &&
+      alreadyActive.userAId &&
+      alreadyActive.userBId &&
+      alreadyActive.userAId !== alreadyActive.userBId
+    ) {
       return NextResponse.json({
         matched: true,
         pactId: alreadyActive.id,
@@ -84,14 +102,14 @@ export async function POST(request: NextRequest) {
           matched: false,
           status: 'WAITING',
           message:
-            'Session expirée ou introuvable. Recommence un pacte depuis le début.',
-          code: 'EXPIRED',
+            'Personne d’autre en attente. Reste sur cette page ou recommence depuis le début.',
+          code: 'WAITING',
         });
       }
       myWaiting = recent;
     }
 
-    // Nettoyage soft : expirer les vieux WAITING (best effort)
+    // Expirer les vieux WAITING
     await prisma.pact
       .updateMany({
         where: {
@@ -102,7 +120,7 @@ export async function POST(request: NextRequest) {
       })
       .catch(() => {});
 
-    // Partenaires : même durée, autre user, WAITING, créés récemment
+    // Partenaires RÉELS : même durée, autre user, WAITING récent, pas soi-même
     const candidates = await prisma.pact.findMany({
       where: {
         status: 'WAITING',
@@ -116,7 +134,12 @@ export async function POST(request: NextRequest) {
       take: 5,
     });
 
-    if (candidates.length === 0) {
+    // Filtrer encore une fois (sécurité)
+    const validPartners = candidates.filter(
+      (c) => c.userAId && c.userAId !== userId && c.userAId !== myWaiting.userAId
+    );
+
+    if (validPartners.length === 0) {
       const totalRecent = await prisma.pact.count({
         where: {
           status: 'WAITING',
@@ -130,7 +153,7 @@ export async function POST(request: NextRequest) {
         message:
           totalRecent <= 1
             ? 'Personne d’autre en attente pour le moment…'
-            : 'D’autres personnes attendent, mais pas la même durée. Même durée obligatoire (1, 3 ou 7 jours).',
+            : 'D’autres personnes attendent, mais pas la même durée. Choisissez la même durée (1, 3 ou 7 jours).',
         debug: {
           myDuration: myWaiting.durationDays,
           totalWaiting: totalRecent,
@@ -139,7 +162,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const partner = candidates[0];
+    const partner = validPartners[0];
     if (!partner.userAId || !myWaiting.userAId) {
       return NextResponse.json({
         matched: false,
@@ -183,20 +206,6 @@ export async function POST(request: NextRequest) {
       ]);
     } catch (txErr) {
       console.error('Match transaction race:', txErr);
-      const retry = await prisma.pact.findFirst({
-        where: {
-          status: 'ACTIVE',
-          endsAt: { gt: now },
-          OR: [{ userAId: userId }, { userBId: userId }],
-        },
-      });
-      if (retry) {
-        return NextResponse.json({
-          matched: true,
-          pactId: retry.id,
-          status: 'ACTIVE',
-        });
-      }
       return NextResponse.json({
         matched: false,
         status: 'WAITING',

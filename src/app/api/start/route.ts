@@ -46,6 +46,21 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // IMPORTANT : fermer tous les anciens pactes de cet utilisateur
+    // → évite les matchs fantômes (vieux ACTIVE / WAITING)
+    await prisma.pact.updateMany({
+      where: {
+        status: { in: ['WAITING', 'ACTIVE'] },
+        OR: [{ userAId: user.id }, { userBId: user.id }],
+      },
+      data: { status: 'ENDED' },
+    });
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { activePactId: null, waitingSince: new Date() },
+    });
+
     const pact = await prisma.pact.create({
       data: {
         durationDays,
@@ -54,7 +69,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Tentative d'envoi du lien magique — NON bloquant
     let emailSent = false;
     let emailWarning: string | null = null;
 
@@ -84,7 +98,6 @@ export async function POST(request: NextRequest) {
       emailWarning = 'Email non envoyé. Tu peux continuer sans le mail.';
     }
 
-    // Toujours OK : l’accès passe par le lien direct / localStorage
     return NextResponse.json(
       {
         message: emailSent
