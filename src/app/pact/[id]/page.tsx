@@ -6,11 +6,13 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import {
   CATEGORY_LABELS,
+  TONE_LABELS,
   getMessageById,
-  searchMessages,
+  filterMessages,
   getMessagesByIntent,
   type MessageCategory,
   type MessageIntent,
+  type MessageTone,
   type SupportOpening,
 } from '@/lib/messages';
 
@@ -57,6 +59,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   const [selectedCategory, setSelectedCategory] = useState<
     MessageCategory | 'all' | 'fav'
   >('all');
+  const [tone, setTone] = useState<MessageTone | 'all'>('all');
   const [search, setSearch] = useState('');
   const [favorites, setFavorites] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
@@ -125,17 +128,17 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
       m.senderUserId !== uid
   ).length;
 
-  const filteredOpenings = useMemo(() => {
-    let list = search
-      ? searchMessages(search, intent)
-      : getMessagesByIntent(intent);
-    if (selectedCategory === 'fav') {
-      list = list.filter((m) => favorites.includes(m.id));
-    } else if (selectedCategory !== 'all') {
-      list = list.filter((m) => m.category === selectedCategory);
-    }
-    return list;
-  }, [search, selectedCategory, favorites, intent]);
+  const filteredOpenings = useMemo(
+    () =>
+      filterMessages({
+        intent,
+        category: selectedCategory,
+        tone,
+        search,
+        favorites,
+      }),
+    [intent, selectedCategory, tone, search, favorites]
+  );
 
   const categoriesForIntent = useMemo(() => {
     return Array.from(
@@ -393,7 +396,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
               {tab === 'soutien' && (
                 <div className="mt-6">
-                  <div className="grid grid-cols-2 gap-3 mb-5">
+                  <div className="grid grid-cols-2 gap-3 mb-4">
                     <button
                       type="button"
                       onClick={() => {
@@ -410,7 +413,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                         Je soutiens
                       </span>
                       <span className="block text-xs text-[#706b63] mt-1">
-                        Offrir une présence, du courage…
+                        Présence, courage, motivation…
                       </span>
                     </button>
                     <button
@@ -429,7 +432,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                         J’ai besoin de soutien
                       </span>
                       <span className="block text-xs text-[#706b63] mt-1">
-                        Dire que c’est lourd, la fatigue…
+                        Jour difficile, fatigue, trac…
                       </span>
                     </button>
                   </div>
@@ -445,12 +448,9 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                   </button>
 
                   <p className="text-sm text-[#706b63] mb-3">
-                    {intent === 'offer'
-                      ? 'Messages pour soutenir l’autre.'
-                      : intent === 'seek'
-                        ? 'Messages pour exprimer ton besoin.'
-                        : 'Choisis une zone ou parcours tout.'}{' '}
-                    <strong>15 messages / 24 h</strong>.
+                    Inclut <strong>Motivation</strong> (entretien, rendez-vous),
+                    phrases <strong>courtes</strong> et citations.{' '}
+                    <strong>15 / 24 h</strong>.
                   </p>
 
                   <input
@@ -458,9 +458,38 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                     placeholder="Rechercher…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-[#1f6b67]/30"
+                    className="w-full px-4 py-2.5 rounded-xl border text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-[#1f6b67]/30"
                   />
 
+                  {/* Filtre ton */}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <span className="text-[10px] uppercase tracking-wide text-[#a49f96] self-center mr-1">
+                      Ton
+                    </span>
+                    {(
+                      [
+                        ['all', 'Tous'],
+                        ['doux', 'Doux'],
+                        ['neutre', 'Neutre'],
+                        ['energique', 'Énergique'],
+                        ['court', 'Court'],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <button
+                        key={key}
+                        onClick={() => setTone(key)}
+                        className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          tone === key
+                            ? 'bg-[#1f6b67] text-white'
+                            : 'bg-black/5 text-[#706b63]'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Catégories */}
                   <div className="flex flex-wrap gap-2 mb-5">
                     <button
                       onClick={() => setSelectedCategory('all')}
@@ -498,6 +527,11 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                   </div>
 
                   <div className="space-y-2 max-h-[28rem] overflow-y-auto">
+                    {filteredOpenings.length === 0 && (
+                      <p className="text-sm text-[#a49f96] text-center py-8">
+                        Aucun message avec ces filtres.
+                      </p>
+                    )}
                     {filteredOpenings.map((m) => {
                       const isFav = favorites.includes(m.id);
                       return (
@@ -522,11 +556,8 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                           >
                             <span className="text-[10px] uppercase text-[#a49f96]">
                               {CATEGORY_LABELS[m.category]}
-                              {m.intent === 'offer'
-                                ? ' · soutenir'
-                                : m.intent === 'seek'
-                                  ? ' · besoin'
-                                  : ''}
+                              {m.tone ? ` · ${TONE_LABELS[m.tone]}` : ''}
+                              {m.source ? ` · ${m.source}` : ''}
                             </span>
                             <p className="mt-0.5 text-sm leading-relaxed">{m.text}</p>
                           </button>
