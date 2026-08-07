@@ -1,5 +1,31 @@
 /** Gestes silencieux — signes simples ou un peu plus longs, sans chat libre */
 export const GESTURES = [
+  // —— Salutations ——
+  { type: 'BONJOUR', label: 'Bonjour.', group: 'Salutations' },
+  { type: 'BONSOIR', label: 'Bonsoir.', group: 'Salutations' },
+  { type: 'SALUT_DISCRET', label: 'Salut discret.', group: 'Salutations' },
+  { type: 'COUCOU_DOUX', label: 'Coucou, tout doux.', group: 'Salutations' },
+  {
+    type: 'BONJOUR_MATIN',
+    label: 'Bonjour. On démarre la journée sans se précipiter.',
+    group: 'Salutations',
+  },
+  {
+    type: 'BONSOIR_REPOS',
+    label: 'Bonsoir. Que la soirée soit plus légère.',
+    group: 'Salutations',
+  },
+  {
+    type: 'REBONJOUR',
+    label: 'Rebonjour. Je repasse discrètement.',
+    group: 'Salutations',
+  },
+  {
+    type: 'A_PLUS_TARD',
+    label: 'À plus tard, si tu veux.',
+    group: 'Salutations',
+  },
+
   // —— Présence ——
   { type: 'JE_SUIS_LA', label: 'Je suis là.', group: 'Présence' },
   { type: 'JE_TIENS', label: 'Je tiens.', group: 'Présence' },
@@ -130,6 +156,7 @@ export const GESTURE_LABELS: Record<string, string> = Object.fromEntries(
 );
 
 export const GESTURE_GROUPS = [
+  'Salutations',
   'Présence',
   'Douceur',
   'Courage',

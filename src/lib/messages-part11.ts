@@ -1,0 +1,125 @@
+import type { SupportOpening } from './messages-types';
+
+const R = ['Bonjour.', 'Bonsoir.', 'Salut.', 'Merci.', 'Reçu.'];
+const R_SOFT = [
+  'Bonjour, merci.',
+  'Salut, ça fait du bien.',
+  'Reçu. Bonne journée.',
+  'Merci pour le salut.',
+  'Présence notée.',
+];
+
+/** Salutations — ouvrir le lien sans conversation libre */
+export const PART11: SupportOpening[] = [
+  {
+    id: 'sal1',
+    category: 'matin',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Bonjour. Je passe juste dire que je suis un peu de ton côté aujourd’hui.',
+    responses: R_SOFT,
+  },
+  {
+    id: 'sal2',
+    category: 'matin',
+    intent: 'offer',
+    tone: 'neutre',
+    text: 'Bonjour. Pas de pression pour la journée — juste un salut discret.',
+    responses: R_SOFT,
+  },
+  {
+    id: 'sal3',
+    category: 'matin',
+    intent: 'offer',
+    tone: 'court',
+    text: 'Bonjour.',
+    responses: R,
+  },
+  {
+    id: 'sal4',
+    category: 'nuit',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Bonsoir. Si la soirée est lourde, tu n’as pas à la porter seul.',
+    responses: R_SOFT,
+  },
+  {
+    id: 'sal5',
+    category: 'nuit',
+    intent: 'offer',
+    tone: 'court',
+    text: 'Bonsoir.',
+    responses: R,
+  },
+  {
+    id: 'sal6',
+    category: 'presence',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Salut. Je ne demande rien — juste signaler ma présence.',
+    responses: R_SOFT,
+  },
+  {
+    id: 'sal7',
+    category: 'presence',
+    intent: 'offer',
+    tone: 'court',
+    text: 'Salut.',
+    responses: R,
+  },
+  {
+    id: 'sal8',
+    category: 'presence',
+    intent: 'offer',
+    tone: 'neutre',
+    text: 'Rebonjour. Je repasse sans attendre de longue réponse.',
+    responses: R_SOFT,
+  },
+  {
+    id: 'sal9',
+    category: 'matin',
+    intent: 'seek',
+    tone: 'doux',
+    text: 'Bonjour… J’aurais besoin d’un simple salut en retour, rien de plus.',
+    responses: [
+      'Bonjour. Je suis là.',
+      'Salut. Présence avec toi.',
+      'Bonjour, reçu.',
+      'Salut discret. OK.',
+    ],
+  },
+  {
+    id: 'sal10',
+    category: 'nuit',
+    intent: 'seek',
+    tone: 'doux',
+    text: 'Bonsoir. Un bonsoir en retour me ferait du bien.',
+    responses: [
+      'Bonsoir. Je veille un peu.',
+      'Bonsoir. Tu n’es pas seul.',
+      'Reçu. Bonne soirée douce.',
+      'Bonsoir. Présence ici.',
+    ],
+  },
+  {
+    id: 'sal11',
+    category: 'reconnexion',
+    intent: 'both',
+    tone: 'doux',
+    text: 'Salut, je reviens. Pas besoin de tout rattraper — un bonjour suffit.',
+    responses: [
+      'Salut. Bienvenue.',
+      'Bonjour. On reprend doucement.',
+      'Reçu. Content que tu sois là.',
+      'Salut. Présence reprise.',
+    ],
+  },
+  {
+    id: 'sal12',
+    category: 'cloture',
+    intent: 'offer',
+    tone: 'doux',
+    text: 'Au revoir pour cette fois. Merci d’avoir été là, même en silence.',
+    responses: R_SOFT,
+  },
+];
