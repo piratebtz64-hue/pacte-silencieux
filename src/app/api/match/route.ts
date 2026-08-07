@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const prisma = new PrismaClient();
 
+/** Un pacte en attente expire après 45 minutes sans match */
+const WAITING_MAX_MS = 45 * 60 * 1000;
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -21,8 +24,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Déjà actif
-    if (current.status === 'ACTIVE' && current.userBId) {
+    const now = new Date();
+    const waitingSinceCutoff = new Date(now.getTime() - WAITING_MAX_MS);
+
+    // Déjà actif ET encore en cours (pas un vieux test)
+    if (
+      current.status === 'ACTIVE' &&
+      current.userBId &&
+      current.endsAt &&
+      current.endsAt > now
+    ) {
       return NextResponse.json({
         matched: true,
         pactId: current.id,
@@ -39,10 +50,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Déjà dans un pacte actif (comme A ou B)
+    // Pacte actif RÉCENT pour cet user (encore valide dans le temps)
     const alreadyActive = await prisma.pact.findFirst({
       where: {
         status: 'ACTIVE',
+        endsAt: { gt: now },
         OR: [{ userAId: userId }, { userBId: userId }],
       },
       orderBy: { startedAt: 'desc' },
@@ -55,24 +67,42 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Si ce pacte n’est plus WAITING, on récupère le WAITING le plus récent de cet user
+    // Mon pacte doit être WAITING et récent
     let myWaiting = current;
-    if (current.status !== 'WAITING') {
+    if (current.status !== 'WAITING' || current.createdAt < waitingSinceCutoff) {
       const recent = await prisma.pact.findFirst({
-        where: { userAId: userId, status: 'WAITING', userBId: null },
+        where: {
+          userAId: userId,
+          status: 'WAITING',
+          userBId: null,
+          createdAt: { gte: waitingSinceCutoff },
+        },
         orderBy: { createdAt: 'desc' },
       });
       if (!recent) {
         return NextResponse.json({
           matched: false,
-          status: current.status,
-          message: 'Pas de pacte en attente pour toi',
+          status: 'WAITING',
+          message:
+            'Session expirée ou introuvable. Recommence un pacte depuis le début.',
+          code: 'EXPIRED',
         });
       }
       myWaiting = recent;
     }
 
-    // Compter les autres en attente (même durée)
+    // Nettoyage soft : expirer les vieux WAITING (best effort)
+    await prisma.pact
+      .updateMany({
+        where: {
+          status: 'WAITING',
+          createdAt: { lt: waitingSinceCutoff },
+        },
+        data: { status: 'ENDED' },
+      })
+      .catch(() => {});
+
+    // Partenaires : même durée, autre user, WAITING, créés récemment
     const candidates = await prisma.pact.findMany({
       where: {
         status: 'WAITING',
@@ -80,32 +110,37 @@ export async function POST(request: NextRequest) {
         userBId: null,
         id: { not: myWaiting.id },
         userAId: { not: userId },
+        createdAt: { gte: waitingSinceCutoff },
       },
       orderBy: { createdAt: 'asc' },
       take: 5,
     });
 
     if (candidates.length === 0) {
-      const totalWaiting = await prisma.pact.count({
-        where: { status: 'WAITING', userBId: null },
+      const totalRecent = await prisma.pact.count({
+        where: {
+          status: 'WAITING',
+          userBId: null,
+          createdAt: { gte: waitingSinceCutoff },
+        },
       });
       return NextResponse.json({
         matched: false,
         status: 'WAITING',
         message:
-          totalWaiting <= 1
+          totalRecent <= 1
             ? 'Personne d’autre en attente pour le moment…'
-            : 'D’autres personnes attendent, mais pas la même durée. Choisissez la même (1, 3 ou 7 jours).',
+            : 'D’autres personnes attendent, mais pas la même durée. Même durée obligatoire (1, 3 ou 7 jours).',
         debug: {
           myDuration: myWaiting.durationDays,
-          totalWaiting,
+          totalWaiting: totalRecent,
           sameDurationOthers: 0,
         },
       });
     }
 
     const partner = candidates[0];
-    if (!partner.userAId) {
+    if (!partner.userAId || !myWaiting.userAId) {
       return NextResponse.json({
         matched: false,
         status: 'WAITING',
@@ -113,12 +148,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const now = new Date();
     const endsAt = new Date(
       now.getTime() + myWaiting.durationDays * 24 * 60 * 60 * 1000
     );
 
-    // Pacte principal = le plus ancien
     const primary =
       myWaiting.createdAt <= partner.createdAt ? myWaiting : partner;
     const secondary = primary.id === myWaiting.id ? partner : myWaiting;
@@ -149,11 +182,11 @@ export async function POST(request: NextRequest) {
         }),
       ]);
     } catch (txErr) {
-      // Race : l’autre téléphone a peut‑être déjà matché
       console.error('Match transaction race:', txErr);
       const retry = await prisma.pact.findFirst({
         where: {
           status: 'ACTIVE',
+          endsAt: { gt: now },
           OR: [{ userAId: userId }, { userBId: userId }],
         },
       });
