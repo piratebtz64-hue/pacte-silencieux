@@ -15,13 +15,7 @@ import {
   type MessageTone,
   type SupportOpening,
 } from '@/lib/messages';
-
-const GESTURES = [
-  { type: 'JE_SUIS_LA', label: 'Je suis là.' },
-  { type: 'JE_TIENS', label: 'Je tiens.' },
-  { type: 'AUJOURDHUI_FRAGILE', label: 'Aujourd’hui c’est fragile.' },
-  { type: 'JE_VEILLE_AVEC_TOI', label: 'Je veille un peu avec toi.' },
-];
+import { GESTURES, GESTURE_GROUPS } from '@/lib/gestures';
 
 const FAV_KEY = 'pacte-favorites';
 
@@ -66,6 +60,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [lastSeenCount, setLastSeenCount] = useState(0);
   const [uid, setUid] = useState('');
+  const [gestureGroup, setGestureGroup] = useState<string>('all');
 
   useEffect(() => {
     setUid(localStorage.getItem('pacte_userId') || '');
@@ -122,7 +117,8 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
       uid &&
       m.receiverUserId === uid &&
       !m.responseText &&
-      m.senderUserId !== uid
+      m.senderUserId !== uid &&
+      !m.openingId.startsWith('gesture:')
   ).length;
 
   const filteredOpenings = useMemo(
@@ -143,23 +139,19 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
     );
   }, [intent]);
 
+  const visibleGestures = useMemo(() => {
+    if (gestureGroup === 'all') return GESTURES;
+    return GESTURES.filter((g) => g.group === gestureGroup);
+  }, [gestureGroup]);
+
   const sendGesture = async (type: string) => {
     const pactId = pact?.id || id;
     if (!pactId) {
       setStatusMsg('Pacte introuvable. Recharge la page.');
       return;
     }
-    if (!type) {
-      setStatusMsg('Type de geste manquant.');
-      return;
-    }
-
-    // Si pas d’userId local, on envoie quand même (API fallback userA)
     const senderUserId =
-      uid ||
-      localStorage.getItem('pacte_userId') ||
-      pact?.userAId ||
-      '';
+      uid || localStorage.getItem('pacte_userId') || pact?.userAId || '';
 
     setSending(true);
     setStatusMsg(null);
@@ -179,6 +171,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
         throw new Error(d.error || d.detail || `Erreur ${res.status}`);
       }
       setStatusMsg('Geste envoyé.');
+      await load();
       setTab('fil');
     } catch (e) {
       setStatusMsg(e instanceof Error ? e.message : 'Erreur');
@@ -334,11 +327,13 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                   )}
                   {messages.map((m) => {
                     const isMine = uid ? m.senderUserId === uid : false;
+                    const isGesture = m.openingId.startsWith('gesture:');
                     const needsResponse =
                       !!uid &&
                       !isMine &&
                       !m.responseText &&
-                      m.receiverUserId === uid;
+                      m.receiverUserId === uid &&
+                      !isGesture;
                     const opening = getMessageById(m.openingId);
                     return (
                       <div key={m.id} className="space-y-2">
@@ -350,7 +345,8 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                           }`}
                         >
                           <p className="text-xs text-[#a49f96] mb-1">
-                            {isMine ? 'Toi' : 'L’autre'} ·{' '}
+                            {isMine ? 'Toi' : 'L’autre'}
+                            {isGesture ? ' · geste' : ''} ·{' '}
                             {new Date(m.createdAt).toLocaleString('fr-FR', {
                               day: 'numeric',
                               month: 'short',
@@ -398,21 +394,53 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
               )}
 
               {tab === 'geste' && (
-                <div className="mt-6 space-y-3">
-                  <p className="text-sm text-[#706b63] mb-2">
-                    Un signe simple, sans explication.
+                <div className="mt-6">
+                  <p className="text-sm text-[#706b63] mb-3">
+                    Un signe simple, sans explication. <strong>{GESTURES.length} gestes</strong>.
                   </p>
-                  {GESTURES.map((g) => (
+                  <div className="flex flex-wrap gap-2 mb-4">
                     <button
-                      key={g.type}
                       type="button"
-                      disabled={sending}
-                      onClick={() => sendGesture(g.type)}
-                      className="w-full p-4 rounded-xl border border-black/10 text-left font-medium hover:border-[#1f6b67] hover:bg-[#1f6b67]/5 transition disabled:opacity-50"
+                      onClick={() => setGestureGroup('all')}
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        gestureGroup === 'all'
+                          ? 'bg-[#1f6b67] text-white'
+                          : 'bg-black/5 text-[#706b63]'
+                      }`}
                     >
-                      {g.label}
+                      Tous
                     </button>
-                  ))}
+                    {GESTURE_GROUPS.map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => setGestureGroup(g)}
+                        className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          gestureGroup === g
+                            ? 'bg-[#1f6b67] text-white'
+                            : 'bg-black/5 text-[#706b63]'
+                        }`}
+                      >
+                        {g}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="space-y-2 max-h-[28rem] overflow-y-auto">
+                    {visibleGestures.map((g) => (
+                      <button
+                        key={g.type}
+                        type="button"
+                        disabled={sending}
+                        onClick={() => sendGesture(g.type)}
+                        className="w-full p-3.5 rounded-xl border border-black/10 text-left font-medium hover:border-[#1f6b67] hover:bg-[#1f6b67]/5 transition disabled:opacity-50"
+                      >
+                        <span className="text-[10px] uppercase text-[#a49f96] block mb-0.5">
+                          {g.group}
+                        </span>
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
