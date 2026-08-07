@@ -12,7 +12,8 @@ export type MessageCategory =
   | 'colere'
   | 'deuil'
   | 'reconnexion'
-  | 'cloture';
+  | 'cloture'
+  | 'remerciement';
 
 export interface SupportOpening {
   id: string;
@@ -36,4 +37,5 @@ export const CATEGORY_LABELS: Record<MessageCategory, string> = {
   deuil: 'Deuil / perte',
   reconnexion: 'Reconnexion',
   cloture: 'Clôture',
+  remerciement: 'Remerciement',
 };
