@@ -9,16 +9,23 @@ import {
 } from './messages-types';
 
 export type { MessageCategory, MessageIntent, SupportOpening } from './messages-types';
-export { CATEGORY_LABELS, OFFER_CATEGORIES, SEEK_CATEGORIES, getIntentForCategory } from './messages-types';
+export {
+  CATEGORY_LABELS,
+  OFFER_CATEGORIES,
+  SEEK_CATEGORIES,
+  getIntentForCategory,
+} from './messages-types';
 
 import { PART0 } from './messages-part0';
 import { PART1 } from './messages-part1';
 import { PART2 } from './messages-part2';
+import { PART3 } from './messages-part3';
 
 export const SUPPORT_MESSAGES: SupportOpening[] = [
   ...PART0,
   ...PART1,
   ...PART2,
+  ...PART3,
 ].map((m) => ({
   ...m,
   intent: m.intent || getIntentForCategory(m.category),

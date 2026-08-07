@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import {
-  SUPPORT_MESSAGES,
   CATEGORY_LABELS,
   getMessageById,
   searchMessages,
@@ -64,17 +63,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [lastSeenCount, setLastSeenCount] = useState(0);
 
-  // Identité locale (plus fiable que seulement userA)
-  const localUserId =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('pacte_userId') || ''
-      : '';
-  const currentUserId =
-    localUserId ||
-    (pact?.userAId && pact?.userBId
-      ? ''
-      : pact?.userAId || pact?.userBId || '');
-
   useEffect(() => {
     try {
       const raw = localStorage.getItem(FAV_KEY);
@@ -101,8 +89,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
         fetch(`/api/support?pactId=${id}`),
       ]);
       if (!pactRes.ok) throw new Error('Pacte non trouvé');
-      const pactData = await pactRes.json();
-      setPact(pactData);
+      setPact(await pactRes.json());
       if (msgRes.ok) {
         const msgData = await msgRes.json();
         setMessages(msgData.messages || []);
@@ -124,20 +111,18 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
     if (tab === 'fil') setLastSeenCount(messages.length);
   }, [tab, messages.length]);
 
+  const uid =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('pacte_userId') || ''
+      : '';
+
   const unreadCount = Math.max(0, messages.length - lastSeenCount);
-
-  const resolvedUserId =
-    currentUserId ||
-    (messages[0]
-      ? localStorage.getItem('pacte_userId') || messages[0].senderUserId
-      : '');
-
   const pendingForMe = messages.filter(
     (m) =>
-      resolvedUserId &&
-      m.receiverUserId === resolvedUserId &&
+      uid &&
+      m.receiverUserId === uid &&
       !m.responseText &&
-      m.senderUserId !== resolvedUserId
+      m.senderUserId !== uid
   ).length;
 
   const filteredOpenings = useMemo(() => {
@@ -153,14 +138,12 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   }, [search, selectedCategory, favorites, intent]);
 
   const categoriesForIntent = useMemo(() => {
-    const set = new Set(
-      getMessagesByIntent(intent).map((m) => m.category)
+    return Array.from(
+      new Set(getMessagesByIntent(intent).map((m) => m.category))
     );
-    return Array.from(set);
   }, [intent]);
 
   const sendGesture = async (type: string) => {
-    const uid = localStorage.getItem('pacte_userId');
     if (!pact || !uid) {
       setStatusMsg('Session incomplète. Repars depuis /start.');
       return;
@@ -187,7 +170,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   };
 
   const sendOpening = async (opening: SupportOpening) => {
-    const uid = localStorage.getItem('pacte_userId');
     if (!pact || !uid) {
       setStatusMsg('Session incomplète. Repars depuis /start.');
       return;
@@ -276,7 +258,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
               className={`px-3 py-1 rounded-full text-xs font-bold ${
                 pact.status === 'ACTIVE'
                   ? 'bg-[#1f6b67]/15 text-[#1f6b67]'
-                  : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200'
+                  : 'bg-amber-100 text-amber-800'
               }`}
             >
               {pact.status === 'ACTIVE' ? 'Actif' : 'En attente'}
@@ -291,7 +273,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
           {pact.status === 'ACTIVE' && (
             <>
-              <div className="mt-8 flex gap-2 border-b border-black/10 dark:border-white/10 pb-px">
+              <div className="mt-8 flex gap-2 border-b border-black/10 dark:border-white/10">
                 {([
                   ['fil', 'Fil'],
                   ['geste', 'Geste'],
@@ -303,7 +285,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                     className={`relative px-4 py-2 text-sm font-bold rounded-t-lg transition ${
                       tab === key
                         ? 'bg-[#1f6b67] text-white'
-                        : 'text-[#706b63] hover:bg-black/5 dark:hover:bg-white/5'
+                        : 'text-[#706b63] hover:bg-black/5'
                     }`}
                   >
                     {label}
@@ -319,39 +301,35 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
               {tab === 'fil' && (
                 <div className="mt-6 space-y-4">
                   {pendingForMe > 0 && (
-                    <div className="p-3 rounded-lg bg-[#1f6b67]/10 border border-[#1f6b67]/20 text-sm text-[#1f6b67] text-center">
+                    <div className="p-3 rounded-lg bg-[#1f6b67]/10 text-sm text-[#1f6b67] text-center">
                       {pendingForMe} message
                       {pendingForMe > 1 ? 's' : ''} en attente de ta réponse
                     </div>
                   )}
                   {messages.length === 0 && (
                     <p className="text-sm text-[#a49f96] text-center py-10">
-                      Aucun message pour l’instant.
-                      <br />
-                      Va dans <strong>Soutien</strong> pour écrire ou demander.
+                      Aucun message. Va dans <strong>Soutien</strong>.
                     </p>
                   )}
                   {messages.map((m) => {
-                    const uid = localStorage.getItem('pacte_userId');
                     const isMine = uid ? m.senderUserId === uid : false;
                     const needsResponse =
-                      uid &&
+                      !!uid &&
                       !isMine &&
                       !m.responseText &&
                       m.receiverUserId === uid;
                     const opening = getMessageById(m.openingId);
-
                     return (
                       <div key={m.id} className="space-y-2">
                         <div
                           className={`p-4 rounded-2xl border ${
                             isMine
                               ? 'bg-[#1f6b67]/10 border-[#1f6b67]/20 ml-6'
-                              : 'bg-[#f2eee5] dark:bg-white/5 border-black/5 dark:border-white/10 mr-6'
+                              : 'bg-[#f2eee5] dark:bg-white/5 border-black/5 mr-6'
                           }`}
                         >
                           <p className="text-xs text-[#a49f96] mb-1">
-                            {isMine ? 'Toi' : 'L’autre personne'} ·{' '}
+                            {isMine ? 'Toi' : 'L’autre'} ·{' '}
                             {new Date(m.createdAt).toLocaleString('fr-FR', {
                               day: 'numeric',
                               month: 'short',
@@ -361,22 +339,20 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                           </p>
                           <p className="leading-relaxed">{m.openingText}</p>
                         </div>
-
                         {m.responseText && (
                           <div
                             className={`p-4 rounded-2xl border ${
                               !isMine
                                 ? 'bg-[#1f6b67]/10 border-[#1f6b67]/20 ml-6'
-                                : 'bg-[#f2eee5] dark:bg-white/5 border-black/5 dark:border-white/10 mr-6'
+                                : 'bg-[#f2eee5] dark:bg-white/5 border-black/5 mr-6'
                             }`}
                           >
                             <p className="text-xs text-[#a49f96] mb-1">Réponse</p>
-                            <p className="leading-relaxed">{m.responseText}</p>
+                            <p>{m.responseText}</p>
                           </div>
                         )}
-
                         {needsResponse && opening && (
-                          <div className="mr-6 p-4 rounded-xl border border-[#1f6b67]/30 bg-white dark:bg-white/5">
+                          <div className="mr-6 p-4 rounded-xl border border-[#1f6b67]/30">
                             <p className="text-xs font-bold text-[#1f6b67] mb-3">
                               Choisir une réponse
                             </p>
@@ -386,7 +362,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                                   key={r}
                                   disabled={sending}
                                   onClick={() => sendResponse(m.id, r)}
-                                  className="w-full text-left px-3 py-2.5 rounded-lg border border-black/10 dark:border-white/10 text-sm hover:border-[#1f6b67] hover:bg-[#1f6b67]/5 transition disabled:opacity-50"
+                                  className="w-full text-left px-3 py-2.5 rounded-lg border text-sm hover:border-[#1f6b67] disabled:opacity-50"
                                 >
                                   {r}
                                 </button>
@@ -402,15 +378,12 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
               {tab === 'geste' && (
                 <div className="mt-6 space-y-3">
-                  <p className="text-sm text-[#706b63] dark:text-[#a49f96] mb-4">
-                    Un signe simple, sans explication.
-                  </p>
                   {GESTURES.map((g) => (
                     <button
                       key={g.type}
                       disabled={sending}
                       onClick={() => sendGesture(g.type)}
-                      className="w-full p-4 rounded-xl border border-black/10 dark:border-white/10 text-left font-medium hover:border-[#1f6b67] hover:bg-[#1f6b67]/5 transition disabled:opacity-50"
+                      className="w-full p-4 rounded-xl border text-left font-medium hover:border-[#1f6b67] disabled:opacity-50"
                     >
                       {g.label}
                     </button>
@@ -420,7 +393,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
               {tab === 'soutien' && (
                 <div className="mt-6">
-                  {/* Deux zones d’intention */}
                   <div className="grid grid-cols-2 gap-3 mb-5">
                     <button
                       type="button"
@@ -431,14 +403,14 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                       className={`p-4 rounded-2xl border text-left transition ${
                         intent === 'offer'
                           ? 'border-[#1f6b67] bg-[#1f6b67]/10 ring-2 ring-[#1f6b67]/30'
-                          : 'border-black/10 dark:border-white/10 hover:border-[#1f6b67]/40'
+                          : 'border-black/10 hover:border-[#1f6b67]/40'
                       }`}
                     >
                       <span className="block text-sm font-bold text-[#1f6b67]">
                         Je soutiens
                       </span>
-                      <span className="block text-xs text-[#706b63] dark:text-[#a49f96] mt-1 leading-snug">
-                        Offrir une présence, du courage, de la douceur…
+                      <span className="block text-xs text-[#706b63] mt-1">
+                        Offrir une présence, du courage…
                       </span>
                     </button>
                     <button
@@ -450,14 +422,14 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                       className={`p-4 rounded-2xl border text-left transition ${
                         intent === 'seek'
                           ? 'border-[#1f6b67] bg-[#1f6b67]/10 ring-2 ring-[#1f6b67]/30'
-                          : 'border-black/10 dark:border-white/10 hover:border-[#1f6b67]/40'
+                          : 'border-black/10 hover:border-[#1f6b67]/40'
                       }`}
                     >
                       <span className="block text-sm font-bold text-[#1f6b67]">
                         J’ai besoin de soutien
                       </span>
-                      <span className="block text-xs text-[#706b63] dark:text-[#a49f96] mt-1 leading-snug">
-                        Dire que c’est lourd, la fatigue, la nuit…
+                      <span className="block text-xs text-[#706b63] mt-1">
+                        Dire que c’est lourd, la fatigue…
                       </span>
                     </button>
                   </div>
@@ -465,21 +437,20 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                   <button
                     type="button"
                     onClick={() => setIntent('all')}
-                    className={`mb-4 text-xs font-bold ${
+                    className={`mb-3 text-xs font-bold ${
                       intent === 'all' ? 'text-[#1f6b67]' : 'text-[#a49f96]'
                     }`}
                   >
                     Voir tous les messages
                   </button>
 
-                  <p className="text-sm text-[#706b63] dark:text-[#a49f96] mb-3">
+                  <p className="text-sm text-[#706b63] mb-3">
                     {intent === 'offer'
-                      ? 'Messages pour soutenir l’autre personne.'
+                      ? 'Messages pour soutenir l’autre.'
                       : intent === 'seek'
-                        ? 'Messages pour exprimer ton besoin de soutien.'
-                        : 'Choisis d’abord une zone, ou parcours tout.'}
-                    {' '}
-                    Limite : 2 messages / 12 h.
+                        ? 'Messages pour exprimer ton besoin.'
+                        : 'Choisis une zone ou parcours tout.'}{' '}
+                    <strong>15 messages / 24 h</strong>.
                   </p>
 
                   <input
@@ -487,7 +458,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                     placeholder="Rechercher…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1f6b67]/30 mb-4"
+                    className="w-full px-4 py-2.5 rounded-xl border text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-[#1f6b67]/30"
                   />
 
                   <div className="flex flex-wrap gap-2 mb-5">
@@ -496,7 +467,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                       className={`px-3 py-1 rounded-full text-xs font-bold ${
                         selectedCategory === 'all'
                           ? 'bg-[#1f6b67] text-white'
-                          : 'bg-black/5 dark:bg-white/10 text-[#706b63]'
+                          : 'bg-black/5 text-[#706b63]'
                       }`}
                     >
                       Tous
@@ -506,7 +477,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                       className={`px-3 py-1 rounded-full text-xs font-bold ${
                         selectedCategory === 'fav'
                           ? 'bg-[#1f6b67] text-white'
-                          : 'bg-black/5 dark:bg-white/10 text-[#706b63]'
+                          : 'bg-black/5 text-[#706b63]'
                       }`}
                     >
                       ♥ Favoris
@@ -518,7 +489,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                         className={`px-3 py-1 rounded-full text-xs font-bold ${
                           selectedCategory === cat
                             ? 'bg-[#1f6b67] text-white'
-                            : 'bg-black/5 dark:bg-white/10 text-[#706b63]'
+                            : 'bg-black/5 text-[#706b63]'
                         }`}
                       >
                         {CATEGORY_LABELS[cat]}
@@ -526,23 +497,18 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                     ))}
                   </div>
 
-                  <div className="space-y-2 max-h-[28rem] overflow-y-auto pr-1">
-                    {filteredOpenings.length === 0 && (
-                      <p className="text-sm text-[#a49f96] text-center py-8">
-                        Aucun message dans cette zone.
-                      </p>
-                    )}
+                  <div className="space-y-2 max-h-[28rem] overflow-y-auto">
                     {filteredOpenings.map((m) => {
                       const isFav = favorites.includes(m.id);
                       return (
                         <div
                           key={m.id}
-                          className="flex gap-2 items-start p-3 rounded-xl border border-black/10 dark:border-white/10 hover:border-[#1f6b67]/40 transition"
+                          className="flex gap-2 items-start p-3 rounded-xl border hover:border-[#1f6b67]/40"
                         >
                           <button
                             type="button"
                             onClick={() => toggleFavorite(m.id)}
-                            className={`mt-1 text-lg leading-none shrink-0 ${
+                            className={`mt-1 text-lg ${
                               isFav ? 'text-red-500' : 'text-[#a49f96]'
                             }`}
                           >
@@ -554,7 +520,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                             onClick={() => sendOpening(m)}
                             className="flex-1 text-left disabled:opacity-50"
                           >
-                            <span className="text-[10px] uppercase tracking-wide text-[#a49f96]">
+                            <span className="text-[10px] uppercase text-[#a49f96]">
                               {CATEGORY_LABELS[m.category]}
                               {m.intent === 'offer'
                                 ? ' · soutenir'
@@ -573,9 +539,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
             </>
           )}
 
-          <p className="mt-12 text-xs text-center text-[#a49f96] leading-relaxed">
-            Ce n’est pas un substitut à une aide professionnelle.
-            <br />
+          <p className="mt-12 text-xs text-center text-[#a49f96]">
             En cas de détresse : 3114 (France).
           </p>
         </div>
