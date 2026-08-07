@@ -14,7 +14,11 @@ export type MessageCategory =
   | 'reconnexion'
   | 'cloture'
   | 'remerciement'
-  | 'motivation';
+  | 'motivation'
+  | 'depart'
+  | 'solitude'
+  | 'fierte'
+  | 'transition';
 
 /** Intention : offrir / demander / les deux */
 export type MessageIntent = 'offer' | 'seek' | 'both';
@@ -50,6 +54,10 @@ export const CATEGORY_LABELS: Record<MessageCategory, string> = {
   cloture: 'Clôture',
   remerciement: 'Remerciement',
   motivation: 'Motivation',
+  depart: 'Départ / au revoir',
+  solitude: 'Solitude',
+  fierte: 'Petite fierté',
+  transition: 'Changement',
 };
 
 export const TONE_LABELS: Record<MessageTone, string> = {
@@ -69,6 +77,8 @@ export const OFFER_CATEGORIES: MessageCategory[] = [
   'remerciement',
   'cloture',
   'motivation',
+  'depart',
+  'fierte',
 ];
 
 export const SEEK_CATEGORIES: MessageCategory[] = [
@@ -79,6 +89,8 @@ export const SEEK_CATEGORIES: MessageCategory[] = [
   'deuil',
   'colere',
   'reconnexion',
+  'solitude',
+  'transition',
 ];
 
 export function getIntentForCategory(category: MessageCategory): MessageIntent {
@@ -92,7 +104,15 @@ export function getIntentForCategory(category: MessageCategory): MessageIntent {
 }
 
 export function getDefaultTone(category: MessageCategory): MessageTone {
-  if (category === 'motivation' || category === 'courage') return 'energique';
-  if (category === 'douceur' || category === 'nuit' || category === 'deuil') return 'doux';
+  if (category === 'motivation' || category === 'courage' || category === 'fierte')
+    return 'energique';
+  if (
+    category === 'douceur' ||
+    category === 'nuit' ||
+    category === 'deuil' ||
+    category === 'depart' ||
+    category === 'solitude'
+  )
+    return 'doux';
   return 'neutre';
 }
