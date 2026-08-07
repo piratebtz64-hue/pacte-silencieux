@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { DONATION_LINK } from '@/lib/donation';
+import StripeBuyButton from '@/components/StripeBuyButton';
 
 export default function DonPage() {
   return (
@@ -26,14 +26,9 @@ export default function DonPage() {
             (hébergement, emails). Aucune obligation.
           </p>
 
-          <a
-            href={DONATION_LINK}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-10 inline-flex w-full items-center justify-center py-4 rounded-full bg-[#1f6b67] text-white text-lg font-bold hover:bg-[#184f4d] transition"
-          >
-            Donner via Stripe
-          </a>
+          <div className="mt-10">
+            <StripeBuyButton />
+          </div>
 
           <p className="mt-8 text-xs text-[#a49f96]">
             Paiement sécurisé par Stripe. Nous ne voyons pas tes données bancaires.
