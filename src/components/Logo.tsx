@@ -36,12 +36,12 @@ export default function Logo({
       aria-label="Le Pacte silencieux — accueil"
     >
       <span
-        className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all duration-300"
+        className="logo-ring relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
         style={{
           background:
-            'linear-gradient(145deg, rgba(26,95,91,0.12), rgba(26,95,91,0.04))',
+            'linear-gradient(145deg, rgba(26,92,88,0.14), rgba(26,92,88,0.03))',
           boxShadow:
-            'inset 0 0 0 1.5px var(--accent), 0 4px 12px var(--glow)',
+            'inset 0 0 0 1.5px var(--accent), 0 4px 14px var(--glow)',
           color: 'var(--accent)',
         }}
       >
@@ -52,7 +52,10 @@ export default function Logo({
           <span className="font-serif text-[0.95rem] font-semibold tracking-tight">
             Le Pacte silencieux
           </span>
-          <span className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-[var(--muted)] hidden sm:block">
+          <span
+            className="mt-0.5 text-[10px] uppercase tracking-[0.16em] hidden sm:block"
+            style={{ color: 'var(--muted)' }}
+          >
             présence discrète
           </span>
         </span>
