@@ -1,19 +1,29 @@
 import type {
   MessageCategory,
   MessageIntent,
+  MessageTone,
   SupportOpening,
 } from './messages-types';
 import {
   CATEGORY_LABELS,
+  TONE_LABELS,
   getIntentForCategory,
+  getDefaultTone,
 } from './messages-types';
 
-export type { MessageCategory, MessageIntent, SupportOpening } from './messages-types';
+export type {
+  MessageCategory,
+  MessageIntent,
+  MessageTone,
+  SupportOpening,
+} from './messages-types';
 export {
   CATEGORY_LABELS,
+  TONE_LABELS,
   OFFER_CATEGORIES,
   SEEK_CATEGORIES,
   getIntentForCategory,
+  getDefaultTone,
 } from './messages-types';
 
 import { PART0 } from './messages-part0';
@@ -21,6 +31,7 @@ import { PART1 } from './messages-part1';
 import { PART2 } from './messages-part2';
 import { PART3 } from './messages-part3';
 import { PART4 } from './messages-part4';
+import { PART5 } from './messages-part5';
 
 export const SUPPORT_MESSAGES: SupportOpening[] = [
   ...PART0,
@@ -28,9 +39,11 @@ export const SUPPORT_MESSAGES: SupportOpening[] = [
   ...PART2,
   ...PART3,
   ...PART4,
+  ...PART5,
 ].map((m) => ({
   ...m,
   intent: m.intent || getIntentForCategory(m.category),
+  tone: m.tone || getDefaultTone(m.category),
 }));
 
 export function getMessageById(id: string): SupportOpening | undefined {
@@ -48,18 +61,51 @@ export function getMessagesByIntent(intent: MessageIntent | 'all'): SupportOpeni
   );
 }
 
+export function filterMessages(options: {
+  intent?: MessageIntent | 'all';
+  category?: MessageCategory | 'all' | 'fav';
+  tone?: MessageTone | 'all';
+  search?: string;
+  favorites?: string[];
+}): SupportOpening[] {
+  const {
+    intent = 'all',
+    category = 'all',
+    tone = 'all',
+    search = '',
+    favorites = [],
+  } = options;
+
+  let list = getMessagesByIntent(intent);
+
+  if (category === 'fav') {
+    list = list.filter((m) => favorites.includes(m.id));
+  } else if (category !== 'all') {
+    list = list.filter((m) => m.category === category);
+  }
+
+  if (tone !== 'all') {
+    list = list.filter((m) => m.tone === tone);
+  }
+
+  const q = search.toLowerCase().trim();
+  if (q) {
+    list = list.filter(
+      (m) =>
+        m.text.toLowerCase().includes(q) ||
+        CATEGORY_LABELS[m.category].toLowerCase().includes(q) ||
+        (m.source && m.source.toLowerCase().includes(q))
+    );
+  }
+
+  return list;
+}
+
 export function searchMessages(
   query: string,
   intent: MessageIntent | 'all' = 'all'
 ): SupportOpening[] {
-  const base = getMessagesByIntent(intent);
-  const q = query.toLowerCase().trim();
-  if (!q) return base;
-  return base.filter(
-    (m) =>
-      m.text.toLowerCase().includes(q) ||
-      CATEGORY_LABELS[m.category].toLowerCase().includes(q)
-  );
+  return filterMessages({ intent, search: query });
 }
 
 export function getMessageCount(): number {
