@@ -1,14 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
+import { GESTURE_LABELS } from '@/lib/gestures';
 
 const prisma = new PrismaClient();
-
-const GESTURE_LABELS: Record<string, string> = {
-  JE_SUIS_LA: 'Je suis là.',
-  JE_TIENS: 'Je tiens.',
-  AUJOURDHUI_FRAGILE: 'Aujourd’hui c’est fragile.',
-  JE_VEILLE_AVEC_TOI: 'Je veille un peu avec toi.',
-};
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,9 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const pactId = String(body.pactId || '').trim();
-    const gestureType = String(
-      body.type || body.gestureType || ''
-    ).trim();
+    const gestureType = String(body.type || body.gestureType || '').trim();
     let senderUserId = String(body.senderUserId || '').trim();
 
     if (!pactId) {
@@ -60,8 +52,6 @@ export async function POST(request: NextRequest) {
 
     const label = GESTURE_LABELS[gestureType];
 
-    // Enregistrement fiable via SupportMessage (même table que les messages)
-    // openingId préfixé gesture: pour les distinguer dans le fil
     const message = await prisma.supportMessage.create({
       data: {
         pactId,
@@ -72,20 +62,6 @@ export async function POST(request: NextRequest) {
         responseText: null,
       },
     });
-
-    // Best-effort aussi dans la table Gesture si elle existe
-    try {
-      await prisma.gesture.create({
-        data: {
-          pactId,
-          senderUserId,
-          receiverUserId,
-          type: gestureType as 'JE_SUIS_LA' | 'JE_TIENS' | 'AUJOURDHUI_FRAGILE' | 'JE_VEILLE_AVEC_TOI',
-        },
-      });
-    } catch {
-      // ignore si table/enum KO
-    }
 
     return NextResponse.json(
       { ok: true, message, gestureLabel: label },
@@ -110,7 +86,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'pactId requis' }, { status: 400 });
     }
 
-    // Gestes = messages dont openingId commence par gesture:
     const gestures = await prisma.supportMessage.findMany({
       where: {
         pactId,
