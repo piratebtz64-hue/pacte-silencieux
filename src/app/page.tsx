@@ -33,8 +33,8 @@ export default function HomePage() {
               <Link href="/start" className="btn-primary">
                 Commencer un pacte de présence
               </Link>
-              <Link href="#comment" className="btn-ghost">
-                Comment ça marche
+              <Link href="/selection" className="btn-ghost">
+                Comment tu te sens ?
               </Link>
             </div>
             <p className="mt-4 text-xs tracking-wide" style={{ color: 'var(--muted)' }}>
@@ -101,7 +101,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Moment doux — pas un test */}
       <section className="py-16 md:py-20">
         <div className="max-w-3xl mx-auto px-4">
           <Reveal>
@@ -109,31 +108,12 @@ export default function HomePage() {
               Comment tu te sens en ce moment ?
             </h2>
             <p className="mt-3 leading-relaxed" style={{ color: 'var(--muted)' }}>
-              Il n’y a pas de bonne ou de mauvaise réponse. C’est juste pour te
-              rappeler que ce que tu traverses a de la place ici.
+              Il n’y a pas de bonne ou de mauvaise réponse. Un petit parcours
+              doux pour clarifier ce dont tu as besoin — ce n’est pas un test
+              médical.
             </p>
-          </Reveal>
-          <div className="mt-8 space-y-3">
-            {[
-              'Tu te sens un peu seul·e en ce moment ?',
-              'Tu aimerais sentir qu’il y a quelqu’un, même sans parler beaucoup ?',
-              'Aujourd’hui, c’est plutôt léger, moyen, ou très lourd ?',
-              'Est-ce qu’un instant de présence, sans rien “réussir”, pourrait t’aider ?',
-            ].map((q, i) => (
-              <Reveal key={q} delay={i * 60}>
-                <div className="card-premium px-5 py-4 text-sm leading-relaxed">
-                  {q}
-                </div>
-              </Reveal>
-            ))}
-          </div>
-          <Reveal delay={280}>
-            <p className="mt-6 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-              Merci d’avoir pris ce moment. Quel que soit ce que tu ressens, tu
-              as le droit d’avoir besoin d’un peu de présence.
-            </p>
-            <Link href="/start" className="btn-primary mt-6 inline-flex !text-sm">
-              Continuer vers un pacte
+            <Link href="/selection" className="btn-primary mt-6 inline-flex !text-sm">
+              Faire la sélection empathique
             </Link>
           </Reveal>
         </div>
@@ -147,8 +127,8 @@ export default function HomePage() {
             </h2>
             <p className="mt-3 text-sm leading-relaxed max-w-[48ch]" style={{ color: 'var(--muted)' }}>
               Parfois on se sent à l’écart non pas parce qu’on n’aime personne,
-              mais parce qu’on n’a personne de disponible *là, tout de suite*.
-              Ce n’est pas un échec. C’est un moment.
+              mais parce qu’on n’a personne de disponible là, tout de suite. Ce
+              n’est pas un échec. C’est un moment.
             </p>
           </Reveal>
           <div className="mt-7 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -283,13 +263,14 @@ export default function HomePage() {
               Pas envie de parler, ou personne autour pour te soutenir ? Ce pacte
               peut t’offrir une présence discrète — le temps qu’il faut.
             </h2>
-            <p className="mt-4 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-              Tu n’as pas besoin de tout expliquer, ni de “travailler sur toi”.
-              Juste, si tu en as besoin, quelqu’un peut rester un peu avec toi.
-            </p>
-            <Link href="/start" className="btn-primary mt-10 inline-flex text-base">
-              Commencer un pacte de présence
-            </Link>
+            <div className="mt-10 flex flex-wrap justify-center gap-3">
+              <Link href="/start" className="btn-primary">
+                Commencer un pacte de présence
+              </Link>
+              <Link href="/selection" className="btn-ghost">
+                Comment tu te sens ?
+              </Link>
+            </div>
             <p className="mt-4 text-xs" style={{ color: 'var(--muted)' }}>
               Gratuit · anonyme · 2 minutes pour commencer
             </p>
