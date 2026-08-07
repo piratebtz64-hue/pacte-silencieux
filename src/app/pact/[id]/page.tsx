@@ -4,6 +4,7 @@ import { useEffect, useState, use, useMemo } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import ExtendPrompt from '@/components/ExtendPrompt';
 import {
   CATEGORY_LABELS,
   TONE_LABELS,
@@ -92,7 +93,11 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
       setPact(await pactRes.json());
       if (msgRes.ok) {
         const msgData = await msgRes.json();
-        setMessages(msgData.messages || []);
+        setMessages(
+          (msgData.messages || []).filter(
+            (m: SupportMsg) => !m.openingId.startsWith('system:extend:yes') && !m.openingId.startsWith('system:extend:no')
+          )
+        );
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
@@ -118,7 +123,8 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
       m.receiverUserId === uid &&
       !m.responseText &&
       m.senderUserId !== uid &&
-      !m.openingId.startsWith('gesture:')
+      !m.openingId.startsWith('gesture:') &&
+      !m.openingId.startsWith('system:')
   ).length;
 
   const filteredOpenings = useMemo(
@@ -253,6 +259,14 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
     );
   }
 
+  const visibleMessages = messages.filter(
+    (m) =>
+      m.openingId === 'system:extend:done' ||
+      m.openingId === 'system:extend:ended' ||
+      (!m.openingId.startsWith('system:extend:yes') &&
+        !m.openingId.startsWith('system:extend:no'))
+  );
+
   return (
     <main className="min-h-screen flex flex-col">
       <Header />
@@ -264,18 +278,26 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
               <h1 className="text-2xl font-serif">Votre pacte</h1>
               <p className="text-sm text-[#a49f96] mt-1">
                 {pact.durationDays} jour{pact.durationDays > 1 ? 's' : ''}
-                {pact.status === 'ACTIVE' ? ' · actif' : ' · en attente'}
-                {messages.length > 0 ? ` · ${messages.length} échange${messages.length > 1 ? 's' : ''}` : ''}
+                {pact.status === 'ACTIVE' ? ' · actif' : pact.status === 'ENDED' ? ' · terminé' : ' · en attente'}
+                {visibleMessages.length > 0
+                  ? ` · ${visibleMessages.length} échange${visibleMessages.length > 1 ? 's' : ''}`
+                  : ''}
               </p>
             </div>
             <span
               className={`px-3 py-1 rounded-full text-xs font-bold ${
                 pact.status === 'ACTIVE'
                   ? 'bg-[#1f6b67]/15 text-[#1f6b67]'
-                  : 'bg-amber-100 text-amber-800'
+                  : pact.status === 'ENDED'
+                    ? 'bg-black/10 text-[#706b63]'
+                    : 'bg-amber-100 text-amber-800'
               }`}
             >
-              {pact.status === 'ACTIVE' ? 'Actif' : 'En attente'}
+              {pact.status === 'ACTIVE'
+                ? 'Actif'
+                : pact.status === 'ENDED'
+                  ? 'Terminé'
+                  : 'En attente'}
             </span>
           </div>
 
@@ -283,6 +305,16 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
             <div className="mt-4 p-3 rounded-lg bg-[#f2eee5] dark:bg-white/5 text-sm text-center">
               {statusMsg}
             </div>
+          )}
+
+          {/* Prolongation fin de cycle */}
+          {uid && (pact.status === 'ACTIVE' || pact.status === 'ENDED') && (
+            <ExtendPrompt
+              pactId={pact.id || id}
+              userId={uid}
+              endsAt={pact.endsAt}
+              onResolved={() => load()}
+            />
           )}
 
           {pact.status === 'ACTIVE' && (
@@ -320,33 +352,41 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                       {pendingForMe > 1 ? 's' : ''} en attente de ta réponse
                     </div>
                   )}
-                  {messages.length === 0 && (
+                  {visibleMessages.length === 0 && (
                     <p className="text-sm text-[#a49f96] text-center py-10">
                       Aucun message. Va dans <strong>Soutien</strong> ou{' '}
                       <strong>Geste</strong>.
                     </p>
                   )}
-                  {messages.map((m) => {
+                  {visibleMessages.map((m) => {
                     const isMine = uid ? m.senderUserId === uid : false;
                     const isGesture = m.openingId.startsWith('gesture:');
+                    const isSystem = m.openingId.startsWith('system:');
                     const needsResponse =
                       !!uid &&
                       !isMine &&
                       !m.responseText &&
                       m.receiverUserId === uid &&
-                      !isGesture;
+                      !isGesture &&
+                      !isSystem;
                     const opening = getMessageById(m.openingId);
                     return (
                       <div key={m.id} className="space-y-2">
                         <div
                           className={`p-4 rounded-2xl border ${
-                            isMine
-                              ? 'bg-[#1f6b67]/10 border-[#1f6b67]/20 ml-6'
-                              : 'bg-[#f2eee5] dark:bg-white/5 border-black/5 mr-6'
+                            isSystem
+                              ? 'bg-[#1f6b67]/5 border-[#1f6b67]/20'
+                              : isMine
+                                ? 'bg-[#1f6b67]/10 border-[#1f6b67]/20 ml-6'
+                                : 'bg-[#f2eee5] dark:bg-white/5 border-black/5 mr-6'
                           }`}
                         >
                           <p className="text-xs text-[#a49f96] mb-1">
-                            {isMine ? 'Toi' : 'L’autre'}
+                            {isSystem
+                              ? 'Système'
+                              : isMine
+                                ? 'Toi'
+                                : 'L’autre'}
                             {isGesture ? ' · geste' : ''} ·{' '}
                             {new Date(m.createdAt).toLocaleString('fr-FR', {
                               day: 'numeric',
@@ -397,7 +437,8 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
               {tab === 'geste' && (
                 <div className="mt-6">
                   <p className="text-sm text-[#706b63] mb-3">
-                    Un signe simple, sans explication. <strong>{GESTURES.length} gestes</strong>.
+                    Un signe simple, sans explication.{' '}
+                    <strong>{GESTURES.length} gestes</strong>.
                   </p>
                   <div className="flex flex-wrap gap-2 mb-4">
                     <button
