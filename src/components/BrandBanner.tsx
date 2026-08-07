@@ -1,67 +1,67 @@
-/** Bannière de marque — lumière, silence, logo chut */
+import { ShushIcon } from './Logo';
+
+/** Bannière de marque inspirée de l’image officielle */
 export default function BrandBanner() {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-black/10 dark:border-white/10"
+      className="relative overflow-hidden rounded-2xl"
       style={{
         background:
-          'radial-gradient(ellipse 80% 60% at 50% 0%, #3d4a3f 0%, #1a1f1c 45%, #0d0f0e 100%)',
+          'radial-gradient(ellipse 90% 70% at 50% -5%, #4a5548 0%, #2a322c 35%, #141816 70%, #0a0c0b 100%)',
+        minHeight: '280px',
       }}
     >
-      {/* Rayons de lumière */}
+      {/* Gros faisceau central */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-70"
+        className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'conic-gradient(from 200deg at 50% -10%, transparent 0deg, rgba(245,230,200,0.15) 20deg, transparent 40deg, transparent 140deg, rgba(245,230,200,0.12) 160deg, transparent 180deg)',
+            'linear-gradient(180deg, rgba(255,236,200,0.22) 0%, rgba(255,236,200,0.08) 28%, transparent 58%)',
         }}
       />
+      {/* Rayons latéraux */}
       <div
-        className="pointer-events-none absolute left-1/2 top-0 h-full w-[2px] -translate-x-1/2 opacity-40"
+        className="pointer-events-none absolute left-1/2 top-0 h-[85%] w-[70%] -translate-x-1/2 opacity-60"
         style={{
           background:
-            'linear-gradient(to bottom, rgba(255,240,210,0.5), transparent 70%)',
+            'conic-gradient(from 195deg at 50% 0%, transparent 0deg, rgba(255,240,210,0.18) 12deg, transparent 28deg, transparent 152deg, rgba(255,240,210,0.14) 168deg, transparent 185deg)',
+        }}
+      />
+      {/* Ligne de lumière verticale douce */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-0 h-full w-px -translate-x-1/2 opacity-30"
+        style={{
+          background:
+            'linear-gradient(to bottom, rgba(255,245,220,0.7), transparent 65%)',
         }}
       />
 
-      <div className="relative px-6 py-14 md:py-16 text-center text-[#f5f0e8]">
-        <h2 className="font-serif text-3xl md:text-4xl tracking-wide">
+      <div className="relative flex flex-col items-center justify-center px-6 py-16 text-center text-[#f7f2ea]">
+        <h2
+          className="font-serif text-3xl md:text-4xl tracking-wide"
+          style={{ textShadow: '0 2px 24px rgba(0,0,0,0.35)' }}
+        >
           Le Pacte Silencieux
         </h2>
 
         {/* Logo chut */}
-        <div className="mt-6 mb-6 flex justify-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#f5f0e8]/50 text-[#f5f0e8]">
-            <svg
-              viewBox="0 0 64 64"
-              className="h-8 w-8"
-              fill="currentColor"
-              aria-hidden
-            >
-              <path d="M28 16c0-2.2 1.8-4 4-4s4 1.8 4 4v15.2c1.9 1.1 3.2 3.1 3.2 5.5 0 3.5-2.8 6.3-6.3 6.3s-6.3-2.8-6.3-6.3c0-2.4 1.3-4.4 3.2-5.5V16z" />
-              <path
-                d="M24 40c1.2 3.5 4.2 6 7.9 6s6.7-2.5 7.9-6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                opacity="0.55"
-              />
-            </svg>
+        <div className="mt-7 mb-7 flex justify-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-[#f7f2ea]/45 text-[#f7f2ea] bg-black/20 backdrop-blur-sm">
+            <ShushIcon className="h-9 w-9" />
           </div>
         </div>
 
-        <p className="text-sm md:text-base text-[#f5f0e8]/85 tracking-wide">
+        <p className="text-sm md:text-[15px] text-[#f7f2ea]/80 tracking-wide max-w-[22ch]">
           Un espace d’entraide sociale discrète
         </p>
       </div>
 
       {/* Brume bas */}
       <div
-        className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 opacity-50"
+        className="pointer-events-none absolute bottom-0 left-0 right-0 h-20"
         style={{
           background:
-            'linear-gradient(to top, rgba(245,240,232,0.12), transparent)',
+            'linear-gradient(to top, rgba(247,242,234,0.12), transparent)',
         }}
       />
     </div>
