@@ -7,6 +7,8 @@ import Footer from '@/components/Footer';
 import ExtendPrompt from '@/components/ExtendPrompt';
 import CrisisPanel from '@/components/CrisisPanel';
 import SoundToggle from '@/components/SoundToggle';
+import SessionRecover from '@/components/SessionRecover';
+import { readSession, writeSession } from '@/lib/session';
 import {
   CATEGORY_LABELS,
   TONE_LABELS,
@@ -68,7 +70,8 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   const prevMsgCount = useRef(0);
 
   useEffect(() => {
-    setUid(localStorage.getItem('pacte_userId') || '');
+    const s = readSession();
+    setUid(s.userId || localStorage.getItem('pacte_userId') || '');
     try {
       const raw = localStorage.getItem(FAV_KEY);
       if (raw) setFavorites(JSON.parse(raw));
@@ -76,6 +79,10 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
       /* ignore */
     }
   }, []);
+
+  useEffect(() => {
+    if (id) writeSession({ pactId: id });
+  }, [id]);
 
   const toggleFavorite = (msgId: string) => {
     setFavorites((prev) => {
@@ -204,7 +211,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   const sendOpening = async (opening: SupportOpening) => {
     const senderUserId = uid || localStorage.getItem('pacte_userId') || '';
     if (!pact || !senderUserId) {
-      setStatusMsg('Session incomplète. Repars depuis /start avec le même email.');
+      setStatusMsg('Session incomplète — utilise le formulaire ci-dessus avec le même email.');
       return;
     }
     setSending(true);
@@ -348,8 +355,8 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
             }}
           >
             <strong style={{ color: 'var(--accent)' }}>Reconnexion :</strong>{' '}
-            avec le même email sur /start, tu reprends ce pacte et tout le Fil
-            (historique conservé pendant toute la durée).
+            avec le même email sur /start, ou via le formulaire ci-dessous si la
+            session a été perdue.
           </div>
 
           {statusMsg && (
@@ -359,6 +366,13 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
             >
               {statusMsg}
             </div>
+          )}
+
+          {!uid && pact.status === 'ACTIVE' && (
+            <SessionRecover
+              pactId={pact.id || id}
+              onRecovered={(userId) => setUid(userId)}
+            />
           )}
 
           {uid && (pact.status === 'ACTIVE' || pact.status === 'ENDED') && (
@@ -385,6 +399,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                   ] as const
                 ).map(([key, label]) => (
                   <button
+                    type="button"
                     key={key}
                     onClick={() => setTab(key)}
                     className="relative px-3.5 py-2 text-sm font-bold rounded-t-lg transition shrink-0"
@@ -514,6 +529,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                             <div className="space-y-2">
                               {opening.responses.map((r) => (
                                 <button
+                                  type="button"
                                   key={r}
                                   disabled={sending}
                                   onClick={() => sendResponse(m.id, r)}
@@ -684,6 +700,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                       ] as const
                     ).map(([key, label]) => (
                       <button
+                        type="button"
                         key={key}
                         onClick={() => setTone(key)}
                         className="px-3 py-1 rounded-full text-xs font-bold"
@@ -700,6 +717,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
                   <div className="flex flex-wrap gap-2 mb-5">
                     <button
+                      type="button"
                       onClick={() => setSelectedCategory('all')}
                       className="px-3 py-1 rounded-full text-xs font-bold"
                       style={{
@@ -714,6 +732,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                       Tous
                     </button>
                     <button
+                      type="button"
                       onClick={() => setSelectedCategory('fav')}
                       className="px-3 py-1 rounded-full text-xs font-bold"
                       style={{
@@ -729,6 +748,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                     </button>
                     {categoriesForIntent.map((cat) => (
                       <button
+                        type="button"
                         key={cat}
                         onClick={() => setSelectedCategory(cat)}
                         className="px-3 py-1 rounded-full text-xs font-bold"
