@@ -1,3 +1,3 @@
 pacte-silencieux production
 2026-08-08
-features: design-pact-sensible, ouverture, fil-aere, suggestions-moment, cloture, gestures-expanded, messages-part0-16, crisis-panel, sounds, intensity, brand-banner
+features: sessions-pro, home-banner, pwa, install-hint, waiting-honest, design-pact-sensible, gestes-ouverture, crisis-panel, messages-part0-16

@@ -1,5 +1,7 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
+import PwaRegister from '@/components/PwaRegister';
+import InstallHint from '@/components/InstallHint';
 
 const siteUrl =
   process.env.NEXT_PUBLIC_APP_URL || 'https://pacte-silencieux.vercel.app';
@@ -21,6 +23,13 @@ export const metadata: Metadata = {
     'sans chat',
     'solitude',
   ],
+  applicationName: 'Le Pacte silencieux',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Pacte silencieux',
+  },
+  formatDetection: { telephone: true },
   openGraph: {
     type: 'website',
     locale: 'fr_FR',
@@ -56,7 +65,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen antialiased">
+        {children}
+        <PwaRegister />
+        <InstallHint />
+      </body>
     </html>
   );
 }
