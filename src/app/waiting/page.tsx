@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { readSession, writeSession } from '@/lib/session';
 
 function WaitingContent() {
   const router = useRouter();
@@ -16,17 +17,18 @@ function WaitingContent() {
   const [hint, setHint] = useState<string | null>(null);
 
   useEffect(() => {
-    setEmail(localStorage.getItem('pacte_email'));
-    setDuration(localStorage.getItem('pacte_duration'));
-    setPactId(localStorage.getItem('pacte_pactId'));
+    const s = readSession();
+    setEmail(s.email || null);
+    setDuration(s.duration || null);
+    setPactId(s.pactId || null);
 
     let seconds = 0;
     const timer = setInterval(() => {
       seconds++;
       const m = Math.floor(seconds / 60);
-      const s = seconds % 60;
+      const s2 = seconds % 60;
       setWaitingTime(
-        `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+        `${String(m).padStart(2, '0')}:${String(s2).padStart(2, '0')}`
       );
     }, 1000);
 
@@ -50,7 +52,7 @@ function WaitingContent() {
 
         if (data.matched && data.pactId) {
           setStatus('Présence trouvée. Ouverture…');
-          localStorage.setItem('pacte_pactId', data.pactId);
+          writeSession({ pactId: data.pactId });
           router.push(`/pact/${data.pactId}`);
           return;
         }
@@ -98,9 +100,7 @@ function WaitingContent() {
             <p className="mt-3 text-sm text-[#706b63] dark:text-[#a49f96]">
               {status}
             </p>
-            {hint && (
-              <p className="mt-2 text-xs text-[#a49f96]">{hint}</p>
-            )}
+            {hint && <p className="mt-2 text-xs text-[#a49f96]">{hint}</p>}
           </div>
 
           {!pactId && (
