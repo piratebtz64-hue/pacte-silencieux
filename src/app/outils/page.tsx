@@ -8,14 +8,17 @@ import Footer from '@/components/Footer';
 import BreathExercise from '@/components/BreathExercise';
 import Grounding54321 from '@/components/Grounding54321';
 import MindfulnessMini from '@/components/MindfulnessMini';
+import SoundToggle from '@/components/SoundToggle';
+import { setSoundMode } from '@/lib/sounds';
 
-type Tool = 'coherence' | 'breath' | 'ground' | 'mind';
+type Tool = 'coherence' | 'breath' | 'ground' | 'mind' | 'sleep';
 
-const TOOLS: { id: Tool; title: string; desc: string }[] = [
+const TOOLS: { id: Tool; title: string; desc: string; featured?: boolean }[] = [
   {
     id: 'coherence',
     title: 'Cohérence cardiaque',
     desc: '5/5 · environ 5 minutes · cercle guidé',
+    featured: true,
   },
   {
     id: 'breath',
@@ -32,6 +35,11 @@ const TOOLS: { id: Tool; title: string; desc: string }[] = [
     title: 'Pleine conscience',
     desc: 'Mini-pratiques courtes, sans performance',
   },
+  {
+    id: 'sleep',
+    title: 'S’endormir',
+    desc: 'Ambiance douce + respiration lente 4/6',
+  },
 ];
 
 function resolveTool(raw: string): Tool | null {
@@ -47,6 +55,13 @@ function resolveTool(raw: string): Tool | null {
   if (key === 'ground' || key === 'ancrage' || key === '54321') return 'ground';
   if (key === 'mind' || key === 'conscience' || key === 'mindfulness')
     return 'mind';
+  if (
+    key === 'sleep' ||
+    key === 'endormir' ||
+    key === 'sommeil' ||
+    key === 'nuit'
+  )
+    return 'sleep';
   return null;
 }
 
@@ -60,12 +75,19 @@ function OutilsContent() {
       typeof window !== 'undefined'
         ? window.location.hash.replace('#', '')
         : '';
-    setTool(resolveTool(q || hash));
+    const resolved = resolveTool(q || hash);
+    setTool(resolved);
+    if (resolved === 'sleep') {
+      setSoundMode('sleep').catch(() => {});
+    }
   }, [search]);
 
-  const open = (id: Tool) => {
+  const open = async (id: Tool) => {
     setTool(id);
     window.history.replaceState(null, '', `/outils?outil=${id}`);
+    if (id === 'sleep') {
+      await setSoundMode('sleep');
+    }
   };
 
   return (
@@ -73,16 +95,24 @@ function OutilsContent() {
       <Header />
       <section className="flex-1 py-12 md:py-16">
         <div className="max-w-lg mx-auto px-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p
+                className="text-xs font-bold uppercase tracking-[0.14em]"
+                style={{ color: 'var(--accent)' }}
+              >
+                Outils de stabilisation
+              </p>
+              <h1 className="mt-3 font-serif text-3xl tracking-tight">
+                Respiration et ancrage
+              </h1>
+            </div>
+            <SoundToggle />
+          </div>
           <p
-            className="text-xs font-bold uppercase tracking-[0.14em]"
-            style={{ color: 'var(--accent)' }}
+            className="mt-3 text-sm leading-relaxed"
+            style={{ color: 'var(--muted)' }}
           >
-            Outils de stabilisation
-          </p>
-          <h1 className="mt-3 font-serif text-3xl tracking-tight">
-            Respiration et ancrage
-          </h1>
-          <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
             Accessibles sans pacte. Ce ne sont pas des soins médicaux. En
             détresse aiguë : 3114 · 15 · 112.
           </p>
@@ -96,20 +126,18 @@ function OutilsContent() {
                   onClick={() => open(t.id)}
                   className="w-full text-left p-4 rounded-2xl border"
                   style={{
-                    borderColor:
-                      t.id === 'coherence'
-                        ? 'color-mix(in srgb, var(--accent) 45%, transparent)'
-                        : 'var(--border)',
-                    background:
-                      t.id === 'coherence'
-                        ? 'var(--accent-soft)'
-                        : 'var(--card-solid)',
+                    borderColor: t.featured
+                      ? 'color-mix(in srgb, var(--accent) 45%, transparent)'
+                      : 'var(--border)',
+                    background: t.featured
+                      ? 'var(--accent-soft)'
+                      : 'var(--card-solid)',
                   }}
                 >
                   <span
                     className="font-semibold text-sm"
                     style={{
-                      color: t.id === 'coherence' ? 'var(--accent)' : undefined,
+                      color: t.featured ? 'var(--accent)' : undefined,
                     }}
                   >
                     {t.title}
@@ -127,17 +155,30 @@ function OutilsContent() {
 
           {tool && (
             <div className="mt-6">
-              <button
-                type="button"
-                onClick={() => {
-                  setTool(null);
-                  window.history.replaceState(null, '', '/outils');
-                }}
-                className="text-xs font-semibold mb-4"
-                style={{ color: 'var(--accent)' }}
-              >
-                ← Tous les outils
-              </button>
+              <div className="flex items-center justify-between gap-2 mb-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTool(null);
+                    window.history.replaceState(null, '', '/outils');
+                  }}
+                  className="text-xs font-semibold"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  ← Tous les outils
+                </button>
+                <SoundToggle />
+              </div>
+
+              {tool === 'sleep' && (
+                <p
+                  className="mb-4 text-xs leading-relaxed"
+                  style={{ color: 'var(--muted)' }}
+                >
+                  Ambiance « S’endormir » activée (tu peux la changer avec le
+                  bouton son). Respiration lente optionnelle ci-dessous.
+                </p>
+              )}
 
               {tool === 'coherence' && (
                 <BreathExercise
@@ -151,6 +192,13 @@ function OutilsContent() {
                   initialProtocolId="exhale46"
                   showPicker
                   showHeartRate
+                />
+              )}
+              {tool === 'sleep' && (
+                <BreathExercise
+                  initialProtocolId="exhale46"
+                  showPicker={false}
+                  showHeartRate={false}
                 />
               )}
               {tool === 'ground' && <Grounding54321 />}
