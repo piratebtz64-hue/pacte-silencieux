@@ -11,7 +11,6 @@ import {
   clearSession,
 } from '@/lib/session';
 
-/** Polling rapide au début, puis un peu plus large pour économiser */
 function nextPollMs(attempt: number) {
   if (attempt < 8) return 1200;
   if (attempt < 20) return 2000;
@@ -22,14 +21,14 @@ function WaitingContent() {
   const [email, setEmail] = useState<string | null>(null);
   const [duration, setDuration] = useState<string | null>(null);
   const [waitingTime, setWaitingTime] = useState('00:00');
-  const [status, setStatus] = useState('Recherche d une presence…');
+  const [status, setStatus] = useState('Recherche d’une présence…');
   const [pactId, setPactId] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
   const [alone, setAlone] = useState(true);
   const [leaving, setLeaving] = useState(false);
   const [offline, setOffline] = useState(false);
   const [honest, setHonest] = useState(
-    'Rien ne se passe tant qu une autre personne n a pas choisi la meme duree et ouvert l attente.'
+    'Rien ne se passe tant qu’une autre personne n’a pas choisi la même durée et ouvert l’attente.'
   );
 
   const attemptRef = useRef(0);
@@ -86,31 +85,30 @@ function WaitingContent() {
       );
       if (seconds === 45) {
         setHonest(
-          'Toujours seul(e) : c est normal s il n y a personne d autre connecte en meme temps.'
+          'Toujours seul(e) : c’est normal s’il n’y a personne d’autre connecté en même temps.'
         );
       }
       if (seconds === 150) {
         setHonest(
-          'Tu peux laisser cette page ouverte, ou revenir plus tard avec le meme email et la meme duree.'
+          'Tu peux laisser cette page ouverte, ou revenir plus tard avec le même email et la même durée.'
         );
       }
       if (seconds === 300) {
         setHonest(
-          'Cinq minutes : tu peux annuler et reessayer plus tard, ou tester une autre duree si vous etes deux.'
+          'Cinq minutes : tu peux annuler et réessayer plus tard, ou tester une autre durée si vous êtes deux.'
         );
       }
     }, 1000);
 
     const onOffline = () => {
       setOffline(true);
-      setStatus('Connexion perdue. Nouvelle tentative des que le reseau revient…');
+      setStatus('Connexion perdue. Nouvelle tentative dès que le réseau revient…');
     };
     const onOnline = () => {
       setOffline(false);
-      setStatus('Reseau de retour. Recherche en cours…');
+      setStatus('Réseau de retour. Recherche en cours…');
     };
 
-    // Fermeture onglet / navigation = deconnexion attendue → sortir de la file
     const onPageHide = () => signalDisconnect(pactIdRef.current);
     const onBeforeUnload = () => signalDisconnect(pactIdRef.current);
 
@@ -140,6 +138,11 @@ function WaitingContent() {
     attemptRef.current = 0;
     leftRef.current = false;
 
+    const schedule = () => {
+      if (cancelled || leftRef.current) return;
+      timer = setTimeout(tryMatch, nextPollMs(attemptRef.current));
+    };
+
     const tryMatch = async () => {
       if (cancelled || leftRef.current) return;
       if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -158,10 +161,9 @@ function WaitingContent() {
         if (cancelled || leftRef.current) return;
 
         if (data.matched && data.pactId) {
-          setStatus('Presence trouvee. Ouverture…');
+          setStatus('Présence trouvée. Ouverture…');
           setAlone(false);
           writeSession({ pactId: data.pactId, status: 'ACTIVE' });
-          // Ne pas signaler disconnect : on part vers le pacte
           leftRef.current = true;
           window.location.assign(`/pact/${data.pactId}`);
           return;
@@ -171,28 +173,21 @@ function WaitingContent() {
         setStatus(
           data.message ||
             (data.alone !== false
-              ? 'Tu es seul(e) dans la file pour l instant.'
+              ? 'Tu es seul(e) dans la file pour l’instant.'
               : 'Toujours en attente…')
         );
         writeSession({ status: 'WAITING' });
         if (data.debug) {
           setHint(
-            `Duree : ${data.debug.myDuration} j · Dans la file : ${data.debug.totalWaiting} · Meme duree : ${data.debug.sameDurationOthers ?? 0}`
+            `Durée : ${data.debug.myDuration} j · Dans la file : ${data.debug.totalWaiting} · Même durée : ${data.debug.sameDurationOthers ?? 0}`
           );
         }
       } catch {
-        if (!cancelled) {
-          setStatus('Connexion en cours…');
-        }
+        if (!cancelled) setStatus('Connexion en cours…');
       }
 
       attemptRef.current += 1;
       schedule();
-    };
-
-    const schedule = () => {
-      if (cancelled || leftRef.current) return;
-      timer = setTimeout(tryMatch, nextPollMs(attemptRef.current));
     };
 
     tryMatch();
@@ -238,8 +233,8 @@ function WaitingContent() {
             {duration
               ? ` de ${duration} jour${Number(duration) > 1 ? 's' : ''}`
               : ''}
-            . Le lien se cree seulement quand une autre personne est en file avec
-            la meme duree.
+            . Le lien se crée seulement quand une autre personne est en file avec
+            la même durée.
           </p>
 
           {offline && (
@@ -264,7 +259,7 @@ function WaitingContent() {
               className="text-xs tracking-wide mb-2"
               style={{ color: 'var(--muted)' }}
             >
-              Temps d attente
+              Temps d’attente
             </div>
             <div
               className="text-4xl font-serif tabular-nums"
@@ -319,9 +314,9 @@ function WaitingContent() {
             <p className="font-semibold" style={{ color: 'var(--accent)' }}>
               Pour que le lien se fasse
             </p>
-            <p>- Deux appareils (ou deux emails differents)</p>
-            <p>- La meme duree : 1, 3 ou 7 jours</p>
-            <p>- Les deux restent sur cette page d attente</p>
+            <p>- Deux appareils (ou deux emails différents)</p>
+            <p>- La même durée : 1, 3 ou 7 jours</p>
+            <p>- Les deux restent sur cette page d’attente</p>
           </div>
 
           {email && (
@@ -339,7 +334,7 @@ function WaitingContent() {
                 onClick={leaveQueue}
                 className="btn-ghost !text-sm"
               >
-                {leaving ? 'Sortie…' : 'Annuler l attente'}
+                {leaving ? 'Sortie…' : 'Annuler l’attente'}
               </button>
             )}
             <Link href="/" className="text-sm" style={{ color: 'var(--muted)' }}>
