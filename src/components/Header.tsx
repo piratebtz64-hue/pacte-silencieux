@@ -5,53 +5,21 @@ import Link from 'next/link';
 import ThemeToggle from './ThemeToggle';
 import Logo from './Logo';
 import ShareButton from './ShareButton';
-import { readSession, writeSession } from '@/lib/session';
+import { hasSessionHint, resolveAndSyncSession } from '@/lib/session';
 
 export default function Header({ showCta = true }: { showCta?: boolean }) {
   const [hasSession, setHasSession] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const s = readSession();
-    if (s.email || s.pactId || s.userId) setHasSession(true);
+    setHasSession(hasSessionHint());
   }, []);
 
   const openMyPact = async () => {
-    const s = readSession();
-    if (!s.email) {
-      window.location.assign('/start');
-      return;
-    }
     setBusy(true);
-    try {
-      const res = await fetch('/api/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: s.email,
-          durationDays: Number(s.duration) || 3,
-          forceNew: false,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok && data.pactId) {
-        writeSession({
-          userId: data.userId || s.userId,
-          pactId: data.pactId,
-        });
-        if (data.status === 'ACTIVE') {
-          window.location.assign(`/pact/${data.pactId}`);
-          return;
-        }
-        window.location.assign('/waiting');
-        return;
-      }
-      window.location.assign('/start');
-    } catch {
-      window.location.assign('/start');
-    } finally {
-      setBusy(false);
-    }
+    const result = await resolveAndSyncSession();
+    setBusy(false);
+    window.location.assign(result.continueUrl || '/start');
   };
 
   return (

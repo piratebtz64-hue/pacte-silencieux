@@ -5,8 +5,9 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BrandBanner from '@/components/BrandBanner';
 import Reveal from '@/components/Reveal';
+import HomeSessionBanner from '@/components/HomeSessionBanner';
 
-/** Ordre volontaire : écoute / accompagnement d’abord, urgence vitale ensuite, prévention suicide en bas */
+/** Ordre : écoute d’abord, urgence vitale, prévention suicide en bas */
 const HELPLINES: [string, string][] = [
   ['09 72 39 40 50', 'SOS Amitié — écoute et soutien'],
   ['0 800 858 858', 'Croix-Rouge Écoute'],
@@ -28,6 +29,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen flex flex-col">
       <Header />
+      <HomeSessionBanner />
       <BrandBanner />
 
       <section className="relative py-12 md:py-20">
@@ -42,9 +44,13 @@ export default function HomePage() {
               className="mt-5 text-base sm:text-lg leading-relaxed max-w-[42ch]"
               style={{ color: 'var(--muted)' }}
             >
-              Une <strong style={{ color: 'var(--foreground)' }}>présence anonyme entre pairs</strong>
-              {' '}— gestes et messages déjà écrits, sans chat libre, sans profil.
-              Ce n’est <strong style={{ color: 'var(--foreground)' }}>pas</strong> une
+              Une{' '}
+              <strong style={{ color: 'var(--foreground)' }}>
+                présence anonyme entre pairs
+              </strong>{' '}
+              — gestes et messages déjà écrits, sans chat libre, sans profil. Ce
+              n’est{' '}
+              <strong style={{ color: 'var(--foreground)' }}>pas</strong> une
               assistante sociale, ni un psy, ni un service d’urgence.
             </p>
             <div className="mt-8 flex flex-wrap gap-3 items-center">
@@ -138,7 +144,10 @@ export default function HomePage() {
             <Reveal key={item.t} delay={i * 40}>
               <article className="card-premium p-5 h-full">
                 <h2 className="text-base font-semibold tracking-tight">{item.t}</h2>
-                <p className="mt-1.5 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+                <p
+                  className="mt-1.5 text-sm leading-relaxed"
+                  style={{ color: 'var(--muted)' }}
+                >
                   {item.d}
                 </p>
               </article>
@@ -147,7 +156,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="comment" className="py-14 md:py-18 border-t" style={{ borderColor: 'var(--border)' }}>
+      <section
+        id="comment"
+        className="py-14 md:py-18 border-t"
+        style={{ borderColor: 'var(--border)' }}
+      >
         <div className="max-w-6xl mx-auto px-4">
           <Reveal>
             <h2 className="font-serif text-2xl md:text-3xl tracking-tight">
@@ -174,7 +187,10 @@ export default function HomePage() {
                   </span>
                   <div>
                     <h3 className="font-semibold text-sm">{s.t}</h3>
-                    <p className="text-sm leading-snug mt-0.5" style={{ color: 'var(--muted)' }}>
+                    <p
+                      className="text-sm leading-snug mt-0.5"
+                      style={{ color: 'var(--muted)' }}
+                    >
                       {s.d}
                     </p>
                   </div>
