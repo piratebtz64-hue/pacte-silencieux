@@ -10,11 +10,14 @@ import {
   resolveAndSyncSession,
   clearSession,
 } from '@/lib/session';
+import { subscribePactMatch } from '@/lib/realtime';
 
-function nextPollMs(attempt: number) {
-  if (attempt < 8) return 1200;
-  if (attempt < 20) return 2000;
-  return 3000;
+/** Polling de secours (Realtime d’abord). */
+function nextPollMs(attempt: number, realtimeOk: boolean) {
+  if (realtimeOk) return attempt < 5 ? 4000 : 8000;
+  if (attempt < 10) return 1200;
+  if (attempt < 25) return 2000;
+  return 4000;
 }
 
 function WaitingContent() {
@@ -27,6 +30,7 @@ function WaitingContent() {
   const [alone, setAlone] = useState(true);
   const [leaving, setLeaving] = useState(false);
   const [offline, setOffline] = useState(false);
+  const [live, setLive] = useState(false);
   const [honest, setHonest] = useState(
     'Rien ne se passe tant qu’une autre personne n’a pas choisi la même durée et ouvert l’attente.'
   );
@@ -34,6 +38,16 @@ function WaitingContent() {
   const attemptRef = useRef(0);
   const leftRef = useRef(false);
   const pactIdRef = useRef<string | null>(null);
+  const liveRef = useRef(false);
+
+  const goToPact = useCallback((activeId: string) => {
+    if (leftRef.current) return;
+    leftRef.current = true;
+    setStatus('Présence trouvée. Ouverture…');
+    setAlone(false);
+    writeSession({ pactId: activeId, status: 'ACTIVE' });
+    window.location.assign(`/pact/${activeId}`);
+  }, []);
 
   const signalDisconnect = useCallback((id: string | null) => {
     if (!id || leftRef.current) return;
@@ -41,12 +55,14 @@ function WaitingContent() {
     const body = JSON.stringify({ pactId: id, action: 'disconnect' });
     try {
       if (navigator.sendBeacon) {
-        const blob = new Blob([body], { type: 'application/json' });
-        navigator.sendBeacon('/api/match', blob);
+        navigator.sendBeacon(
+          '/api/match',
+          new Blob([body], { type: 'application/json' })
+        );
         return;
       }
     } catch {
-      /* fall through */
+      /* ignore */
     }
     fetch('/api/match', {
       method: 'POST',
@@ -68,9 +84,7 @@ function WaitingContent() {
         if (r.pactId) {
           setPactId(r.pactId);
           pactIdRef.current = r.pactId;
-          if (r.status === 'ACTIVE') {
-            window.location.assign(`/pact/${r.pactId}`);
-          }
+          if (r.status === 'ACTIVE') goToPact(r.pactId);
         }
       });
     }
@@ -78,10 +92,8 @@ function WaitingContent() {
     let seconds = 0;
     const timer = setInterval(() => {
       seconds++;
-      const m = Math.floor(seconds / 60);
-      const s2 = seconds % 60;
       setWaitingTime(
-        `${String(m).padStart(2, '0')}:${String(s2).padStart(2, '0')}`
+        `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
       );
       if (seconds === 45) {
         setHonest(
@@ -93,54 +105,73 @@ function WaitingContent() {
           'Tu peux laisser cette page ouverte, ou revenir plus tard avec le même email et la même durée.'
         );
       }
-      if (seconds === 300) {
-        setHonest(
-          'Cinq minutes : tu peux annuler et réessayer plus tard, ou tester une autre durée si vous êtes deux.'
-        );
-      }
     }, 1000);
 
     const onOffline = () => {
       setOffline(true);
-      setStatus('Connexion perdue. Nouvelle tentative dès que le réseau revient…');
+      setStatus('Connexion perdue. Reprise automatique…');
     };
     const onOnline = () => {
       setOffline(false);
       setStatus('Réseau de retour. Recherche en cours…');
     };
-
     const onPageHide = () => signalDisconnect(pactIdRef.current);
-    const onBeforeUnload = () => signalDisconnect(pactIdRef.current);
 
     window.addEventListener('offline', onOffline);
     window.addEventListener('online', onOnline);
     window.addEventListener('pagehide', onPageHide);
-    window.addEventListener('beforeunload', onBeforeUnload);
 
     return () => {
       clearInterval(timer);
       window.removeEventListener('offline', onOffline);
       window.removeEventListener('online', onOnline);
       window.removeEventListener('pagehide', onPageHide);
-      window.removeEventListener('beforeunload', onBeforeUnload);
     };
-  }, [signalDisconnect]);
+  }, [signalDisconnect, goToPact]);
 
   useEffect(() => {
     pactIdRef.current = pactId;
   }, [pactId]);
 
+  // WebSocket Realtime
+  useEffect(() => {
+    if (!pactId) return;
+    setLive(false);
+    liveRef.current = false;
+
+    const unsub = subscribePactMatch(pactId, (activeId) => {
+      goToPact(activeId);
+    });
+
+    // Marquer live après un court délai si le client existe
+    const t = setTimeout(() => {
+      setLive(true);
+      liveRef.current = true;
+      setStatus((s) =>
+        s.startsWith('Présence') ? s : 'Temps réel actif — en écoute…'
+      );
+    }, 600);
+
+    return () => {
+      clearTimeout(t);
+      unsub();
+    };
+  }, [pactId, goToPact]);
+
+  // Polling de secours
   useEffect(() => {
     if (!pactId) return;
 
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout>;
     attemptRef.current = 0;
-    leftRef.current = false;
 
     const schedule = () => {
       if (cancelled || leftRef.current) return;
-      timer = setTimeout(tryMatch, nextPollMs(attemptRef.current));
+      timer = setTimeout(
+        tryMatch,
+        nextPollMs(attemptRef.current, liveRef.current)
+      );
     };
 
     const tryMatch = async () => {
@@ -161,25 +192,23 @@ function WaitingContent() {
         if (cancelled || leftRef.current) return;
 
         if (data.matched && data.pactId) {
-          setStatus('Présence trouvée. Ouverture…');
-          setAlone(false);
-          writeSession({ pactId: data.pactId, status: 'ACTIVE' });
-          leftRef.current = true;
-          window.location.assign(`/pact/${data.pactId}`);
+          goToPact(data.pactId);
           return;
         }
 
         setAlone(data.alone !== false);
-        setStatus(
-          data.message ||
-            (data.alone !== false
-              ? 'Tu es seul(e) dans la file pour l’instant.'
-              : 'Toujours en attente…')
-        );
+        if (!liveRef.current) {
+          setStatus(
+            data.message ||
+              (data.alone !== false
+                ? 'Tu es seul(e) dans la file pour l’instant.'
+                : 'Toujours en attente…')
+          );
+        }
         writeSession({ status: 'WAITING' });
         if (data.debug) {
           setHint(
-            `Durée : ${data.debug.myDuration} j · Dans la file : ${data.debug.totalWaiting} · Même durée : ${data.debug.sameDurationOthers ?? 0}`
+            `Durée : ${data.debug.myDuration} j · File : ${data.debug.totalWaiting} · Même durée : ${data.debug.sameDurationOthers ?? 0}`
           );
         }
       } catch {
@@ -191,12 +220,11 @@ function WaitingContent() {
     };
 
     tryMatch();
-
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [pactId]);
+  }, [pactId, goToPact]);
 
   const leaveQueue = async () => {
     if (!pactId || leaving) return;
@@ -233,32 +261,37 @@ function WaitingContent() {
             {duration
               ? ` de ${duration} jour${Number(duration) > 1 ? 's' : ''}`
               : ''}
-            . Le lien se crée seulement quand une autre personne est en file avec
-            la même durée.
+            . Le lien se crée quand une autre personne est en file avec la même
+            durée.
           </p>
 
-          {offline && (
-            <p
-              className="mt-4 text-xs font-semibold"
-              style={{ color: 'var(--accent)' }}
-            >
-              Hors ligne — la recherche reprendra automatiquement.
-            </p>
-          )}
+          <div className="mt-4 flex flex-wrap justify-center gap-2 text-[11px]">
+            {live && (
+              <span
+                className="px-2.5 py-1 rounded-full font-semibold"
+                style={{
+                  background: 'var(--accent-soft)',
+                  color: 'var(--accent)',
+                }}
+              >
+                Temps réel
+              </span>
+            )}
+            {offline && (
+              <span className="px-2.5 py-1 rounded-full font-semibold" style={{ color: 'var(--muted)' }}>
+                Hors ligne
+              </span>
+            )}
+          </div>
 
           <div
-            className="mt-8 p-6 rounded-2xl border"
+            className="mt-6 p-6 rounded-2xl border"
             style={{
               background: 'var(--card-solid)',
-              borderColor: alone
-                ? 'var(--border)'
-                : 'color-mix(in srgb, var(--accent) 35%, var(--border))',
+              borderColor: 'var(--border)',
             }}
           >
-            <div
-              className="text-xs tracking-wide mb-2"
-              style={{ color: 'var(--muted)' }}
-            >
+            <div className="text-xs tracking-wide mb-2" style={{ color: 'var(--muted)' }}>
               Temps d’attente
             </div>
             <div
