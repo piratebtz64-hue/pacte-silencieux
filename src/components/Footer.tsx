@@ -12,7 +12,9 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-4 py-14">
         <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-10">
           <div className="flex flex-col items-center md:items-start gap-3 max-w-xs text-center md:text-left">
-            <Logo />
+            <Link href="/">
+              <Logo />
+            </Link>
             <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
               Présence anonyme entre pairs. Messages déjà écrits. Aucun chat
               libre.
@@ -22,8 +24,11 @@ export default function Footer() {
             <Link href="/start" className="btn-primary !py-2.5 !px-5 !text-sm">
               Commencer
             </Link>
-            <Link href="/professionnels" className="btn-ghost !py-2.5 !px-5 !text-sm">
-              Professionnels
+            <Link href="/outils" className="btn-ghost !py-2.5 !px-5 !text-sm">
+              Respiration et outils
+            </Link>
+            <Link href="/selection" className="btn-ghost !py-2.5 !px-5 !text-sm">
+              Sélection
             </Link>
             <Link href="/#aide" className="btn-ghost !py-2.5 !px-5 !text-sm">
               Aide
@@ -40,7 +45,10 @@ export default function Footer() {
           style={{ color: 'var(--muted)' }}
         >
           {[
-            ['/professionnels', 'Pour les professionnels'],
+            ['/outils', 'Outils (respiration, ancrage)'],
+            ['/outils?outil=coherence', 'Cohérence cardiaque'],
+            ['/selection', 'Sélection empathique'],
+            ['/don', 'Soutenir le projet'],
             ['/confidentialite', 'Confidentialité'],
             ['/mentions-legales', 'Mentions légales'],
             ['/cgu', 'Conditions d’utilisation'],

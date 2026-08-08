@@ -2,51 +2,70 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import ThemeToggle from './ThemeToggle';
 import Logo from './Logo';
-import ShareButton from './ShareButton';
-import { hasSessionHint, resolveAndSyncSession } from '@/lib/session';
+import ThemeToggle from './ThemeToggle';
+import { hasSessionHint, resolveAndSyncSession, readSession } from '@/lib/session';
 
 export default function Header({ showCta = true }: { showCta?: boolean }) {
   const [hasSession, setHasSession] = useState(false);
-  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setHasSession(hasSessionHint());
   }, []);
 
   const openMyPact = async () => {
-    setBusy(true);
-    const result = await resolveAndSyncSession();
-    setBusy(false);
+    const s = readSession();
+    const result = await resolveAndSyncSession(s.email || undefined);
     window.location.assign(result.continueUrl || '/start');
   };
 
   return (
     <header
-      className="sticky top-0 z-50 border-b"
+      className="sticky top-0 z-40 border-b backdrop-blur-md"
       style={{
         borderColor: 'var(--border)',
-        background: 'color-mix(in srgb, var(--background) 78%, transparent)',
-        backdropFilter: 'blur(16px) saturate(1.2)',
-        WebkitBackdropFilter: 'blur(16px) saturate(1.2)',
+        background: 'color-mix(in srgb, var(--background) 86%, transparent)',
       }}
     >
-      <div className="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between gap-2">
-        <Logo />
-        <div className="flex items-center gap-2 sm:gap-3">
+      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+        <Link href="/" className="shrink-0" aria-label="Accueil">
+          <Logo />
+        </Link>
+
+        <nav className="hidden sm:flex items-center gap-1 text-xs font-medium">
+          <Link
+            href="/outils"
+            className="px-3 py-2 rounded-lg hover:opacity-80"
+            style={{ color: 'var(--muted)' }}
+          >
+            Outils
+          </Link>
+          <Link
+            href="/selection"
+            className="px-3 py-2 rounded-lg hover:opacity-80"
+            style={{ color: 'var(--muted)' }}
+          >
+            Sélection
+          </Link>
+          <Link
+            href="/#aide"
+            className="px-3 py-2 rounded-lg hover:opacity-80"
+            style={{ color: 'var(--muted)' }}
+          >
+            Aide
+          </Link>
+        </nav>
+
+        <div className="flex items-center gap-2">
           {hasSession && (
             <button
               type="button"
               onClick={openMyPact}
-              disabled={busy}
-              className="text-sm font-semibold hidden sm:inline disabled:opacity-50"
-              style={{ color: 'var(--accent)' }}
+              className="btn-ghost !py-2 !px-3 !text-xs"
             >
-              {busy ? '…' : 'Mon pacte'}
+              Mon pacte
             </button>
           )}
-          <ShareButton label="Partager" className="hidden sm:inline-block" />
           {showCta && (
             <Link href="/start" className="btn-primary !py-2 !px-4 !text-sm">
               {hasSession ? 'Reprendre' : 'Commencer'}
