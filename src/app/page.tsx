@@ -6,21 +6,22 @@ import Footer from '@/components/Footer';
 import BrandBanner from '@/components/BrandBanner';
 import Reveal from '@/components/Reveal';
 
+/** Ordre volontaire : écoute / accompagnement d’abord, urgence vitale ensuite, prévention suicide en bas */
 const HELPLINES: [string, string][] = [
-  ['3114', 'Prévention du suicide (24h/24, gratuit)'],
+  ['09 72 39 40 50', 'SOS Amitié — écoute et soutien'],
+  ['0 800 858 858', 'Croix-Rouge Écoute'],
+  ['0 800 23 13 13', 'Fil Santé Jeunes'],
+  ['3919', 'Violences faites aux femmes (24h/24)'],
+  ['119', 'Enfance en danger (24h/24)'],
+  ['3977', 'Maltraitance personnes âgées / handicap'],
+  ['0 800 200 000', 'Drogues Info Service'],
+  ['0 800 39 40 50', 'Alcool Info Service'],
   ['15', 'SAMU — urgence médicale'],
   ['112', 'Urgences (Europe)'],
   ['18', 'Pompiers'],
   ['17', 'Police / gendarmerie'],
-  ['119', 'Enfance en danger (24h/24)'],
-  ['3919', 'Violences faites aux femmes (24h/24)'],
-  ['3977', 'Maltraitance personnes âgées / handicap'],
-  ['0 800 23 13 13', 'Fil Santé Jeunes'],
-  ['0 800 858 858', 'Croix-Rouge Écoute'],
-  ['09 72 39 40 50', 'SOS Amitié (écoute)'],
-  ['0 800 200 000', 'Drogues Info Service'],
-  ['0 800 39 40 50', 'Alcool Info Service'],
-  ['114', 'Urgence sourds et malentendants — SMS, fax ou appli (pas d’appel vocal)'],
+  ['114', 'Urgence sourds et malentendants — SMS, fax ou appli'],
+  ['3114', 'Prévention du suicide (24h/24, gratuit)'],
 ];
 
 export default function HomePage() {
@@ -203,9 +204,10 @@ export default function HomePage() {
             </h2>
             <p className="mt-4 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
               Ce site ne remplace pas une assistante sociale, un psychologue ou
-              un médecin. Urgence immédiate : <strong>15</strong> ou{' '}
-              <strong>112</strong>. Pour les personnes sourdes ou malentendantes
-              : <strong>114</strong> (SMS, fax ou application — pas d’appel vocal).
+              un médecin. Pour une écoute humaine : SOS Amitié ou Croix-Rouge
+              ci-dessous. Urgence médicale : <strong>15</strong> ou{' '}
+              <strong>112</strong>. Personnes sourdes ou malentendantes :{' '}
+              <strong>114</strong> (SMS, fax ou appli).
             </p>
           </Reveal>
 
