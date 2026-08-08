@@ -15,6 +15,7 @@ import {
   getMessageById,
   filterMessages,
   getMessagesByIntent,
+  SUPPORT_MESSAGES,
   type MessageCategory,
   type MessageIntent,
   type MessageTone,
@@ -48,6 +49,34 @@ interface SupportMsg {
   respondedAt: string | null;
 }
 
+function hourSuggestions(): SupportOpening[] {
+  const h = new Date().getHours();
+  const prefer: MessageCategory[] =
+    h >= 22 || h < 6
+      ? ['nuit', 'presence', 'solitude', 'repos', 'micro']
+      : h < 11
+        ? ['matin', 'presence', 'salutation', 'courage', 'micro']
+        : h < 18
+          ? ['presence', 'difficile', 'travail', 'limites', 'douceur']
+          : ['nuit', 'fatigue', 'presence', 'repos', 'remerciement'];
+
+  const picked: SupportOpening[] = [];
+  for (const cat of prefer) {
+    const pool = SUPPORT_MESSAGES.filter(
+      (m) => m.category === cat && (m.intensity ?? 2) <= 2
+    );
+    if (pool.length) {
+      picked.push(pool[Math.floor(Math.random() * Math.min(3, pool.length))]);
+    }
+    if (picked.length >= 5) break;
+  }
+  while (picked.length < 5) {
+    const m = SUPPORT_MESSAGES[Math.floor(Math.random() * SUPPORT_MESSAGES.length)];
+    if (!picked.find((p) => p.id === m.id)) picked.push(m);
+  }
+  return picked.slice(0, 5);
+}
+
 export default function PactPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [pact, setPact] = useState<Pact | null>(null);
@@ -67,7 +96,10 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   const [lastSeenCount, setLastSeenCount] = useState(0);
   const [uid, setUid] = useState('');
   const [gestureGroup, setGestureGroup] = useState<string>('all');
+  const [showCatalog, setShowCatalog] = useState(false);
+  const [suggestions, setSuggestions] = useState<SupportOpening[]>([]);
   const prevMsgCount = useRef(0);
+  const filEnd = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const s = readSession();
@@ -78,6 +110,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
     } catch {
       /* ignore */
     }
+    setSuggestions(hourSuggestions());
   }, []);
 
   useEffect(() => {
@@ -129,7 +162,10 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   }, [id]);
 
   useEffect(() => {
-    if (tab === 'fil') setLastSeenCount(messages.length);
+    if (tab === 'fil') {
+      setLastSeenCount(messages.length);
+      setTimeout(() => filEnd.current?.scrollIntoView({ behavior: 'smooth' }), 80);
+    }
   }, [tab, messages.length]);
 
   const unreadCount = Math.max(0, messages.length - lastSeenCount);
@@ -160,6 +196,23 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
       new Set(getMessagesByIntent(intent).map((m) => m.category))
     );
   }, [intent]);
+
+  const primaryCategories = useMemo(() => {
+    const priority = [
+      'presence',
+      'douceur',
+      'nuit',
+      'solitude',
+      'difficile',
+      'repos',
+      'salutation',
+      'remerciement',
+    ] as MessageCategory[];
+    const set = new Set(categoriesForIntent);
+    return priority.filter((c) => set.has(c)).concat(
+      categoriesForIntent.filter((c) => !priority.includes(c)).slice(0, 4)
+    );
+  }, [categoriesForIntent]);
 
   const visibleGestures = useMemo(() => {
     if (gestureGroup === 'all') return GESTURES;
@@ -211,7 +264,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   const sendOpening = async (opening: SupportOpening) => {
     const senderUserId = uid || localStorage.getItem('pacte_userId') || '';
     if (!pact || !senderUserId) {
-      setStatusMsg('Session incomplète — utilise le formulaire ci-dessus avec le même email.');
+      setStatusMsg('Session incomplète — reconnecte-toi avec le même email.');
       return;
     }
     setSending(true);
@@ -263,7 +316,12 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
   if (loading) {
     return (
       <main className="min-h-screen grid place-items-center">
-        <p style={{ color: 'var(--muted)' }}>Chargement du pacte…</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="pact-breath" />
+          <p className="text-sm" style={{ color: 'var(--muted)' }}>
+            Ouverture du pacte…
+          </p>
+        </div>
       </main>
     );
   }
@@ -277,15 +335,12 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
             {error}
           </p>
           <p className="mt-4 text-sm" style={{ color: 'var(--muted)' }}>
-            Pour retrouver un pacte actif : retourne sur{' '}
+            Retourne sur{' '}
             <Link href="/start" className="underline" style={{ color: 'var(--accent)' }}>
               /start
             </Link>{' '}
             avec le <strong>même email</strong>.
           </p>
-          <Link href="/" className="mt-6 inline-block font-bold" style={{ color: 'var(--accent)' }}>
-            Accueil
-          </Link>
         </div>
       </main>
     );
@@ -299,80 +354,49 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
         !m.openingId.startsWith('system:extend:no'))
   );
 
+  const isEmptyFil = visibleMessages.length === 0;
+
   return (
     <main className="min-h-screen flex flex-col">
       <Header />
 
-      <section className="flex-1 py-10">
-        <div className="max-w-xl mx-auto px-4">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-serif tracking-tight">Votre pacte</h1>
-              <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>
-                {pact.durationDays} jour{pact.durationDays > 1 ? 's' : ''}
-                {pact.status === 'ACTIVE'
-                  ? ' · actif'
-                  : pact.status === 'ENDED'
-                    ? ' · terminé'
-                    : ' · en attente'}
-                {daysLeft !== null && pact.status === 'ACTIVE'
-                  ? ` · ${daysLeft} j restant${daysLeft > 1 ? 's' : ''}`
-                  : ''}
-                {visibleMessages.length > 0
-                  ? ` · ${visibleMessages.length} échange${visibleMessages.length > 1 ? 's' : ''}`
-                  : ''}
-              </p>
+      <section className="flex-1 py-8 md:py-12 pact-shell">
+        <div className="max-w-lg mx-auto px-4 relative">
+          {/* Entête discrète */}
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="flex items-center gap-2.5">
+              <div className="pact-breath" aria-hidden />
+              <div>
+                <p className="text-xs font-semibold tracking-wide" style={{ color: 'var(--accent)' }}>
+                  Pacte silencieux
+                </p>
+                <p className="text-xs" style={{ color: 'var(--muted)' }}>
+                  {pact.durationDays} j
+                  {pact.status === 'ACTIVE' && daysLeft !== null
+                    ? ` · ${daysLeft} restant${daysLeft > 1 ? 's' : ''}`
+                    : ''}
+                  {pact.status === 'ENDED' ? ' · terminé' : ''}
+                  {pact.status === 'WAITING' ? ' · en attente' : ''}
+                </p>
+              </div>
             </div>
-            <div className="flex flex-col items-end gap-2">
-              <SoundToggle />
-              <span
-                className="px-3 py-1 rounded-full text-xs font-bold"
-                style={{
-                  background:
-                    pact.status === 'ACTIVE'
-                      ? 'var(--accent-soft)'
-                      : 'var(--card)',
-                  color:
-                    pact.status === 'ACTIVE'
-                      ? 'var(--accent)'
-                      : 'var(--muted)',
-                }}
-              >
-                {pact.status === 'ACTIVE'
-                  ? 'Actif'
-                  : pact.status === 'ENDED'
-                    ? 'Terminé'
-                    : 'En attente'}
-              </span>
-            </div>
+            <SoundToggle />
           </div>
-
-          <div
-            className="mt-4 p-3 rounded-xl text-xs leading-relaxed"
-            style={{
-              background: 'var(--accent-soft)',
-              color: 'var(--muted)',
-            }}
-          >
-            <strong style={{ color: 'var(--accent)' }}>Reconnexion :</strong>{' '}
-            avec le même email sur /start, ou via le formulaire ci-dessous si la
-            session a été perdue.
-          </div>
-
-          {statusMsg && (
-            <div
-              className="mt-4 p-3 rounded-lg text-sm text-center"
-              style={{ background: 'var(--card)' }}
-            >
-              {statusMsg}
-            </div>
-          )}
 
           {!uid && pact.status === 'ACTIVE' && (
             <SessionRecover
               pactId={pact.id || id}
               onRecovered={(userId) => setUid(userId)}
             />
+          )}
+
+          {statusMsg && (
+            <p
+              className="mt-3 text-center text-sm animate-fade-in"
+              style={{ color: 'var(--accent)' }}
+            >
+              {statusMsg}
+            </p>
           )}
 
           {uid && (pact.status === 'ACTIVE' || pact.status === 'ENDED') && (
@@ -384,11 +408,52 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
             />
           )}
 
+          {/* Clôture digne */}
+          {pact.status === 'ENDED' && (
+            <div className="pact-close">
+              <div
+                className="mx-auto mb-6 w-12 h-12 rounded-full grid place-items-center"
+                style={{ background: 'var(--accent-soft)' }}
+              >
+                <span className="text-xl" style={{ color: 'var(--accent)' }}>
+                  ·
+                </span>
+              </div>
+              <h1 className="pact-welcome-title">Ce temps-là est terminé</h1>
+              <p
+                className="mt-4 text-sm leading-relaxed max-w-[32ch] mx-auto"
+                style={{ color: 'var(--muted)' }}
+              >
+                Merci d’avoir tenu une présence. Tu peux relire le Fil ci-dessous,
+                ou recommencer un autre jour si tu en ressens le besoin.
+              </p>
+              {visibleMessages.length > 0 && (
+                <div className="mt-10 space-y-5 text-left">
+                  {visibleMessages.slice(-6).map((m) => (
+                    <div key={m.id} className="msg-bubble msg-bubble-theirs">
+                      <p className="msg-body">{m.openingText}</p>
+                      {m.responseText && (
+                        <p className="msg-body mt-3 opacity-80">{m.responseText}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Link href="/start" className="btn-primary mt-10 inline-flex">
+                Un autre pacte
+              </Link>
+            </div>
+          )}
+
           {pact.status === 'ACTIVE' && (
             <>
-              <div
-                className="mt-8 flex gap-1 border-b overflow-x-auto"
-                style={{ borderColor: 'var(--border)' }}
+              {/* Navigation douce */}
+              <nav
+                className="mt-6 p-1 rounded-full flex gap-0.5"
+                style={{
+                  background: 'var(--card)',
+                  border: '1px solid var(--border)',
+                }}
               >
                 {(
                   [
@@ -402,168 +467,168 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                     type="button"
                     key={key}
                     onClick={() => setTab(key)}
-                    className="relative px-3.5 py-2 text-sm font-bold rounded-t-lg transition shrink-0"
-                    style={
-                      tab === key
-                        ? {
-                            background: 'var(--accent)',
-                            color: '#fff',
-                          }
-                        : { color: 'var(--muted)' }
-                    }
+                    className={`pact-tab relative ${
+                      tab === key ? 'pact-tab-active' : ''
+                    }`}
                   >
                     {label}
                     {key === 'fil' && (unreadCount > 0 || pendingForMe > 0) && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] grid place-items-center">
-                        {pendingForMe || unreadCount}
-                      </span>
+                      <span
+                        className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full"
+                        style={{ background: 'var(--accent)' }}
+                      />
                     )}
                   </button>
                 ))}
-              </div>
+              </nav>
 
+              {/* ——— FIL ——— */}
               {tab === 'fil' && (
-                <div className="mt-6 space-y-4">
-                  {pendingForMe > 0 && (
-                    <div
-                      className="p-3 rounded-lg text-sm text-center"
-                      style={{
-                        background: 'var(--accent-soft)',
-                        color: 'var(--accent)',
-                      }}
-                    >
-                      {pendingForMe} message
-                      {pendingForMe > 1 ? 's' : ''} en attente de ta réponse
+                <div className="mt-8">
+                  {isEmptyFil ? (
+                    <div className="pact-welcome">
+                      <p className="pact-welcome-title">
+                        Vous êtes reliés. Rien n’est attendu.
+                      </p>
+                      <p
+                        className="mt-4 text-sm leading-relaxed max-w-[28ch] mx-auto"
+                        style={{ color: 'var(--muted)' }}
+                      >
+                        Un geste suffit. Ou le silence, un moment.
+                      </p>
+                      <button
+                        type="button"
+                        disabled={sending}
+                        onClick={() => sendGesture('JE_SUIS_LA')}
+                        className="mt-10 btn-primary disabled:opacity-50"
+                      >
+                        Je suis là.
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTab('soutien')}
+                        className="mt-4 block mx-auto text-sm"
+                        style={{ color: 'var(--muted)' }}
+                      >
+                        Ou choisir un message →
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-5">
+                      {pendingForMe > 0 && (
+                        <p
+                          className="text-center text-xs tracking-wide"
+                          style={{ color: 'var(--accent)' }}
+                        >
+                          Une réponse t’attend
+                        </p>
+                      )}
+                      {visibleMessages.map((m, i) => {
+                        const isMine = uid ? m.senderUserId === uid : false;
+                        const isGesture = m.openingId.startsWith('gesture:');
+                        const isSystem = m.openingId.startsWith('system:');
+                        const needsResponse =
+                          !!uid &&
+                          !isMine &&
+                          !m.responseText &&
+                          m.receiverUserId === uid &&
+                          !isGesture &&
+                          !isSystem;
+                        const opening = getMessageById(m.openingId);
+                        return (
+                          <div
+                            key={m.id}
+                            className={`space-y-2 ${
+                              isMine ? 'pl-6' : 'pr-6'
+                            }`}
+                            style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+                          >
+                            <div
+                              className={`msg-bubble ${
+                                isMine ? 'msg-bubble-mine' : 'msg-bubble-theirs'
+                              }`}
+                            >
+                              <p className="msg-meta">
+                                {isSystem
+                                  ? 'Moment'
+                                  : isMine
+                                    ? 'Toi'
+                                    : 'Présence'}
+                                {isGesture ? ' · geste' : ''} ·{' '}
+                                {new Date(m.createdAt).toLocaleString('fr-FR', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </p>
+                              <p className="msg-body">{m.openingText}</p>
+                            </div>
+                            {m.responseText && (
+                              <div
+                                className={`msg-bubble ${
+                                  !isMine
+                                    ? 'msg-bubble-mine'
+                                    : 'msg-bubble-theirs'
+                                } ${!isMine ? 'pl-0' : ''}`}
+                              >
+                                <p className="msg-meta">Réponse</p>
+                                <p className="msg-body">{m.responseText}</p>
+                              </div>
+                            )}
+                            {needsResponse && opening && (
+                              <div className="pt-1 space-y-2">
+                                <p
+                                  className="text-xs tracking-wide px-1"
+                                  style={{ color: 'var(--accent)' }}
+                                >
+                                  Répondre
+                                </p>
+                                {opening.responses.map((r) => (
+                                  <button
+                                    type="button"
+                                    key={r}
+                                    disabled={sending}
+                                    onClick={() => sendResponse(m.id, r)}
+                                    className="suggest-card text-sm disabled:opacity-50"
+                                  >
+                                    <span className="msg-body text-[0.95rem]">{r}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      <div ref={filEnd} />
                     </div>
                   )}
-                  {visibleMessages.length === 0 && (
-                    <p
-                      className="text-sm text-center py-10"
-                      style={{ color: 'var(--muted)' }}
-                    >
-                      Aucun message encore. Va dans <strong>Soutien</strong>,{' '}
-                      <strong>Geste</strong> ou <strong>Crise</strong>.
-                    </p>
-                  )}
-                  {visibleMessages.map((m) => {
-                    const isMine = uid ? m.senderUserId === uid : false;
-                    const isGesture = m.openingId.startsWith('gesture:');
-                    const isSystem = m.openingId.startsWith('system:');
-                    const needsResponse =
-                      !!uid &&
-                      !isMine &&
-                      !m.responseText &&
-                      m.receiverUserId === uid &&
-                      !isGesture &&
-                      !isSystem;
-                    const opening = getMessageById(m.openingId);
-                    return (
-                      <div key={m.id} className="space-y-2">
-                        <div
-                          className={`p-4 rounded-2xl border ${
-                            isMine ? 'ml-6' : 'mr-6'
-                          }`}
-                          style={{
-                            borderColor: isSystem
-                              ? 'color-mix(in srgb, var(--accent) 25%, transparent)'
-                              : 'var(--border)',
-                            background: isMine
-                              ? 'var(--accent-soft)'
-                              : 'var(--card)',
-                          }}
-                        >
-                          <p
-                            className="text-xs mb-1"
-                            style={{ color: 'var(--muted)' }}
-                          >
-                            {isSystem
-                              ? 'Système'
-                              : isMine
-                                ? 'Toi'
-                                : 'L’autre'}
-                            {isGesture ? ' · geste' : ''} ·{' '}
-                            {new Date(m.createdAt).toLocaleString('fr-FR', {
-                              day: 'numeric',
-                              month: 'short',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </p>
-                          <p className="leading-relaxed">{m.openingText}</p>
-                        </div>
-                        {m.responseText && (
-                          <div
-                            className={`p-4 rounded-2xl border ${
-                              !isMine ? 'ml-6' : 'mr-6'
-                            }`}
-                            style={{
-                              borderColor: 'var(--border)',
-                              background: !isMine
-                                ? 'var(--accent-soft)'
-                                : 'var(--card)',
-                            }}
-                          >
-                            <p
-                              className="text-xs mb-1"
-                              style={{ color: 'var(--muted)' }}
-                            >
-                              Réponse
-                            </p>
-                            <p>{m.responseText}</p>
-                          </div>
-                        )}
-                        {needsResponse && opening && (
-                          <div
-                            className="mr-6 p-4 rounded-xl border"
-                            style={{
-                              borderColor:
-                                'color-mix(in srgb, var(--accent) 35%, transparent)',
-                            }}
-                          >
-                            <p
-                              className="text-xs font-bold mb-3"
-                              style={{ color: 'var(--accent)' }}
-                            >
-                              Choisir une réponse
-                            </p>
-                            <div className="space-y-2">
-                              {opening.responses.map((r) => (
-                                <button
-                                  type="button"
-                                  key={r}
-                                  disabled={sending}
-                                  onClick={() => sendResponse(m.id, r)}
-                                  className="w-full text-left px-3 py-2.5 rounded-lg border text-sm disabled:opacity-50"
-                                  style={{ borderColor: 'var(--border)' }}
-                                >
-                                  {r}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
                 </div>
               )}
 
+              {/* ——— GESTE ——— */}
               {tab === 'geste' && (
-                <div className="mt-6">
-                  <p className="text-sm mb-3" style={{ color: 'var(--muted)' }}>
-                    Un signe simple. <strong>{GESTURES.length} gestes</strong>.
+                <div className="mt-8">
+                  <p
+                    className="font-serif text-xl leading-snug text-center max-w-[16ch] mx-auto"
+                    style={{ letterSpacing: '-0.02em' }}
+                  >
+                    Un signe. Rien d’autre.
                   </p>
-                  <div className="flex flex-wrap gap-2 mb-4">
+                  <div className="flex flex-wrap justify-center gap-2 mt-6 mb-6">
                     <button
                       type="button"
                       onClick={() => setGestureGroup('all')}
-                      className="px-3 py-1 rounded-full text-xs font-bold"
+                      className="px-3 py-1 rounded-full text-xs font-semibold"
                       style={{
                         background:
                           gestureGroup === 'all'
+                            ? 'var(--accent-soft)'
+                            : 'transparent',
+                        color:
+                          gestureGroup === 'all'
                             ? 'var(--accent)'
-                            : 'var(--card)',
-                        color: gestureGroup === 'all' ? '#fff' : 'var(--muted)',
+                            : 'var(--muted)',
                       }}
                     >
                       Tous
@@ -573,72 +638,77 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                         key={g}
                         type="button"
                         onClick={() => setGestureGroup(g)}
-                        className="px-3 py-1 rounded-full text-xs font-bold"
+                        className="px-3 py-1 rounded-full text-xs font-semibold"
                         style={{
                           background:
-                            gestureGroup === g ? 'var(--accent)' : 'var(--card)',
-                          color: gestureGroup === g ? '#fff' : 'var(--muted)',
+                            gestureGroup === g
+                              ? 'var(--accent-soft)'
+                              : 'transparent',
+                          color:
+                            gestureGroup === g
+                              ? 'var(--accent)'
+                              : 'var(--muted)',
                         }}
                       >
                         {g}
                       </button>
                     ))}
                   </div>
-                  <div className="space-y-2 max-h-[28rem] overflow-y-auto">
+                  <div className="space-y-2.5 max-h-[28rem] overflow-y-auto pr-1">
                     {visibleGestures.map((g) => (
                       <button
                         key={g.type}
                         type="button"
                         disabled={sending}
                         onClick={() => sendGesture(g.type)}
-                        className="w-full p-3.5 rounded-xl border text-left font-medium disabled:opacity-50"
-                        style={{ borderColor: 'var(--border)' }}
+                        className="suggest-card disabled:opacity-50"
                       >
                         <span
-                          className="text-[10px] uppercase block mb-0.5"
+                          className="text-[10px] uppercase tracking-wider block mb-1"
                           style={{ color: 'var(--muted)' }}
                         >
                           {g.group}
                         </span>
-                        {g.label}
+                        <span className="msg-body text-[1rem]">{g.label}</span>
                       </button>
                     ))}
                   </div>
                 </div>
               )}
 
+              {/* ——— SOUTIEN ——— */}
               {tab === 'soutien' && (
-                <div className="mt-6">
-                  <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="mt-8">
+                  <p
+                    className="font-serif text-xl leading-snug text-center max-w-[18ch] mx-auto"
+                  >
+                    Quelques mots. Pas tout le catalogue.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2.5 mt-6 mb-8">
                     <button
                       type="button"
                       onClick={() => {
                         setIntent('offer');
                         setSelectedCategory('all');
                       }}
-                      className="p-4 rounded-2xl border text-left"
+                      className="p-4 rounded-2xl text-left border"
                       style={{
                         borderColor:
                           intent === 'offer'
-                            ? 'var(--accent)'
+                            ? 'color-mix(in srgb, var(--accent) 40%, transparent)'
                             : 'var(--border)',
                         background:
                           intent === 'offer'
                             ? 'var(--accent-soft)'
-                            : 'transparent',
+                            : 'var(--card-solid)',
                       }}
                     >
                       <span
-                        className="block text-sm font-bold"
+                        className="block text-sm font-semibold"
                         style={{ color: 'var(--accent)' }}
                       >
                         Je soutiens
-                      </span>
-                      <span
-                        className="block text-xs mt-1"
-                        style={{ color: 'var(--muted)' }}
-                      >
-                        Présence, courage…
                       </span>
                     </button>
                     <button
@@ -647,170 +717,147 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                         setIntent('seek');
                         setSelectedCategory('all');
                       }}
-                      className="p-4 rounded-2xl border text-left"
+                      className="p-4 rounded-2xl text-left border"
                       style={{
                         borderColor:
-                          intent === 'seek' ? 'var(--accent)' : 'var(--border)',
+                          intent === 'seek'
+                            ? 'color-mix(in srgb, var(--accent) 40%, transparent)'
+                            : 'var(--border)',
                         background:
                           intent === 'seek'
                             ? 'var(--accent-soft)'
-                            : 'transparent',
+                            : 'var(--card-solid)',
                       }}
                     >
                       <span
-                        className="block text-sm font-bold"
+                        className="block text-sm font-semibold"
                         style={{ color: 'var(--accent)' }}
                       >
-                        J’ai besoin de soutien
+                        J’ai besoin
                       </span>
-                      <span
-                        className="block text-xs mt-1"
+                    </button>
+                  </div>
+
+                  {!showCatalog && (
+                    <div className="space-y-2.5">
+                      <p
+                        className="text-xs tracking-wide text-center mb-3"
                         style={{ color: 'var(--muted)' }}
                       >
-                        Jour difficile, trac…
-                      </span>
-                    </button>
-                  </div>
-
-                  <p className="text-sm mb-3" style={{ color: 'var(--muted)' }}>
-                    <strong>Échanges illimités</strong>. Historique dans le Fil
-                    pendant toute la durée.
-                  </p>
-
-                  <input
-                    type="search"
-                    placeholder="Rechercher…"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border text-sm mb-3"
-                    style={{
-                      borderColor: 'var(--border)',
-                      background: 'var(--card-solid)',
-                    }}
-                  />
-
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {(
-                      [
-                        ['all', 'Tous'],
-                        ['doux', 'Doux'],
-                        ['neutre', 'Neutre'],
-                        ['energique', 'Énergique'],
-                        ['court', 'Court'],
-                      ] as const
-                    ).map(([key, label]) => (
-                      <button
-                        type="button"
-                        key={key}
-                        onClick={() => setTone(key)}
-                        className="px-3 py-1 rounded-full text-xs font-bold"
-                        style={{
-                          background:
-                            tone === key ? 'var(--accent)' : 'var(--card)',
-                          color: tone === key ? '#fff' : 'var(--muted)',
-                        }}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 mb-5">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCategory('all')}
-                      className="px-3 py-1 rounded-full text-xs font-bold"
-                      style={{
-                        background:
-                          selectedCategory === 'all'
-                            ? 'var(--accent)'
-                            : 'var(--card)',
-                        color:
-                          selectedCategory === 'all' ? '#fff' : 'var(--muted)',
-                      }}
-                    >
-                      Tous
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCategory('fav')}
-                      className="px-3 py-1 rounded-full text-xs font-bold"
-                      style={{
-                        background:
-                          selectedCategory === 'fav'
-                            ? 'var(--accent)'
-                            : 'var(--card)',
-                        color:
-                          selectedCategory === 'fav' ? '#fff' : 'var(--muted)',
-                      }}
-                    >
-                      ♥ Favoris
-                    </button>
-                    {categoriesForIntent.map((cat) => (
-                      <button
-                        type="button"
-                        key={cat}
-                        onClick={() => setSelectedCategory(cat)}
-                        className="px-3 py-1 rounded-full text-xs font-bold"
-                        style={{
-                          background:
-                            selectedCategory === cat
-                              ? 'var(--accent)'
-                              : 'var(--card)',
-                          color:
-                            selectedCategory === cat ? '#fff' : 'var(--muted)',
-                        }}
-                      >
-                        {CATEGORY_LABELS[cat]}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="space-y-2 max-h-[28rem] overflow-y-auto">
-                    {filteredOpenings.map((m) => {
-                      const isFav = favorites.includes(m.id);
-                      return (
-                        <div
+                        Suggestions du moment
+                      </p>
+                      {suggestions.map((m) => (
+                        <button
                           key={m.id}
-                          className="flex gap-2 items-start p-3 rounded-xl border"
-                          style={{ borderColor: 'var(--border)' }}
+                          type="button"
+                          disabled={sending}
+                          onClick={() => sendOpening(m)}
+                          className="suggest-card disabled:opacity-50"
                         >
+                          <span className="msg-body text-[1rem]">{m.text}</span>
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setShowCatalog(true)}
+                        className="w-full text-center text-sm py-4"
+                        style={{ color: 'var(--muted)' }}
+                      >
+                        Voir plus de messages →
+                      </button>
+                    </div>
+                  )}
+
+                  {showCatalog && (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setShowCatalog(false)}
+                        className="text-sm mb-4"
+                        style={{ color: 'var(--accent)' }}
+                      >
+                        ← Suggestions
+                      </button>
+
+                      <input
+                        type="search"
+                        placeholder="Rechercher…"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl border text-sm mb-3"
+                        style={{
+                          borderColor: 'var(--border)',
+                          background: 'var(--card-solid)',
+                        }}
+                      />
+
+                      <div className="flex flex-wrap gap-1.5 mb-4">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCategory('all')}
+                          className="px-2.5 py-1 rounded-full text-xs font-semibold"
+                          style={{
+                            background:
+                              selectedCategory === 'all'
+                                ? 'var(--accent-soft)'
+                                : 'transparent',
+                            color:
+                              selectedCategory === 'all'
+                                ? 'var(--accent)'
+                                : 'var(--muted)',
+                          }}
+                        >
+                          Tous
+                        </button>
+                        {primaryCategories.map((cat) => (
                           <button
                             type="button"
-                            onClick={() => toggleFavorite(m.id)}
-                            className={`mt-1 text-lg ${
-                              isFav ? 'text-red-500' : ''
-                            }`}
-                            style={!isFav ? { color: 'var(--muted)' } : undefined}
+                            key={cat}
+                            onClick={() => setSelectedCategory(cat)}
+                            className="px-2.5 py-1 rounded-full text-xs font-semibold"
+                            style={{
+                              background:
+                                selectedCategory === cat
+                                  ? 'var(--accent-soft)'
+                                  : 'transparent',
+                              color:
+                                selectedCategory === cat
+                                  ? 'var(--accent)'
+                                  : 'var(--muted)',
+                            }}
                           >
-                            {isFav ? '♥' : '♡'}
+                            {CATEGORY_LABELS[cat]}
                           </button>
+                        ))}
+                      </div>
+
+                      <div className="space-y-2 max-h-[26rem] overflow-y-auto">
+                        {filteredOpenings.slice(0, 80).map((m) => (
                           <button
+                            key={m.id}
                             type="button"
                             disabled={sending}
                             onClick={() => sendOpening(m)}
-                            className="flex-1 text-left disabled:opacity-50"
+                            className="suggest-card disabled:opacity-50"
                           >
                             <span
-                              className="text-[10px] uppercase"
+                              className="text-[10px] uppercase tracking-wider"
                               style={{ color: 'var(--muted)' }}
                             >
                               {CATEGORY_LABELS[m.category]}
                               {m.tone ? ` · ${TONE_LABELS[m.tone]}` : ''}
                             </span>
-                            <p className="mt-0.5 text-sm leading-relaxed">
-                              {m.text}
-                            </p>
+                            <p className="msg-body text-[0.95rem] mt-1">{m.text}</p>
                           </button>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
               {tab === 'crise' && (
-                <div className="mt-6">
+                <div className="mt-8">
                   <CrisisPanel onSendGesture={sendGesture} />
                 </div>
               )}
@@ -818,10 +865,10 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
           )}
 
           <p
-            className="mt-12 text-xs text-center"
+            className="mt-14 text-xs text-center"
             style={{ color: 'var(--muted)' }}
           >
-            En cas de détresse : 3114 (France).
+            En détresse : 3114 · 15 · 112
           </p>
         </div>
       </section>
