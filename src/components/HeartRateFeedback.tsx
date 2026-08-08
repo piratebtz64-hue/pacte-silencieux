@@ -17,6 +17,11 @@ import {
   maybeNotifyHighHr,
   type HrAssessment,
 } from '@/lib/hr-alerts';
+import {
+  readBatteryPercent,
+  BATTERY_SERVICE,
+  type BatteryInfo,
+} from '@/lib/gatt-battery';
 
 type Source = 'none' | 'ble' | 'manual';
 type ConnState = 'idle' | 'picking' | 'connecting' | 'live' | 'error';
@@ -37,6 +42,7 @@ export default function HeartRateFeedback() {
   const [manualLeft, setManualLeft] = useState(15);
   const [notifPermission, setNotifPermission] = useState<string>('default');
   const [assessment, setAssessment] = useState<HrAssessment | null>(null);
+  const [battery, setBattery] = useState<BatteryInfo | null>(null);
   const deviceRef = useRef<BluetoothDevice | null>(null);
   const unsubRef = useRef<(() => void) | null>(null);
 
@@ -49,7 +55,6 @@ export default function HeartRateFeedback() {
     }
   }, []);
 
-  // Alertes à chaque nouveau bpm
   useEffect(() => {
     if (bpm == null) {
       setAssessment(null);
@@ -77,6 +82,7 @@ export default function HeartRateFeedback() {
     setBpm(null);
     setSample(null);
     setLocation(null);
+    setBattery(null);
     setConn('idle');
     setStatus('Capteur déconnecté');
     setErrorInfo(null);
@@ -116,6 +122,10 @@ export default function HeartRateFeedback() {
       setLocation(null);
     }
 
+    setStatus('GATT : batterie…');
+    const bat = await readBatteryPercent(server);
+    setBattery(bat);
+
     setStatus('GATT : notifications mesure (0x2A37)…');
     const characteristic = await service.getCharacteristic(HR_MEASUREMENT);
 
@@ -150,6 +160,7 @@ export default function HeartRateFeedback() {
     setErrorInfo(null);
     setSample(null);
     setLocation(null);
+    setBattery(null);
 
     if (!('bluetooth' in navigator)) {
       const info = parseBleError({
@@ -175,11 +186,11 @@ export default function HeartRateFeedback() {
         wideScan
           ? {
               acceptAllDevices: true,
-              optionalServices: [HR_SERVICE],
+              optionalServices: [HR_SERVICE, BATTERY_SERVICE],
             }
           : {
               filters: [{ services: [HR_SERVICE] }],
-              optionalServices: [HR_SERVICE],
+              optionalServices: [HR_SERVICE, BATTERY_SERVICE],
             }
       );
 
@@ -190,6 +201,7 @@ export default function HeartRateFeedback() {
         setConn('idle');
         setBpm(null);
         setSample(null);
+        setBattery(null);
       });
 
       await attachGattProfile(device);
@@ -292,6 +304,20 @@ export default function HeartRateFeedback() {
         </div>
       )}
 
+      {battery && (
+        <p
+          className="mt-2 text-xs font-semibold"
+          style={{
+            color:
+              battery.level === 'critical' || battery.level === 'low'
+                ? '#a33'
+                : 'var(--muted)',
+          }}
+        >
+          Batterie capteur : {battery.percent} % — {battery.label}
+        </p>
+      )}
+
       {status && (
         <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
           {status}
@@ -300,7 +326,6 @@ export default function HeartRateFeedback() {
         </p>
       )}
 
-      {/* Notifications */}
       <div className="mt-3 p-3 rounded-xl border text-xs" style={{ borderColor: 'var(--border)' }}>
         <p className="font-semibold" style={{ color: 'var(--foreground)' }}>
           Alertes téléphone
@@ -317,10 +342,6 @@ export default function HeartRateFeedback() {
         ) : notifPermission === 'denied' ? (
           <p className="mt-2" style={{ color: 'var(--muted)' }}>
             Refusées — réactive-les dans les réglages du navigateur.
-          </p>
-        ) : notifPermission === 'unsupported' ? (
-          <p className="mt-2" style={{ color: 'var(--muted)' }}>
-            Non supportées sur ce navigateur.
           </p>
         ) : (
           <button
