@@ -6,6 +6,7 @@ import {
   type BreathPhase,
 } from '@/lib/breath-protocols';
 import { playBreathIn, playBreathOut } from '@/lib/sounds';
+import HeartRateFeedback from './HeartRateFeedback';
 
 type RunState = 'idle' | 'run' | 'done';
 
@@ -28,9 +29,11 @@ function scaleForPhase(phase: BreathPhase, progress: number): number {
 export default function BreathExercise({
   initialProtocolId = 'coherence55',
   showPicker = true,
+  showHeartRate = true,
 }: {
   initialProtocolId?: string;
   showPicker?: boolean;
+  showHeartRate?: boolean;
 }) {
   const [protocolId, setProtocolId] = useState(initialProtocolId);
   const protocol = useMemo(
@@ -45,6 +48,7 @@ export default function BreathExercise({
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [phaseDuration, setPhaseDuration] = useState(1);
   const [elapsedSec, setElapsedSec] = useState(0);
+  const [resetFlash, setResetFlash] = useState(false);
 
   const currentPhase = protocol.phases[phaseIndex];
 
@@ -55,6 +59,8 @@ export default function BreathExercise({
     setSecondsLeft(0);
     setPhaseDuration(1);
     setElapsedSec(0);
+    setResetFlash(true);
+    setTimeout(() => setResetFlash(false), 600);
   }, []);
 
   const start = useCallback(() => {
@@ -150,81 +156,79 @@ export default function BreathExercise({
       )}
 
       <div className="flex flex-col items-center">
-        <div className="relative" style={{ width: 168, height: 168 }}>
+        {/* Cercle */}
+        <div
+          className="relative flex items-center justify-center"
+          style={{ width: 180, height: 180 }}
+          aria-live="polite"
+        >
           <div
-            className="absolute inset-0 flex items-center justify-center"
-            aria-live="polite"
-          >
-            <div
-              className="absolute rounded-full"
-              style={{
-                width: 160,
-                height: 160,
-                background: 'var(--accent-soft)',
-                border:
-                  '1.5px solid color-mix(in srgb, var(--accent) 35%, transparent)',
-                transform: `scale(${scale})`,
-                transition:
-                  state === 'run'
-                    ? `transform ${phaseDuration}s linear`
-                    : 'transform 0.5s ease',
-              }}
-            />
-            <div className="relative z-10 text-center px-2">
-              <p
-                className="font-serif text-3xl tabular-nums leading-none"
-                style={{ color: 'var(--accent)' }}
-              >
-                {state === 'run' ? secondsLeft : '·'}
-              </p>
-              <p
-                className="text-xs mt-2 leading-snug"
-                style={{ color: 'var(--muted)' }}
-              >
-                {state === 'idle'
-                  ? protocol.short
-                  : state === 'done'
-                    ? 'Terminé. Tu as tenu.'
-                    : currentPhase?.hint}
-              </p>
-            </div>
-          </div>
-
-          {/* Bouton Reset — toujours accessible près du cercle */}
-          <button
-            type="button"
-            onClick={reset}
-            title="Réinitialiser"
-            aria-label="Réinitialiser la respiration"
-            className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full text-[11px] font-semibold border"
+            className="absolute rounded-full"
             style={{
-              borderColor: 'var(--border)',
-              background: 'var(--card-solid)',
-              color: 'var(--muted)',
-              boxShadow: 'var(--shadow-soft)',
+              width: 168,
+              height: 168,
+              background: resetFlash
+                ? 'color-mix(in srgb, var(--accent) 25%, var(--accent-soft))'
+                : 'var(--accent-soft)',
+              border:
+                '2px solid color-mix(in srgb, var(--accent) 40%, transparent)',
+              transform: `scale(${scale})`,
+              transition:
+                state === 'run'
+                  ? `transform ${phaseDuration}s linear`
+                  : 'transform 0.45s ease, background 0.3s ease',
             }}
-          >
-            Reset
-          </button>
-        </div>
-
-        {state === 'run' && (
-          <div className="mt-8 text-center">
-            <p className="text-xs" style={{ color: 'var(--muted)' }}>
-              Cycle {cycle + 1} / {protocol.cycles}
-              {protocol.id === 'coherence55' && (
-                <>
-                  {' '}
-                  · reste {remainMin}:{String(remainS).padStart(2, '0')}
-                </>
-              )}
+          />
+          <div className="relative z-10 text-center px-2">
+            <p
+              className="font-serif text-3xl tabular-nums leading-none"
+              style={{ color: 'var(--accent)' }}
+            >
+              {state === 'run' ? secondsLeft : '·'}
+            </p>
+            <p className="text-xs mt-2 leading-snug" style={{ color: 'var(--muted)' }}>
+              {state === 'idle'
+                ? protocol.short
+                : state === 'done'
+                  ? 'Terminé. Tu as tenu.'
+                  : currentPhase?.hint}
             </p>
           </div>
+        </div>
+
+        {/* RESET — gros bouton sous le cercle, toujours visible */}
+        <button
+          type="button"
+          onClick={reset}
+          className="mt-5 px-6 py-2.5 rounded-full text-sm font-bold border-2"
+          style={{
+            borderColor: 'var(--accent)',
+            color: 'var(--accent)',
+            background: 'var(--card-solid)',
+            minWidth: '8rem',
+          }}
+        >
+          Reset
+        </button>
+        <p className="mt-1.5 text-[11px]" style={{ color: 'var(--muted)' }}>
+          Remet le cercle et le chrono à zéro
+        </p>
+
+        {state === 'run' && (
+          <p className="mt-4 text-xs" style={{ color: 'var(--muted)' }}>
+            Cycle {cycle + 1} / {protocol.cycles}
+            {protocol.id === 'coherence55' && (
+              <>
+                {' '}
+                · reste {remainMin}:{String(remainS).padStart(2, '0')}
+              </>
+            )}
+          </p>
         )}
 
         {protocol.note && state === 'idle' && (
           <p
-            className="mt-8 text-xs text-center max-w-[34ch] leading-relaxed"
+            className="mt-4 text-xs text-center max-w-[34ch] leading-relaxed"
             style={{ color: 'var(--muted)' }}
           >
             {protocol.note}
@@ -235,23 +239,14 @@ export default function BreathExercise({
           <button
             type="button"
             onClick={start}
-            className="btn-primary !text-sm mt-6"
+            className="btn-primary !text-sm mt-5"
           >
             {state === 'done' ? 'Recommencer' : 'Lancer'}
           </button>
         )}
-
-        {state === 'run' && (
-          <button
-            type="button"
-            onClick={reset}
-            className="mt-5 text-xs font-semibold"
-            style={{ color: 'var(--accent)' }}
-          >
-            Reset — tout remettre à zéro
-          </button>
-        )}
       </div>
+
+      {showHeartRate && <HeartRateFeedback />}
     </div>
   );
 }
