@@ -3,29 +3,45 @@
 @tailwind utilities;
 
 /*
-  Design system « présence »
-  — low-stimulus (cerveau en détresse)
-  — tons désaturés, papier chaud, accent sage
-  — peu de contraste agressif, beaucoup d’air
+  Psychologie des couleurs — Le Pacte silencieux
+  ------------------------------------------------
+  Fond crème/sable  → sécurité, non-clinique (évite le blanc labo)
+  Accent teal-sage  → calme + confiance (bleu) et soin (vert)
+  Or / warm muted   → chaleur humaine sans excitation
+  Pas de rouge vif  → pas de signal d’alarme / menace
+  Contraste doux    → charge cognitive basse (cerveau fatigué)
 */
+
 :root {
-  --background: #f3f0e8;
-  --foreground: #1c1a16;
-  --muted: #7a746a;
-  --card: rgba(252, 250, 245, 0.88);
-  --card-solid: #fcfaf5;
-  --border: rgba(28, 26, 22, 0.08);
-  --accent: #3d6b5e;
-  --accent-hover: #32584d;
-  --accent-soft: rgba(61, 107, 94, 0.1);
-  --glow: rgba(61, 107, 94, 0.18);
-  --gold: #a89678;
-  --gold-soft: rgba(168, 150, 120, 0.14);
-  --warm: #e8e0d4;
+  /* Fond : crème légèrement verdâtre — “papier”, pas hôpital */
+  --background: #f2f4ef;
+  --foreground: #1a1f1c;
+  --muted: #5f6b64;
+
+  /* Surfaces */
+  --card: rgba(250, 252, 248, 0.9);
+  --card-solid: #fafcf8;
+  --border: rgba(26, 31, 28, 0.08);
+  --warm: #e6ebe4;
+
+  /*
+    Accent principal : teal désaturé
+    Bleu → confiance / stabilité
+    Vert → soin / nature / régulation
+  */
+  --accent: #2f6f66;
+  --accent-hover: #275a53;
+  --accent-soft: rgba(47, 111, 102, 0.11);
+  --glow: rgba(47, 111, 102, 0.2);
+
+  /* Secondaire chaud (lien humain, jamais “urgent”) */
+  --gold: #9a8b6e;
+  --gold-soft: rgba(154, 139, 110, 0.14);
+
   --radius: 1.5rem;
-  --shadow-soft: 0 1px 2px rgba(28, 26, 22, 0.03),
-    0 8px 28px rgba(28, 26, 22, 0.05);
-  --shadow-lift: 0 12px 40px rgba(28, 26, 22, 0.08);
+  --shadow-soft: 0 1px 2px rgba(26, 31, 28, 0.03),
+    0 10px 32px rgba(47, 111, 102, 0.06);
+  --shadow-lift: 0 14px 44px rgba(47, 111, 102, 0.1);
   --font-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
@@ -33,21 +49,25 @@
 }
 
 [data-theme='dark'] {
-  --background: #0e100e;
-  --foreground: #e8e4db;
-  --muted: #9a9488;
-  --card: rgba(20, 24, 20, 0.88);
-  --card-solid: #141814;
-  --border: rgba(255, 255, 255, 0.07);
-  --accent: #6ba894;
-  --accent-hover: #7db8a4;
-  --accent-soft: rgba(107, 168, 148, 0.14);
-  --glow: rgba(107, 168, 148, 0.2);
-  --gold: #c4b08a;
-  --gold-soft: rgba(196, 176, 138, 0.12);
-  --warm: #1a1e1a;
-  --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.35);
-  --shadow-lift: 0 16px 48px rgba(0, 0, 0, 0.45);
+  /* Nuit forêt — pas de noir absolu (trop dur) */
+  --background: #0c1210;
+  --foreground: #e4ebe7;
+  --muted: #8a9690;
+  --card: rgba(16, 24, 21, 0.9);
+  --card-solid: #101815;
+  --border: rgba(228, 235, 231, 0.08);
+  --warm: #15201c;
+
+  --accent: #5cb3a6;
+  --accent-hover: #6fc4b7;
+  --accent-soft: rgba(92, 179, 166, 0.14);
+  --glow: rgba(92, 179, 166, 0.22);
+
+  --gold: #c2b392;
+  --gold-soft: rgba(194, 179, 146, 0.12);
+
+  --shadow-soft: 0 4px 28px rgba(0, 0, 0, 0.4);
+  --shadow-lift: 0 18px 50px rgba(0, 0, 0, 0.5);
 }
 
 html {
@@ -77,42 +97,41 @@ body {
     color var(--duration) var(--ease-out);
 }
 
-/* Fond vivant mais très doux — pas de flash */
+/* Auréoles : teal (calme) + or doux (chaleur) — jamais de rouge */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  opacity: 1;
   background:
     radial-gradient(
-      ellipse 90% 55% at 50% -15%,
-      rgba(61, 107, 94, 0.07),
-      transparent 55%
+      ellipse 95% 55% at 50% -18%,
+      rgba(47, 111, 102, 0.09),
+      transparent 58%
     ),
     radial-gradient(
-      ellipse 40% 35% at 100% 100%,
-      rgba(168, 150, 120, 0.08),
-      transparent 50%
+      ellipse 45% 35% at 100% 100%,
+      rgba(154, 139, 110, 0.07),
+      transparent 52%
     ),
     radial-gradient(
-      ellipse 30% 25% at 0% 80%,
-      rgba(61, 107, 94, 0.04),
-      transparent 45%
+      ellipse 35% 28% at 0% 85%,
+      rgba(47, 111, 102, 0.05),
+      transparent 48%
     );
 }
 
 [data-theme='dark'] body::before {
   background:
     radial-gradient(
-      ellipse 80% 50% at 50% -10%,
-      rgba(107, 168, 148, 0.08),
-      transparent 50%
+      ellipse 85% 50% at 50% -12%,
+      rgba(92, 179, 166, 0.1),
+      transparent 52%
     ),
     radial-gradient(
-      ellipse 40% 30% at 90% 90%,
-      rgba(196, 176, 138, 0.05),
+      ellipse 40% 30% at 92% 92%,
+      rgba(194, 179, 146, 0.06),
       transparent 50%
     );
 }
@@ -148,17 +167,17 @@ button {
   padding: 0.95rem 1.9rem;
   border-radius: 9999px;
   background: var(--accent);
-  color: #faf8f4;
+  color: #f7faf8;
   font-weight: 600;
   font-size: 0.9375rem;
   letter-spacing: 0.01em;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset, 0 6px 20px var(--glow);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 8px 24px var(--glow);
   transform: translateZ(0);
 }
 .btn-primary:hover {
   background: var(--accent-hover);
   transform: translateY(-1px) translateZ(0);
-  box-shadow: 0 8px 28px var(--glow);
+  box-shadow: 0 10px 30px var(--glow);
 }
 .btn-primary:active {
   transform: translateY(0) translateZ(0);
@@ -177,7 +196,7 @@ button {
   color: var(--foreground);
 }
 .btn-ghost:hover {
-  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
   background: var(--accent-soft);
 }
 
@@ -205,7 +224,7 @@ button {
   text-transform: uppercase;
   background: var(--warm);
   color: var(--accent);
-  border: 1px solid color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .divider {
@@ -214,7 +233,7 @@ button {
     90deg,
     transparent,
     var(--border) 20%,
-    color-mix(in srgb, var(--gold) 30%, var(--border)) 50%,
+    color-mix(in srgb, var(--gold) 35%, var(--border)) 50%,
     var(--border) 80%,
     transparent
   );
@@ -243,12 +262,12 @@ button {
 @keyframes breath {
   0%,
   100% {
-    opacity: 0.45;
+    opacity: 0.4;
     transform: scale(1);
   }
   50% {
     opacity: 0.95;
-    transform: scale(1.06);
+    transform: scale(1.08);
   }
 }
 
@@ -301,7 +320,6 @@ button {
   color: var(--accent);
 }
 
-/* Hero silence */
 .hero-silence {
   position: relative;
   padding-top: 3.5rem;
@@ -316,18 +334,18 @@ button {
 
 .hero-orb {
   position: absolute;
-  width: min(22rem, 70vw);
-  height: min(22rem, 70vw);
+  width: min(24rem, 72vw);
+  height: min(24rem, 72vw);
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(61, 107, 94, 0.12),
+    rgba(47, 111, 102, 0.14),
     transparent 68%
   );
-  top: 10%;
-  right: -5%;
+  top: 8%;
+  right: -8%;
   pointer-events: none;
-  filter: blur(2px);
+  filter: blur(4px);
 }
 
 .tone-step {
@@ -347,17 +365,16 @@ button {
   margin-top: 0.45rem;
   flex-shrink: 0;
   background: var(--accent);
-  opacity: 0.55;
+  opacity: 0.45;
 }
 .tone-dot-2 {
-  opacity: 0.75;
+  opacity: 0.7;
 }
 .tone-dot-3 {
   opacity: 1;
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
-/* Pacte */
 .pact-shell {
   position: relative;
 }
@@ -401,7 +418,7 @@ button {
 
 .msg-bubble-mine {
   background: var(--accent-soft);
-  border-color: color-mix(in srgb, var(--accent) 20%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 .msg-bubble-theirs {
@@ -443,7 +460,7 @@ button {
     transform 0.35s var(--ease-out);
 }
 .suggest-card:hover {
-  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
   background: var(--accent-soft);
   transform: translateY(-1px);
 }
