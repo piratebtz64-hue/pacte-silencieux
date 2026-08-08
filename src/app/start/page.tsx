@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { readSession, writeSession } from '@/lib/session';
 
 export default function StartPage() {
   const router = useRouter();
@@ -10,11 +11,21 @@ export default function StartPage() {
   const [duration, setDuration] = useState<'1' | '3' | '7'>('3');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedPactId, setSavedPactId] = useState('');
   const [done, setDone] = useState<{
     emailSent: boolean;
     warning: string | null;
     pactId: string;
   } | null>(null);
+
+  useEffect(() => {
+    const s = readSession();
+    if (s.email) setEmail(s.email);
+    if (s.duration === '1' || s.duration === '3' || s.duration === '7') {
+      setDuration(s.duration);
+    }
+    if (s.pactId) setSavedPactId(s.pactId);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,10 +50,12 @@ export default function StartPage() {
         throw new Error(parts.join(' — ') || 'Une erreur est survenue');
       }
 
-      localStorage.setItem('pacte_email', email.toLowerCase().trim());
-      localStorage.setItem('pacte_duration', duration);
-      if (data.userId) localStorage.setItem('pacte_userId', data.userId);
-      if (data.pactId) localStorage.setItem('pacte_pactId', data.pactId);
+      writeSession({
+        email: email.toLowerCase().trim(),
+        userId: data.userId || '',
+        pactId: data.pactId || '',
+        duration,
+      });
 
       if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
         Notification.requestPermission().catch(() => {});
@@ -106,32 +119,38 @@ export default function StartPage() {
           rester un peu avec quelqu’un — discrètement.
         </p>
 
+        {savedPactId && (
+          <div
+            className="mt-6 p-4 rounded-xl border text-sm"
+            style={{
+              borderColor: 'color-mix(in srgb, var(--accent) 30%, transparent)',
+              background: 'var(--accent-soft)',
+            }}
+          >
+            <p className="font-semibold" style={{ color: 'var(--accent)' }}>
+              Session trouvée sur cet appareil
+            </p>
+            <p className="mt-1" style={{ color: 'var(--muted)' }}>
+              Tu peux rouvrir ton pacte sans tout recommencer.
+            </p>
+            <Link
+              href={`/pact/${savedPactId}`}
+              className="mt-3 inline-block font-bold underline"
+              style={{ color: 'var(--accent)' }}
+            >
+              Ouvrir mon pacte →
+            </Link>
+          </div>
+        )}
+
         <div className="card-premium mt-8 p-5">
           <p className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>
             Ce n’est pas un test
           </p>
           <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
             Que tu aies besoin d’une présence, que tu veuilles en offrir une, ou
-            les deux : même parcours. Il n’y a pas de bonne ou de mauvaise
-            raison d’être ici.
+            les deux : même parcours.
           </p>
-        </div>
-
-        <div
-          className="mt-3 p-5 rounded-[var(--radius)] border"
-          style={{
-            borderColor: 'color-mix(in srgb, var(--accent) 22%, transparent)',
-            background: 'var(--accent-soft)',
-          }}
-        >
-          <p className="text-sm font-semibold">Ce qui est garanti</p>
-          <ul className="mt-2 text-sm space-y-1.5" style={{ color: 'var(--muted)' }}>
-            <li>· Aucun échange libre (pas de chat)</li>
-            <li>· Aucun nom réel nécessaire</li>
-            <li>· Historique conservé tant que le pacte est actif</li>
-            <li>· Échanges illimités pendant la durée</li>
-            <li>· Arrêt possible à tout moment</li>
-          </ul>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -179,8 +198,7 @@ export default function StartPage() {
               autoComplete="email"
             />
             <p className="mt-2 text-xs" style={{ color: 'var(--muted)' }}>
-              Si un pacte actif existe avec cet email, tu le reprends avec
-              l’historique.
+              Même email = tu reprends le pacte actif et l’historique.
             </p>
           </div>
 
