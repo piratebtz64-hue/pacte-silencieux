@@ -8,68 +8,101 @@ import {
 } from '@/lib/crisis-scenarios';
 import { playCrisisStart } from '@/lib/sounds';
 import BreathExercise from './BreathExercise';
+import Grounding54321 from './Grounding54321';
+
+type Mode = 'menu' | 'breath' | 'ground' | 'scenario';
 
 export default function CrisisPanel({
   onSendGesture,
 }: {
   onSendGesture?: (type: string) => void;
 }) {
+  const [mode, setMode] = useState<Mode>('menu');
   const [active, setActive] = useState<CrisisScenario | null>(null);
   const [step, setStep] = useState(0);
-  const [showBreathOnly, setShowBreathOnly] = useState(false);
 
-  const open = (id: CrisisId) => {
+  const openScenario = (id: CrisisId) => {
     const s = CRISIS_SCENARIOS.find((c) => c.id === id) || null;
     setActive(s);
     setStep(0);
-    setShowBreathOnly(false);
+    setMode('scenario');
     playCrisisStart();
   };
 
-  if (showBreathOnly) {
+  if (mode === 'breath') {
     return (
       <div className="card-premium p-5">
         <button
           type="button"
-          onClick={() => setShowBreathOnly(false)}
+          onClick={() => setMode('menu')}
           className="text-xs"
           style={{ color: 'var(--muted)' }}
         >
-          ← Retour crise
+          ← Retour
         </button>
         <h3 className="mt-3 font-serif text-xl tracking-tight text-center">
-          Respiration 4 / 6
+          Respiration guidée
         </h3>
         <p
-          className="mt-2 text-sm text-center leading-relaxed"
+          className="mt-2 text-sm text-center leading-relaxed max-w-[34ch] mx-auto"
           style={{ color: 'var(--muted)' }}
         >
-          Suis le cercle. Rien d’autre à faire.
+          Choisis un protocole. Suis le cercle. Ce n’est pas un traitement médical.
         </p>
-        <BreathExercise cycles={5} />
-        <p className="mt-6 text-xs text-center" style={{ color: 'var(--muted)' }}>
-          Si ça ne redescend pas : 3114 · 15 · 112
+        <div className="mt-6">
+          <BreathExercise showPicker initialProtocolId="exhale46" />
+        </div>
+        <p className="mt-8 text-xs text-center" style={{ color: 'var(--muted)' }}>
+          Détresse aiguë : 3114 · 15 · 112
         </p>
       </div>
     );
   }
 
-  if (active) {
-    const current = active.steps[step];
-    const last = step >= active.steps.length - 1;
-    const isBreathStep =
-      active.id === 'panique' && step === 1;
-
+  if (mode === 'ground') {
     return (
-      <div
-        className="card-premium p-5"
-        style={{
-          borderColor: 'color-mix(in srgb, var(--accent) 25%, transparent)',
-        }}
-      >
+      <div className="card-premium p-5">
         <button
           type="button"
-          onClick={() => setActive(null)}
+          onClick={() => setMode('menu')}
+          className="text-xs"
+          style={{ color: 'var(--muted)' }}
+        >
+          ← Retour
+        </button>
+        <h3 className="mt-3 font-serif text-xl tracking-tight text-center">
+          Ancrage 5-4-3-2-1
+        </h3>
+        <p
+          className="mt-2 text-sm text-center leading-relaxed max-w-[34ch] mx-auto"
+          style={{ color: 'var(--muted)' }}
+        >
+          Les cinq sens, un par un. Pour revenir dans le présent.
+        </p>
+        <div className="mt-6">
+          <Grounding54321 />
+        </div>
+        <p className="mt-8 text-xs text-center" style={{ color: 'var(--muted)' }}>
+          Détresse aiguë : 3114 · 15 · 112
+        </p>
+      </div>
+    );
+  }
+
+  if (mode === 'scenario' && active) {
+    const current = active.steps[step];
+    const last = step >= active.steps.length - 1;
+    const isBreathStep = active.id === 'panique' && step === 1;
+    const isGroundStep = active.id === 'panique' && step === 0;
+
+    return (
+      <div className="card-premium p-5">
+        <button
+          type="button"
+          onClick={() => {
+            setMode('menu');
+            setActive(null);
+          }}
           className="text-xs"
           style={{ color: 'var(--muted)' }}
         >
@@ -95,7 +128,23 @@ export default function CrisisPanel({
           )}
         </div>
 
-        {isBreathStep && <BreathExercise cycles={5} />}
+        {isGroundStep && (
+          <div className="mt-4">
+            <button
+              type="button"
+              className="btn-ghost !text-sm w-full"
+              onClick={() => setMode('ground')}
+            >
+              Ouvrir l’ancrage 5-4-3-2-1 guidé
+            </button>
+          </div>
+        )}
+
+        {isBreathStep && (
+          <div className="mt-4">
+            <BreathExercise showPicker={false} initialProtocolId="exhale46" />
+          </div>
+        )}
 
         <div className="mt-6 flex flex-wrap gap-2">
           {step > 0 && (
@@ -129,7 +178,10 @@ export default function CrisisPanel({
               <button
                 type="button"
                 className="btn-ghost !text-sm"
-                onClick={() => setActive(null)}
+                onClick={() => {
+                  setMode('menu');
+                  setActive(null);
+                }}
               >
                 Fermer
               </button>
@@ -149,33 +201,57 @@ export default function CrisisPanel({
   return (
     <div className="space-y-3">
       <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-        Scénarios guidés, étape par étape. Ce n’est pas une urgence médicale — en
-        détresse aiguë : <strong>3114</strong>.
+        Outils de stabilisation — pas une urgence médicale. En détresse aiguë :{' '}
+        <strong>3114</strong> · <strong>15</strong> · <strong>112</strong>.
       </p>
 
       <button
         type="button"
-        onClick={() => setShowBreathOnly(true)}
+        onClick={() => setMode('breath')}
         className="w-full text-left p-4 rounded-2xl border"
         style={{
-          borderColor: 'color-mix(in srgb, var(--accent) 35%, transparent)',
+          borderColor: 'color-mix(in srgb, var(--accent) 40%, transparent)',
           background: 'var(--accent-soft)',
         }}
       >
         <span className="font-semibold text-sm" style={{ color: 'var(--accent)' }}>
-          Respiration guidée 4 / 6
+          Respiration guidée
         </span>
         <span className="block text-xs mt-1" style={{ color: 'var(--muted)' }}>
-          Cercle animé · 5 cycles · accessible en un tap
+          4/6 · cohérence 5/5 · carré · soupir · 4-7-8 · cercle animé
         </span>
       </button>
+
+      <button
+        type="button"
+        onClick={() => setMode('ground')}
+        className="w-full text-left p-4 rounded-2xl border"
+        style={{
+          borderColor: 'color-mix(in srgb, var(--accent) 30%, transparent)',
+          background: 'var(--card-solid)',
+        }}
+      >
+        <span className="font-semibold text-sm" style={{ color: 'var(--accent)' }}>
+          Ancrage sensoriel 5-4-3-2-1
+        </span>
+        <span className="block text-xs mt-1" style={{ color: 'var(--muted)' }}>
+          Vue · toucher · ouïe · odorat · goût — guidé étape par étape
+        </span>
+      </button>
+
+      <p
+        className="text-[10px] uppercase tracking-[0.12em] font-semibold pt-2"
+        style={{ color: 'var(--muted)' }}
+      >
+        Scénarios
+      </p>
 
       {CRISIS_SCENARIOS.map((c) => (
         <button
           key={c.id}
           type="button"
-          onClick={() => open(c.id)}
-          className="w-full text-left p-4 rounded-2xl border transition hover:border-[var(--accent)]"
+          onClick={() => openScenario(c.id)}
+          className="w-full text-left p-4 rounded-2xl border"
           style={{ borderColor: 'var(--border)', background: 'var(--card)' }}
         >
           <span className="font-semibold text-sm">{c.label}</span>
