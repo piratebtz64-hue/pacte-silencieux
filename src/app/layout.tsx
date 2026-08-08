@@ -2,51 +2,62 @@ import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import PwaRegister from '@/components/PwaRegister';
 import InstallHint from '@/components/InstallHint';
-
-const siteUrl =
-  process.env.NEXT_PUBLIC_APP_URL || 'https://pacte-silencieux.vercel.app';
+import { SITE, websiteJsonLd } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE.url),
   title: {
-    default:
-      'Le Pacte silencieux — Soutien anonyme quand personne n’est disponible',
-    template: '%s · Le Pacte silencieux',
+    default: `${SITE.name} — Soutien anonyme quand personne n’est disponible`,
+    template: `%s · ${SITE.name}`,
   },
-  description:
-    'Quand personne n’est près de toi pour en parler et que tu as besoin d’un peu de soutien. Présence anonyme entre pairs, sans chat libre. Complément — ne remplace pas une assistante sociale ni un professionnel de santé.',
-  keywords: [
-    'pacte silencieux',
-    'soutien anonyme',
-    'présence discrète',
-    'messages de soutien',
-    'sans chat',
-    'solitude',
-  ],
-  applicationName: 'Le Pacte silencieux',
+  description: SITE.description,
+  keywords: [...SITE.keywords],
+  applicationName: SITE.name,
+  authors: [{ name: SITE.name }],
+  creator: SITE.name,
+  publisher: SITE.name,
+  category: 'health',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Pacte silencieux',
+    title: SITE.shortName,
   },
-  formatDetection: { telephone: true },
+  formatDetection: {
+    telephone: true,
+    email: false,
+    address: false,
+  },
   openGraph: {
     type: 'website',
-    locale: 'fr_FR',
-    url: siteUrl,
-    siteName: 'Le Pacte silencieux',
-    title: 'Le Pacte silencieux',
-    description:
-      'Quand personne n’est disponible près de toi — une présence anonyme entre pairs. Gratuit.',
+    locale: SITE.locale,
+    url: SITE.url,
+    siteName: SITE.name,
+    title: SITE.name,
+    description: SITE.description,
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Le Pacte silencieux',
-    description:
-      'Soutien anonyme quand l’entourage n’est pas là. Pas un remplacement des professionnels.',
+    title: SITE.name,
+    description: SITE.description,
   },
-  robots: { index: true, follow: true },
-  alternates: { canonical: siteUrl },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
+  alternates: {
+    canonical: SITE.url,
+    languages: { 'fr-FR': SITE.url },
+  },
+  other: {
+    'google': 'notranslate',
+  },
 };
 
 export const viewport: Viewport = {
@@ -63,8 +74,18 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const jsonLd = websiteJsonLd();
+
   return (
     <html lang="fr" suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(jsonLd),
+          }}
+        />
+      </head>
       <body className="min-h-screen antialiased">
         {children}
         <PwaRegister />
