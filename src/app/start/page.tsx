@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { readSession, writeSession } from '@/lib/session';
 
 export default function StartPage() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [duration, setDuration] = useState<'1' | '3' | '7'>('3');
   const [loading, setLoading] = useState(false);
@@ -28,7 +26,26 @@ export default function StartPage() {
     if (s.email || s.pactId || s.userId) setHasSession(true);
   }, []);
 
-  /** Toujours passer par l’API pour trouver le VRAI pacte (actif ou attente) */
+  const goAfterStart = (data: {
+    status?: string;
+    pactId?: string;
+    resume?: boolean;
+  }) => {
+    if (data.status === 'ACTIVE' && data.pactId) {
+      window.location.assign(`/pact/${data.pactId}`);
+      return true;
+    }
+    if (data.resume && data.status === 'WAITING') {
+      window.location.assign('/waiting');
+      return true;
+    }
+    if (data.status === 'WAITING' && data.pactId) {
+      // nouveau ou attente : page attente
+      return false;
+    }
+    return false;
+  };
+
   const resumePact = async () => {
     const mail = email.toLowerCase().trim();
     if (!mail) {
@@ -49,7 +66,9 @@ export default function StartPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error([data.error, data.detail].filter(Boolean).join(' — ') || 'Erreur');
+        throw new Error(
+          [data.error, data.detail].filter(Boolean).join(' — ') || 'Erreur'
+        );
       }
 
       writeSession({
@@ -59,24 +78,13 @@ export default function StartPage() {
         duration: String(duration),
       });
 
-      if (data.resume && data.status === 'ACTIVE' && data.pactId) {
-        router.push(`/pact/${data.pactId}`);
-        return;
-      }
-      if (data.resume && data.status === 'WAITING') {
-        router.push('/waiting');
-        return;
-      }
-      // Pas de pacte à reprendre → on continue le flux normal (nouveau)
+      if (goAfterStart(data)) return;
+
       if (data.pactId) {
-        setDone({
-          emailSent: !!data.emailSent,
-          warning:
-            data.emailWarning ||
-            'Aucun pacte actif trouvé. Un nouveau a été préparé.',
-          pactId: data.pactId,
-        });
+        window.location.assign('/waiting');
+        return;
       }
+      setError('Aucun pacte trouvé. Utilise Continuer pour en créer un.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
     } finally {
@@ -118,14 +126,7 @@ export default function StartPage() {
         Notification.requestPermission().catch(() => {});
       }
 
-      if (data.resume && data.status === 'ACTIVE' && data.pactId) {
-        router.push(`/pact/${data.pactId}`);
-        return;
-      }
-      if (data.resume && data.status === 'WAITING') {
-        router.push('/waiting');
-        return;
-      }
+      if (goAfterStart(data)) return;
 
       setDone({
         emailSent: !!data.emailSent,
@@ -153,7 +154,7 @@ export default function StartPage() {
           </p>
           <button
             type="button"
-            onClick={() => router.push('/waiting')}
+            onClick={() => window.location.assign('/waiting')}
             className="btn-primary mt-8 w-full"
           >
             Continuer vers l’attente
@@ -170,7 +171,7 @@ export default function StartPage() {
     <main className="min-h-screen py-12 md:py-16">
       <div className="max-w-md mx-auto px-4 w-full animate-fade-up">
         <Link href="/" className="text-sm" style={{ color: 'var(--muted)' }}>
-          ← Retour
+          ← Accueil
         </Link>
         <h1 className="mt-6 font-serif text-3xl md:text-4xl tracking-tight">
           Commencer un pacte de présence
@@ -192,8 +193,8 @@ export default function StartPage() {
               Session trouvée sur cet appareil
             </p>
             <p className="mt-1" style={{ color: 'var(--muted)' }}>
-              On retrouve ton pacte actif (ou l’attente) avec le même email — pas
-              l’ancien lien expiré.
+              Vérifie l’email ci-dessous (le même qu’à l’inscription), puis ouvre
+              ton pacte.
             </p>
             <button
               type="button"
@@ -202,14 +203,8 @@ export default function StartPage() {
               className="mt-3 font-bold underline disabled:opacity-50"
               style={{ color: 'var(--accent)' }}
             >
-              {resuming ? 'Recherche du pacte…' : 'Ouvrir mon pacte →'}
+              {resuming ? 'Ouverture…' : 'Ouvrir mon pacte →'}
             </button>
-            {!email && (
-              <p className="mt-2 text-xs" style={{ color: 'var(--muted)' }}>
-                Remplis l’email ci-dessous (le même qu’à l’inscription), puis
-                reclique.
-              </p>
-            )}
           </div>
         )}
 
@@ -276,7 +271,11 @@ export default function StartPage() {
             <p className="text-sm text-red-600 dark:text-red-400 break-words">{error}</p>
           )}
 
-          <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary w-full disabled:opacity-60"
+          >
             {loading ? 'Chargement…' : 'Continuer'}
           </button>
         </form>

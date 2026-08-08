@@ -2,14 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import ThemeToggle from './ThemeToggle';
 import Logo from './Logo';
 import ShareButton from './ShareButton';
 import { readSession, writeSession } from '@/lib/session';
 
 export default function Header({ showCta = true }: { showCta?: boolean }) {
-  const router = useRouter();
   const [hasSession, setHasSession] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -21,7 +19,7 @@ export default function Header({ showCta = true }: { showCta?: boolean }) {
   const openMyPact = async () => {
     const s = readSession();
     if (!s.email) {
-      router.push('/start');
+      window.location.assign('/start');
       return;
     }
     setBusy(true);
@@ -42,17 +40,15 @@ export default function Header({ showCta = true }: { showCta?: boolean }) {
           pactId: data.pactId,
         });
         if (data.status === 'ACTIVE') {
-          router.push(`/pact/${data.pactId}`);
+          window.location.assign(`/pact/${data.pactId}`);
           return;
         }
-        if (data.status === 'WAITING' || data.resume) {
-          router.push(data.status === 'ACTIVE' ? `/pact/${data.pactId}` : '/waiting');
-          return;
-        }
+        window.location.assign('/waiting');
+        return;
       }
-      router.push('/start');
+      window.location.assign('/start');
     } catch {
-      router.push('/start');
+      window.location.assign('/start');
     } finally {
       setBusy(false);
     }
