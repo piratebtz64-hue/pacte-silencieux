@@ -6,7 +6,8 @@ import {
   type CrisisId,
   type CrisisScenario,
 } from '@/lib/crisis-scenarios';
-import { playBreathIn, playBreathOut, playCrisisStart } from '@/lib/sounds';
+import { playCrisisStart } from '@/lib/sounds';
+import BreathExercise from './BreathExercise';
 
 export default function CrisisPanel({
   onSendGesture,
@@ -15,19 +16,57 @@ export default function CrisisPanel({
 }) {
   const [active, setActive] = useState<CrisisScenario | null>(null);
   const [step, setStep] = useState(0);
+  const [showBreathOnly, setShowBreathOnly] = useState(false);
 
   const open = (id: CrisisId) => {
     const s = CRISIS_SCENARIOS.find((c) => c.id === id) || null;
     setActive(s);
     setStep(0);
+    setShowBreathOnly(false);
     playCrisisStart();
   };
+
+  if (showBreathOnly) {
+    return (
+      <div className="card-premium p-5">
+        <button
+          type="button"
+          onClick={() => setShowBreathOnly(false)}
+          className="text-xs"
+          style={{ color: 'var(--muted)' }}
+        >
+          ← Retour crise
+        </button>
+        <h3 className="mt-3 font-serif text-xl tracking-tight text-center">
+          Respiration 4 / 6
+        </h3>
+        <p
+          className="mt-2 text-sm text-center leading-relaxed"
+          style={{ color: 'var(--muted)' }}
+        >
+          Suis le cercle. Rien d’autre à faire.
+        </p>
+        <BreathExercise cycles={5} />
+        <p className="mt-6 text-xs text-center" style={{ color: 'var(--muted)' }}>
+          Si ça ne redescend pas : 3114 · 15 · 112
+        </p>
+      </div>
+    );
+  }
 
   if (active) {
     const current = active.steps[step];
     const last = step >= active.steps.length - 1;
+    const isBreathStep =
+      active.id === 'panique' && step === 1;
+
     return (
-      <div className="card-premium p-5 border border-[color-mix(in_srgb,var(--accent)_25%,transparent)]">
+      <div
+        className="card-premium p-5"
+        style={{
+          borderColor: 'color-mix(in srgb, var(--accent) 25%, transparent)',
+        }}
+      >
         <button
           type="button"
           onClick={() => setActive(null)}
@@ -47,30 +86,16 @@ export default function CrisisPanel({
           </p>
           <p className="mt-2 text-sm leading-relaxed">{current.body}</p>
           {current.action && (
-            <p className="mt-3 text-xs font-bold uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+            <p
+              className="mt-3 text-xs font-bold uppercase tracking-wide"
+              style={{ color: 'var(--muted)' }}
+            >
               → {current.action}
             </p>
           )}
         </div>
 
-        {active.id === 'panique' && step === 1 && (
-          <div className="mt-4 flex gap-2">
-            <button
-              type="button"
-              className="btn-ghost !text-xs !py-2"
-              onClick={() => playBreathIn()}
-            >
-              Son inspire
-            </button>
-            <button
-              type="button"
-              className="btn-ghost !text-xs !py-2"
-              onClick={() => playBreathOut()}
-            >
-              Son expire
-            </button>
-          </div>
-        )}
+        {isBreathStep && <BreathExercise cycles={5} />}
 
         <div className="mt-6 flex flex-wrap gap-2">
           {step > 0 && (
@@ -127,6 +152,24 @@ export default function CrisisPanel({
         Scénarios guidés, étape par étape. Ce n’est pas une urgence médicale — en
         détresse aiguë : <strong>3114</strong>.
       </p>
+
+      <button
+        type="button"
+        onClick={() => setShowBreathOnly(true)}
+        className="w-full text-left p-4 rounded-2xl border"
+        style={{
+          borderColor: 'color-mix(in srgb, var(--accent) 35%, transparent)',
+          background: 'var(--accent-soft)',
+        }}
+      >
+        <span className="font-semibold text-sm" style={{ color: 'var(--accent)' }}>
+          Respiration guidée 4 / 6
+        </span>
+        <span className="block text-xs mt-1" style={{ color: 'var(--muted)' }}>
+          Cercle animé · 5 cycles · accessible en un tap
+        </span>
+      </button>
+
       {CRISIS_SCENARIOS.map((c) => (
         <button
           key={c.id}
