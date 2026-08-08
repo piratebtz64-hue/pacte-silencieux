@@ -10,8 +10,9 @@ export default function StartPage() {
   const [email, setEmail] = useState('');
   const [duration, setDuration] = useState<'1' | '3' | '7'>('3');
   const [loading, setLoading] = useState(false);
+  const [resuming, setResuming] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [savedPactId, setSavedPactId] = useState('');
+  const [hasSession, setHasSession] = useState(false);
   const [done, setDone] = useState<{
     emailSent: boolean;
     warning: string | null;
@@ -24,8 +25,64 @@ export default function StartPage() {
     if (s.duration === '1' || s.duration === '3' || s.duration === '7') {
       setDuration(s.duration);
     }
-    if (s.pactId) setSavedPactId(s.pactId);
+    if (s.email || s.pactId || s.userId) setHasSession(true);
   }, []);
+
+  /** Toujours passer par l’API pour trouver le VRAI pacte (actif ou attente) */
+  const resumePact = async () => {
+    const mail = email.toLowerCase().trim();
+    if (!mail) {
+      setError('Indique le même email que lors de l’inscription.');
+      return;
+    }
+    setResuming(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: mail,
+          durationDays: Number(duration) || 3,
+          forceNew: false,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error([data.error, data.detail].filter(Boolean).join(' — ') || 'Erreur');
+      }
+
+      writeSession({
+        email: mail,
+        userId: data.userId || '',
+        pactId: data.pactId || '',
+        duration: String(duration),
+      });
+
+      if (data.resume && data.status === 'ACTIVE' && data.pactId) {
+        router.push(`/pact/${data.pactId}`);
+        return;
+      }
+      if (data.resume && data.status === 'WAITING') {
+        router.push('/waiting');
+        return;
+      }
+      // Pas de pacte à reprendre → on continue le flux normal (nouveau)
+      if (data.pactId) {
+        setDone({
+          emailSent: !!data.emailSent,
+          warning:
+            data.emailWarning ||
+            'Aucun pacte actif trouvé. Un nouveau a été préparé.',
+          pactId: data.pactId,
+        });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      setResuming(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,8 +118,12 @@ export default function StartPage() {
         Notification.requestPermission().catch(() => {});
       }
 
-      if (data.resume && data.pactId) {
+      if (data.resume && data.status === 'ACTIVE' && data.pactId) {
         router.push(`/pact/${data.pactId}`);
+        return;
+      }
+      if (data.resume && data.status === 'WAITING') {
+        router.push('/waiting');
         return;
       }
 
@@ -119,7 +180,7 @@ export default function StartPage() {
           rester un peu avec quelqu’un — discrètement.
         </p>
 
-        {savedPactId && (
+        {hasSession && (
           <div
             className="mt-6 p-4 rounded-xl border text-sm"
             style={{
@@ -131,15 +192,24 @@ export default function StartPage() {
               Session trouvée sur cet appareil
             </p>
             <p className="mt-1" style={{ color: 'var(--muted)' }}>
-              Tu peux rouvrir ton pacte sans tout recommencer.
+              On retrouve ton pacte actif (ou l’attente) avec le même email — pas
+              l’ancien lien expiré.
             </p>
-            <Link
-              href={`/pact/${savedPactId}`}
-              className="mt-3 inline-block font-bold underline"
+            <button
+              type="button"
+              disabled={resuming || !email}
+              onClick={resumePact}
+              className="mt-3 font-bold underline disabled:opacity-50"
               style={{ color: 'var(--accent)' }}
             >
-              Ouvrir mon pacte →
-            </Link>
+              {resuming ? 'Recherche du pacte…' : 'Ouvrir mon pacte →'}
+            </button>
+            {!email && (
+              <p className="mt-2 text-xs" style={{ color: 'var(--muted)' }}>
+                Remplis l’email ci-dessous (le même qu’à l’inscription), puis
+                reclique.
+              </p>
+            )}
           </div>
         )}
 

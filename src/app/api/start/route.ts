@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
 
     if (!forceNew) {
       try {
+        // 1) Pacte ACTIF (les deux présents)
         const active = await prisma.pact.findFirst({
           where: {
             status: 'ACTIVE',
@@ -97,12 +98,34 @@ export async function POST(request: NextRequest) {
             userId: user.id,
             pactId: active.id,
             resume: true,
+            status: 'ACTIVE',
             emailSent: false,
             continueUrl: `${APP_URL}/pact/${active.id}`,
           });
         }
+
+        // 2) Pacte encore EN ATTENTE
+        const waiting = await prisma.pact.findFirst({
+          where: {
+            status: 'WAITING',
+            OR: [{ userAId: user.id }, { userBId: user.id }],
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        if (waiting) {
+          return NextResponse.json({
+            message: 'Pacte en attente repris',
+            userId: user.id,
+            pactId: waiting.id,
+            resume: true,
+            status: 'WAITING',
+            emailSent: false,
+            continueUrl: `${APP_URL}/waiting`,
+          });
+        }
       } catch (e) {
-        console.error('Active pact lookup:', e);
+        console.error('Active/waiting pact lookup:', e);
       }
     }
 
@@ -191,6 +214,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         pactId: pact.id,
         resume: false,
+        status: 'WAITING',
         emailSent,
         emailWarning,
         continueUrl: `${APP_URL}/waiting`,
