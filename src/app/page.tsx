@@ -20,7 +20,7 @@ const HELPLINES: [string, string][] = [
   ['09 72 39 40 50', 'SOS Amitié (écoute)'],
   ['0 800 200 000', 'Drogues Info Service'],
   ['0 800 39 40 50', 'Alcool Info Service'],
-  ['114', 'Urgence pour personnes sourdes / malentendantes'],
+  ['114', 'Urgence sourds et malentendants — SMS, fax ou appli (pas d’appel vocal)'],
 ];
 
 export default function HomePage() {
@@ -29,7 +29,6 @@ export default function HomePage() {
       <Header />
       <BrandBanner />
 
-      {/* Hero — seul endroit où on pose le cadre */}
       <section className="relative py-12 md:py-20">
         <div className="max-w-6xl mx-auto px-4 grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
           <div className="lg:col-span-7 animate-fade-up">
@@ -119,7 +118,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3 points seulement — plus de doublons « pas un chat / pas un pro » */}
       <section className="pb-14 md:pb-16">
         <div className="max-w-6xl mx-auto px-4 grid sm:grid-cols-3 gap-4">
           {[
@@ -148,7 +146,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Comment ça marche — compact */}
       <section id="comment" className="py-14 md:py-18 border-t" style={{ borderColor: 'var(--border)' }}>
         <div className="max-w-6xl mx-auto px-4">
           <Reveal>
@@ -158,26 +155,10 @@ export default function HomePage() {
           </Reveal>
           <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              {
-                n: '1',
-                t: 'Durée',
-                d: 'Tu choisis 1, 3 ou 7 jours.',
-              },
-              {
-                n: '2',
-                t: 'Match',
-                d: 'Une autre personne anonyme, même durée.',
-              },
-              {
-                n: '3',
-                t: 'Présence',
-                d: 'Gestes, messages, réponses cliquables.',
-              },
-              {
-                n: '4',
-                t: 'Fin / suite',
-                d: 'Prolonger ensemble, ou clôturer.',
-              },
+              { n: '1', t: 'Durée', d: 'Tu choisis 1, 3 ou 7 jours.' },
+              { n: '2', t: 'Match', d: 'Une autre personne anonyme, même durée.' },
+              { n: '3', t: 'Présence', d: 'Gestes, messages, réponses cliquables.' },
+              { n: '4', t: 'Fin / suite', d: 'Prolonger ensemble, ou clôturer.' },
             ].map((s, i) => (
               <Reveal key={s.n} delay={i * 40}>
                 <article className="flex gap-3 p-1">
@@ -210,7 +191,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Aide — une seule fois, en bas */}
       <section
         id="aide"
         className="py-14 md:py-16 border-t"
@@ -224,7 +204,8 @@ export default function HomePage() {
             <p className="mt-4 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
               Ce site ne remplace pas une assistante sociale, un psychologue ou
               un médecin. Urgence immédiate : <strong>15</strong> ou{' '}
-              <strong>112</strong>.
+              <strong>112</strong>. Pour les personnes sourdes ou malentendantes
+              : <strong>114</strong> (SMS, fax ou application — pas d’appel vocal).
             </p>
           </Reveal>
 
@@ -235,11 +216,14 @@ export default function HomePage() {
               </h3>
               <ul className="mt-4 space-y-2 text-sm">
                 {HELPLINES.map(([n, label]) => (
-                  <li key={n} className="flex gap-3 flex-wrap">
-                    <strong className="shrink-0" style={{ color: 'var(--accent)' }}>
+                  <li key={n} className="flex gap-3 flex-wrap items-baseline">
+                    <strong
+                      className="shrink-0 min-w-[7.5rem] tabular-nums"
+                      style={{ color: 'var(--accent)' }}
+                    >
                       {n}
                     </strong>
-                    <span style={{ color: 'var(--muted)' }}>— {label}</span>
+                    <span style={{ color: 'var(--muted)' }}>{label}</span>
                   </li>
                 ))}
               </ul>
