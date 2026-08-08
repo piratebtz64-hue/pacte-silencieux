@@ -8,7 +8,6 @@ import Footer from '@/components/Footer';
 import BreathExercise from '@/components/BreathExercise';
 import Grounding54321 from '@/components/Grounding54321';
 import MindfulnessMini from '@/components/MindfulnessMini';
-import HeartRateFeedback from '@/components/HeartRateFeedback';
 
 type Tool = 'coherence' | 'breath' | 'ground' | 'mind';
 
@@ -35,30 +34,39 @@ const TOOLS: { id: Tool; title: string; desc: string }[] = [
   },
 ];
 
+function resolveTool(raw: string): Tool | null {
+  const key = raw.toLowerCase().trim();
+  if (key === 'coherence' || key === 'coherence55') return 'coherence';
+  if (
+    key === 'breath' ||
+    key === 'respiration' ||
+    key === 'respirations' ||
+    key === 'programme'
+  )
+    return 'breath';
+  if (key === 'ground' || key === 'ancrage' || key === '54321') return 'ground';
+  if (key === 'mind' || key === 'conscience' || key === 'mindfulness')
+    return 'mind';
+  return null;
+}
+
 function OutilsContent() {
   const search = useSearchParams();
   const [tool, setTool] = useState<Tool | null>(null);
 
   useEffect(() => {
-    const q = (search.get('outil') || search.get('tool') || '').toLowerCase();
+    const q = search.get('outil') || search.get('tool') || '';
     const hash =
       typeof window !== 'undefined'
-        ? window.location.hash.replace('#', '').toLowerCase()
+        ? window.location.hash.replace('#', '')
         : '';
-    const key = (q || hash) as Tool | '';
-    if (
-      key === 'coherence' ||
-      key === 'breath' ||
-      key === 'ground' ||
-      key === 'mind'
-    ) {
-      setTool(key);
-      return;
-    }
-    if (key === 'respiration' || key === 'respirations') setTool('breath');
-    if (key === 'ancrage') setTool('ground');
-    if (key === 'conscience' || key === 'mindfulness') setTool('mind');
+    setTool(resolveTool(q || hash));
   }, [search]);
+
+  const open = (id: Tool) => {
+    setTool(id);
+    window.history.replaceState(null, '', `/outils?outil=${id}`);
+  };
 
   return (
     <main className="min-h-screen flex flex-col">
@@ -85,10 +93,7 @@ function OutilsContent() {
                 <button
                   key={t.id}
                   type="button"
-                  onClick={() => {
-                    setTool(t.id);
-                    window.history.replaceState(null, '', `/outils?outil=${t.id}`);
-                  }}
+                  onClick={() => open(t.id)}
                   className="w-full text-left p-4 rounded-2xl border"
                   style={{
                     borderColor:
@@ -135,12 +140,19 @@ function OutilsContent() {
               </button>
 
               {tool === 'coherence' && (
-                <>
-                  <BreathExercise forcedProtocolId="coherence-55" />
-                  <HeartRateFeedback />
-                </>
+                <BreathExercise
+                  initialProtocolId="coherence55"
+                  showPicker={false}
+                  showHeartRate
+                />
               )}
-              {tool === 'breath' && <BreathExercise />}
+              {tool === 'breath' && (
+                <BreathExercise
+                  initialProtocolId="exhale46"
+                  showPicker
+                  showHeartRate
+                />
+              )}
               {tool === 'ground' && <Grounding54321 />}
               {tool === 'mind' && <MindfulnessMini />}
             </div>

@@ -24,6 +24,39 @@ const HELPLINES: [string, string][] = [
   ['3114', 'Prévention du suicide (24h/24, gratuit)'],
 ];
 
+const QUICK = [
+  {
+    href: '/start',
+    title: 'Commencer un pacte',
+    desc: '1, 3 ou 7 jours · présence anonyme',
+  },
+  {
+    href: '/outils?outil=coherence',
+    title: 'Cohérence cardiaque',
+    desc: 'Respiration 5/5 guidée',
+  },
+  {
+    href: '/outils?outil=breath',
+    title: 'Respirations',
+    desc: '4/6 · carré · soupir · 4-7-8',
+  },
+  {
+    href: '/outils?outil=ground',
+    title: 'Ancrage 5-4-3-2-1',
+    desc: 'Revenir dans le corps',
+  },
+  {
+    href: '/selection',
+    title: 'Sélection empathique',
+    desc: 'Clarifier ce dont tu as besoin',
+  },
+  {
+    href: '/#aide',
+    title: 'Numéros d’aide',
+    desc: 'Écoute et urgences (France)',
+  },
+] as const;
+
 export default function HomePage() {
   return (
     <main className="min-h-screen flex flex-col">
@@ -31,7 +64,6 @@ export default function HomePage() {
       <HomeSessionBanner />
       <BrandBanner />
 
-      {/* ——— HERO ——— */}
       <section className="hero-silence">
         <div className="hero-orb" aria-hidden />
         <div className="max-w-3xl mx-auto px-4 text-center relative">
@@ -51,20 +83,46 @@ export default function HomePage() {
             sans chat libre. Un{' '}
             <strong style={{ color: 'var(--foreground)' }}>complément</strong>{' '}
             quand l’entourage n’est pas disponible — pas un remplacement des
-            proches, des assistantes sociales, ni des professionnels de santé.
+            proches ni des professionnels de santé.
           </p>
           <div className="mt-10 flex flex-wrap gap-3 justify-center animate-fade-up animate-delay-3">
             <Link href="/start" className="btn-primary">
               Commencer un pacte
             </Link>
-            <a href="#tons" className="btn-ghost">
-              Comment on prend soin
-            </a>
+            <Link href="/outils" className="btn-ghost">
+              Respiration et outils
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* ——— EXEMPLE ——— */}
+      <section className="pb-12">
+        <div className="max-w-2xl mx-auto px-4">
+          <h2 className="font-serif text-xl text-center mb-6">Accès directs</h2>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {QUICK.map((q) => (
+              <Link
+                key={q.href}
+                href={q.href}
+                className="block p-4 rounded-2xl border text-left transition-opacity hover:opacity-90"
+                style={{
+                  borderColor: 'var(--border)',
+                  background: 'var(--card-solid)',
+                }}
+              >
+                <span className="font-semibold text-sm">{q.title}</span>
+                <span
+                  className="block text-xs mt-1"
+                  style={{ color: 'var(--muted)' }}
+                >
+                  {q.desc}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="pb-16 md:pb-20">
         <div className="max-w-md mx-auto px-4">
           <Reveal>
@@ -76,10 +134,7 @@ export default function HomePage() {
                 Un échange possible
               </p>
               <div className="space-y-3.5">
-                <div
-                  className="p-4 rounded-2xl"
-                  style={{ background: 'var(--warm)' }}
-                >
+                <div className="p-4 rounded-2xl" style={{ background: 'var(--warm)' }}>
                   <p className="text-[11px] mb-1.5" style={{ color: 'var(--muted)' }}>
                     Présence
                   </p>
@@ -101,22 +156,12 @@ export default function HomePage() {
                     Merci. Ça m’aide un peu.
                   </p>
                 </div>
-                <div
-                  className="p-4 rounded-2xl border text-center"
-                  style={{ borderColor: 'var(--border)' }}
-                >
-                  <p className="text-[11px] mb-1" style={{ color: 'var(--muted)' }}>
-                    Ou un geste
-                  </p>
-                  <p className="font-serif text-lg">Je suis là.</p>
-                </div>
               </div>
             </div>
           </Reveal>
         </div>
       </section>
 
-      {/* ——— ÉCHELLE EMPATHIE ——— */}
       <section
         id="tons"
         className="py-16 md:py-20 border-t"
@@ -131,120 +176,32 @@ export default function HomePage() {
               className="mt-4 text-sm leading-relaxed text-center max-w-[40ch] mx-auto"
               style={{ color: 'var(--muted)' }}
             >
-              L’échange ne s’emballe pas. On commence doux. On monte seulement
-              si la personne le choisit.
+              L’échange ne s’emballe pas. On commence doux. On monte seulement si
+              la personne le choisit.
             </p>
           </Reveal>
-
-          <div className="mt-10 space-y-3">
-            <Reveal delay={40}>
-              <div className="tone-step">
-                <span className="tone-dot" />
-                <div>
-                  <p className="text-sm font-semibold">Présence</p>
-                  <p className="mt-1 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-                    « Je suis là. » « Doucement. » Aucune question, aucune solution.
-                    Juste ne pas être seul·e un instant.
-                  </p>
-                </div>
-              </div>
-            </Reveal>
-            <Reveal delay={80}>
-              <div className="tone-step">
-                <span className="tone-dot tone-dot-2" />
-                <div>
-                  <p className="text-sm font-semibold">Reconnaissance</p>
-                  <p className="mt-1 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-                    Nommer un peu ce qui pèse, sans forcer le récit. Valider.
-                    Laisser la place de répondre — ou non.
-                  </p>
-                </div>
-              </div>
-            </Reveal>
-            <Reveal delay={120}>
-              <div className="tone-step">
-                <span className="tone-dot tone-dot-3" />
-                <div>
-                  <p className="text-sm font-semibold">Ancrage</p>
-                  <p className="mt-1 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-                    Si ça déborde : outils de crise doux (respiration, sol),
-                    et les numéros humains en bas de page. Jamais d’escalade
-                    poussée par le site.
-                  </p>
-                </div>
-              </div>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* ——— CADRE ——— */}
-      <section className="pb-16 md:pb-20">
-        <div className="max-w-4xl mx-auto px-4 grid sm:grid-cols-3 gap-4">
-          {[
-            {
-              t: 'Cadre sûr',
-              d: 'Pas de message libre : phrases et gestes choisis. Pas de profil public.',
-            },
-            {
-              t: 'Temps limité',
-              d: '1, 3 ou 7 jours. À la fin : prolonger ensemble, ou s’arrêter.',
-            },
-            {
-              t: 'Complément',
-              d: 'Quand l’entourage n’est pas là. Si ça dépasse : numéros ci-dessous.',
-            },
-          ].map((item, i) => (
-            <Reveal key={item.t} delay={i * 50}>
-              <article className="card-premium p-5 h-full">
-                <h2 className="text-base font-semibold tracking-tight">{item.t}</h2>
-                <p
-                  className="mt-2 text-sm leading-relaxed"
-                  style={{ color: 'var(--muted)' }}
-                >
-                  {item.d}
-                </p>
-              </article>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      {/* ——— STEPS ——— */}
-      <section
-        id="comment"
-        className="py-16 md:py-20 border-t"
-        style={{ borderColor: 'var(--border)' }}
-      >
-        <div className="max-w-3xl mx-auto px-4">
-          <Reveal>
-            <h2 className="font-serif text-2xl md:text-3xl tracking-tight text-center">
-              Comment ça marche
-            </h2>
-          </Reveal>
-          <div className="mt-12 space-y-8">
+          <div className="mt-10 grid gap-4">
             {[
-              { n: '1', t: 'Tu choisis une durée', d: '1, 3 ou 7 jours.' },
+              {
+                n: '1',
+                t: 'Présence douce',
+                d: 'Messages courts, sans pression. Juste rester là.',
+              },
               {
                 n: '2',
-                t: 'Une présence te rejoint',
-                d: 'Quelqu’un d’anonyme, la même durée.',
+                t: 'Validation',
+                d: 'Reconnaître ce qui est difficile, sans minimiser.',
               },
               {
                 n: '3',
-                t: 'Vous échangez sans chat libre',
-                d: 'Gestes, messages, réponses cliquables.',
+                t: 'Outils si besoin',
+                d: 'Respiration, ancrage — seulement si tu le choisis.',
               },
-              {
-                n: '4',
-                t: 'Vous clôturez — ou prolongez',
-                d: 'Ensemble, d’une semaine, si les deux le veulent.',
-              },
-            ].map((s, i) => (
-              <Reveal key={s.n} delay={i * 40}>
-                <div className="flex gap-5 items-start">
+            ].map((s) => (
+              <Reveal key={s.n}>
+                <div className="flex gap-4 p-4 rounded-2xl border" style={{ borderColor: 'var(--border)' }}>
                   <span
-                    className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold font-serif"
+                    className="shrink-0 h-8 w-8 rounded-full grid place-items-center text-sm font-bold"
                     style={{
                       background: 'var(--accent-soft)',
                       color: 'var(--accent)',
@@ -252,7 +209,7 @@ export default function HomePage() {
                   >
                     {s.n}
                   </span>
-                  <div className="pt-1.5">
+                  <div>
                     <h3 className="font-semibold">{s.t}</h3>
                     <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>
                       {s.d}
@@ -262,17 +219,17 @@ export default function HomePage() {
               </Reveal>
             ))}
           </div>
-          <Reveal delay={100}>
-            <div className="mt-12 text-center">
-              <Link href="/start" className="btn-primary">
-                Commencer un pacte
-              </Link>
-            </div>
-          </Reveal>
+          <div className="mt-10 text-center flex flex-wrap gap-3 justify-center">
+            <Link href="/start" className="btn-primary">
+              Commencer un pacte
+            </Link>
+            <Link href="/outils" className="btn-ghost">
+              Voir les outils
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* ——— AIDE ——— */}
       <section
         id="aide"
         className="py-16 md:py-20 border-t"
@@ -284,13 +241,11 @@ export default function HomePage() {
               En cas de besoin réel
             </h2>
             <p className="mt-4 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-              Ce site ne remplace pas une assistante sociale, un psychologue ou
-              un médecin. Pour une écoute humaine : SOS Amitié ou Croix-Rouge.
-              Urgence : <strong>15</strong> ou <strong>112</strong>. Sourds et
-              malentendants : <strong>114</strong>.
+              Ce site ne remplace pas un psychologue ou un médecin. Pour une
+              écoute humaine : SOS Amitié ou Croix-Rouge. Urgence :{' '}
+              <strong>15</strong> ou <strong>112</strong>.
             </p>
           </Reveal>
-
           <Reveal delay={60}>
             <div className="card-premium mt-8 p-5 md:p-6">
               <h3 className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>
