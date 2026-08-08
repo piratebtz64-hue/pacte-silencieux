@@ -2,38 +2,45 @@ import { ShushIcon } from './Logo';
 
 export default function BrandBanner() {
   return (
-    <div className="relative w-full overflow-hidden border-b border-white/5">
+    <div
+      className="relative w-full overflow-hidden border-b"
+      style={{ borderColor: 'var(--border)' }}
+    >
       <div
         className="absolute inset-0"
         style={{
           background:
-            'linear-gradient(115deg, #0a0e0c 0%, #152018 38%, #0f1411 72%, #080a09 100%)',
+            'linear-gradient(105deg, #1a2420 0%, #24352e 45%, #1c2824 100%)',
         }}
       />
       <div
-        className="pointer-events-none absolute inset-0 opacity-70"
+        className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(ellipse 75% 120% at 50% -50%, rgba(255,228,185,0.28), transparent 55%)',
+            'radial-gradient(ellipse 80% 140% at 50% -40%, rgba(107,168,148,0.22), transparent 55%)',
         }}
       />
 
-      <div className="relative max-w-6xl mx-auto px-4 py-4 sm:py-5 flex items-center justify-center gap-3.5 animate-fade-in">
+      <div className="relative max-w-6xl mx-auto px-4 py-5 sm:py-6 flex items-center justify-center gap-3.5 animate-fade-in">
         <div
-          className="shrink-0 flex h-11 w-11 items-center justify-center rounded-full text-[#f3efe6]"
+          className="shrink-0 flex h-12 w-12 items-center justify-center rounded-full"
           style={{
-            boxShadow:
-              'inset 0 0 0 1px rgba(243,239,230,0.4), 0 0 20px rgba(255,228,185,0.12)',
+            color: '#f3efe6',
+            background: 'rgba(252,250,245,0.06)',
+            boxShadow: 'inset 0 0 0 1px rgba(243,239,230,0.28)',
           }}
         >
           <ShushIcon className="h-6 w-6" />
         </div>
         <div className="text-left min-w-0">
-          <p className="font-serif text-lg sm:text-xl text-[#f3efe6] tracking-wide">
+          <p className="font-serif text-lg sm:text-xl tracking-wide" style={{ color: '#f3efe6' }}>
             Le Pacte silencieux
           </p>
-          <p className="mt-0.5 text-[11px] sm:text-xs text-[#f3efe6]/6 tracking-[0.08em]">
-            Un espace d’entraide sociale discrète
+          <p
+            className="mt-0.5 text-[11px] sm:text-xs tracking-[0.06em]"
+            style={{ color: 'rgba(243,239,230,0.55)' }}
+          >
+            Une présence, quand l’entourage n’est pas là
           </p>
         </div>
       </div>
