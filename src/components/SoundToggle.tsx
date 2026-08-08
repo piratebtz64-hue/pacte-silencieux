@@ -5,6 +5,7 @@ import {
   getSoundMode,
   setSoundMode,
   playModeConfirm,
+  unlockAudio,
   SOUND_MODE_LABELS,
   SOUND_MODE_HINTS,
   SLEEP_MODES,
@@ -14,26 +15,46 @@ import {
 } from '@/lib/sounds';
 import SoundFreqPanel from '@/components/SoundFreqPanel';
 
+function shortLabel(mode: SoundMode): string {
+  if (mode === 'off') return 'Muet';
+  if (mode === 'ui') return 'Sons';
+  return SOUND_MODE_LABELS[mode];
+}
+
 export default function SoundToggle({ className = '' }: { className?: string }) {
   const [mode, setMode] = useState<SoundMode>('ui');
   const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setMode(getSoundMode());
   }, []);
 
+  const openMenu = async () => {
+    // Important mobile : débloquer l’audio dans le geste utilisateur
+    await unlockAudio();
+    setOpen((v) => !v);
+  };
+
   const apply = async (next: SoundMode) => {
-    setMode(next);
-    await setSoundMode(next);
-    playModeConfirm();
+    if (busy) return;
+    setBusy(true);
+    try {
+      await unlockAudio();
+      setMode(next);
+      await setSoundMode(next);
+      playModeConfirm();
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
     <div className={`relative inline-block ${className}`}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="text-xs font-medium px-3 py-1.5 rounded-full border transition"
+        onClick={openMenu}
+        className="text-xs font-medium px-3 py-1.5 rounded-full border transition touch-manipulation"
         style={{
           borderColor: 'var(--border)',
           color: mode === 'off' ? 'var(--muted)' : 'var(--accent)',
@@ -42,27 +63,53 @@ export default function SoundToggle({ className = '' }: { className?: string }) 
         title="Choisir le son"
         aria-expanded={open}
       >
-        {mode === 'off' ? 'Muet' : SOUND_MODE_LABELS[mode]}
+        {shortLabel(mode)}
       </button>
 
       {open && (
         <>
+          {/* Overlay : ferme le menu, z-index très haut pour passer au-dessus du fil */}
           <button
             type="button"
-            className="fixed inset-0 z-40 cursor-default"
-            aria-label="Fermer"
+            className="fixed inset-0 z-[90] bg-black/40 touch-manipulation"
+            aria-label="Fermer le menu son"
             onClick={() => setOpen(false)}
           />
+
+          {/* Sheet bas sur mobile = pas de menu coupé par overflow */}
           <div
-            className="absolute right-0 z-50 mt-2 w-[17rem] max-h-[78vh] overflow-y-auto rounded-xl border shadow-lg p-1"
+            role="dialog"
+            aria-label="Menu son"
+            className="fixed left-3 right-3 bottom-3 z-[100] max-h-[75vh] overflow-y-auto rounded-2xl border shadow-2xl p-2 sm:absolute sm:left-auto sm:right-0 sm:bottom-auto sm:mt-2 sm:w-[17rem] sm:max-h-[78vh]"
             style={{
               borderColor: 'var(--border)',
               background: 'var(--card-solid)',
             }}
+            onClick={(e) => e.stopPropagation()}
           >
+            <div className="flex items-center justify-between px-2 py-2 sm:hidden">
+              <span className="text-sm font-semibold">Sons</span>
+              <button
+                type="button"
+                className="text-xs px-2 py-1"
+                style={{ color: 'var(--muted)' }}
+                onClick={() => setOpen(false)}
+              >
+                Fermer
+              </button>
+            </div>
+
             <Section title="Général">
-              <ModeRow m="off" active={mode === 'off'} onPick={() => apply('off')} />
-              <ModeRow m="ui" active={mode === 'ui'} onPick={() => apply('ui')} />
+              <ModeRow
+                m="off"
+                active={mode === 'off'}
+                onPick={() => apply('off')}
+              />
+              <ModeRow
+                m="ui"
+                active={mode === 'ui'}
+                onPick={() => apply('ui')}
+              />
             </Section>
 
             <Section title="Nature">
@@ -94,8 +141,7 @@ export default function SoundToggle({ className = '' }: { className?: string }) 
                 className="px-3 pb-1 text-[10px] leading-relaxed"
                 style={{ color: 'var(--muted)' }}
               >
-                Deux fréquences L/R. Casque conseillé. Indicatif — pas un outil
-                médical.
+                Casque conseillé. Indicatif — pas un outil médical.
               </p>
               {BINAURAL_MODES.map((m) => (
                 <ModeRow
@@ -120,11 +166,17 @@ export default function SoundToggle({ className = '' }: { className?: string }) 
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <p
-        className="px-3 pt-2.5 pb-1 text-[10px] uppercase tracking-wide font-semibold border-t first:border-0"
+        className="px-3 pt-2.5 pb-1 text-[10px] uppercase tracking-wide font-semibold border-t first:border-t-0"
         style={{ color: 'var(--muted)', borderColor: 'var(--border)' }}
       >
         {title}
@@ -147,10 +199,12 @@ function ModeRow({
     <li>
       <button
         type="button"
-        role="option"
-        aria-selected={active}
-        onClick={onPick}
-        className="w-full text-left px-3 py-2 text-xs transition-opacity hover:opacity-80"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onPick();
+        }}
+        className="w-full text-left px-3 py-2.5 text-xs touch-manipulation"
         style={{
           color: active ? 'var(--accent)' : 'var(--foreground)',
           fontWeight: active ? 600 : 400,
