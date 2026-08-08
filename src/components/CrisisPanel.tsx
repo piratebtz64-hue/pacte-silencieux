@@ -9,8 +9,9 @@ import {
 import { playCrisisStart } from '@/lib/sounds';
 import BreathExercise from './BreathExercise';
 import Grounding54321 from './Grounding54321';
+import MindfulnessMini from './MindfulnessMini';
 
-type Mode = 'menu' | 'breath' | 'ground' | 'scenario';
+type Mode = 'menu' | 'breath' | 'coherence' | 'ground' | 'mind' | 'scenario';
 
 export default function CrisisPanel({
   onSendGesture,
@@ -28,6 +29,38 @@ export default function CrisisPanel({
     setMode('scenario');
     playCrisisStart();
   };
+
+  if (mode === 'coherence') {
+    return (
+      <div className="card-premium p-5">
+        <button
+          type="button"
+          onClick={() => setMode('menu')}
+          className="text-xs"
+          style={{ color: 'var(--muted)' }}
+        >
+          ← Retour
+        </button>
+        <h3 className="mt-3 font-serif text-xl tracking-tight text-center">
+          Cohérence cardiaque
+        </h3>
+        <p
+          className="mt-2 text-sm text-center leading-relaxed max-w-[34ch] mx-auto"
+          style={{ color: 'var(--muted)' }}
+        >
+          5 secondes inspire · 5 secondes expire · environ 5 minutes (protocole
+          3-6-5). Le bouton <strong>Reset</strong> sous le cercle remet tout à
+          zéro.
+        </p>
+        <div className="mt-6">
+          <BreathExercise showPicker={false} initialProtocolId="coherence55" />
+        </div>
+        <p className="mt-8 text-xs text-center" style={{ color: 'var(--muted)' }}>
+          3 fois par jour si tu peux · pas un traitement médical · 3114 si besoin
+        </p>
+      </div>
+    );
+  }
 
   if (mode === 'breath') {
     return (
@@ -47,10 +80,10 @@ export default function CrisisPanel({
           className="mt-2 text-sm text-center leading-relaxed max-w-[34ch] mx-auto"
           style={{ color: 'var(--muted)' }}
         >
-          Choisis un protocole. Suis le cercle. Ce n’est pas un traitement médical.
+          Tous les protocoles. Cercle animé · Reset toujours disponible.
         </p>
         <div className="mt-6">
-          <BreathExercise showPicker initialProtocolId="exhale46" />
+          <BreathExercise showPicker initialProtocolId="coherence55" />
         </div>
         <p className="mt-8 text-xs text-center" style={{ color: 'var(--muted)' }}>
           Détresse aiguë : 3114 · 15 · 112
@@ -77,10 +110,40 @@ export default function CrisisPanel({
           className="mt-2 text-sm text-center leading-relaxed max-w-[34ch] mx-auto"
           style={{ color: 'var(--muted)' }}
         >
-          Les cinq sens, un par un. Pour revenir dans le présent.
+          Les cinq sens, un par un.
         </p>
         <div className="mt-6">
           <Grounding54321 />
+        </div>
+        <p className="mt-8 text-xs text-center" style={{ color: 'var(--muted)' }}>
+          Détresse aiguë : 3114 · 15 · 112
+        </p>
+      </div>
+    );
+  }
+
+  if (mode === 'mind') {
+    return (
+      <div className="card-premium p-5">
+        <button
+          type="button"
+          onClick={() => setMode('menu')}
+          className="text-xs"
+          style={{ color: 'var(--muted)' }}
+        >
+          ← Retour
+        </button>
+        <h3 className="mt-3 font-serif text-xl tracking-tight text-center">
+          Pleine conscience
+        </h3>
+        <p
+          className="mt-2 text-sm text-center leading-relaxed max-w-[34ch] mx-auto"
+          style={{ color: 'var(--muted)' }}
+        >
+          Micro-pratiques 1–2 minutes. Sans performance.
+        </p>
+        <div className="mt-6">
+          <MindfulnessMini />
         </div>
         <p className="mt-8 text-xs text-center" style={{ color: 'var(--muted)' }}>
           Détresse aiguë : 3114 · 15 · 112
@@ -207,18 +270,33 @@ export default function CrisisPanel({
 
       <button
         type="button"
-        onClick={() => setMode('breath')}
+        onClick={() => setMode('coherence')}
         className="w-full text-left p-4 rounded-2xl border"
         style={{
-          borderColor: 'color-mix(in srgb, var(--accent) 40%, transparent)',
+          borderColor: 'color-mix(in srgb, var(--accent) 45%, transparent)',
           background: 'var(--accent-soft)',
         }}
       >
         <span className="font-semibold text-sm" style={{ color: 'var(--accent)' }}>
-          Respiration guidée
+          Cohérence cardiaque (5 min)
         </span>
         <span className="block text-xs mt-1" style={{ color: 'var(--muted)' }}>
-          4/6 · cohérence 5/5 · carré · soupir · 4-7-8 · cercle animé
+          5/5 · protocole 3-6-5 · cercle + Reset
+        </span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setMode('breath')}
+        className="w-full text-left p-4 rounded-2xl border"
+        style={{
+          borderColor: 'var(--border)',
+          background: 'var(--card-solid)',
+        }}
+      >
+        <span className="font-semibold text-sm">Toutes les respirations</span>
+        <span className="block text-xs mt-1" style={{ color: 'var(--muted)' }}>
+          4/6 · carré · soupir · 4-7-8
         </span>
       </button>
 
@@ -227,15 +305,28 @@ export default function CrisisPanel({
         onClick={() => setMode('ground')}
         className="w-full text-left p-4 rounded-2xl border"
         style={{
-          borderColor: 'color-mix(in srgb, var(--accent) 30%, transparent)',
+          borderColor: 'var(--border)',
           background: 'var(--card-solid)',
         }}
       >
-        <span className="font-semibold text-sm" style={{ color: 'var(--accent)' }}>
-          Ancrage sensoriel 5-4-3-2-1
-        </span>
+        <span className="font-semibold text-sm">Ancrage 5-4-3-2-1</span>
         <span className="block text-xs mt-1" style={{ color: 'var(--muted)' }}>
-          Vue · toucher · ouïe · odorat · goût — guidé étape par étape
+          Cinq sens, guidé
+        </span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setMode('mind')}
+        className="w-full text-left p-4 rounded-2xl border"
+        style={{
+          borderColor: 'var(--border)',
+          background: 'var(--card-solid)',
+        }}
+      >
+        <span className="font-semibold text-sm">Pleine conscience</span>
+        <span className="block text-xs mt-1" style={{ color: 'var(--muted)' }}>
+          Pieds au sol · souffle · balayage · laisser passer
         </span>
       </button>
 

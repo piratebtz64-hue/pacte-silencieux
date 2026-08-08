@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   BREATH_PROTOCOLS,
-  type BreathProtocol,
   type BreathPhase,
 } from '@/lib/breath-protocols';
 import { playBreathIn, playBreathOut } from '@/lib/sounds';
@@ -11,7 +10,6 @@ import { playBreathIn, playBreathOut } from '@/lib/sounds';
 type RunState = 'idle' | 'run' | 'done';
 
 function scaleForPhase(phase: BreathPhase, progress: number): number {
-  // progress 0 → 1 within phase
   switch (phase) {
     case 'in':
     case 'double_in':
@@ -28,7 +26,7 @@ function scaleForPhase(phase: BreathPhase, progress: number): number {
 }
 
 export default function BreathExercise({
-  initialProtocolId = 'exhale46',
+  initialProtocolId = 'coherence55',
   showPicker = true,
 }: {
   initialProtocolId?: string;
@@ -46,8 +44,18 @@ export default function BreathExercise({
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [phaseDuration, setPhaseDuration] = useState(1);
+  const [elapsedSec, setElapsedSec] = useState(0);
 
   const currentPhase = protocol.phases[phaseIndex];
+
+  const reset = useCallback(() => {
+    setState('idle');
+    setCycle(0);
+    setPhaseIndex(0);
+    setSecondsLeft(0);
+    setPhaseDuration(1);
+    setElapsedSec(0);
+  }, []);
 
   const start = useCallback(() => {
     const first = protocol.phases[0];
@@ -55,6 +63,7 @@ export default function BreathExercise({
     setPhaseIndex(0);
     setPhaseDuration(first.seconds);
     setSecondsLeft(first.seconds);
+    setElapsedSec(0);
     setState('run');
     if (first.phase === 'in' || first.phase === 'double_in') playBreathIn();
     else if (first.phase === 'out') playBreathOut();
@@ -74,7 +83,6 @@ export default function BreathExercise({
         if (ph.phase === 'out') playBreathOut();
         return;
       }
-      // fin de cycle
       const nextCycle = cycle + 1;
       if (nextCycle >= protocol.cycles) {
         setState('done');
@@ -89,7 +97,10 @@ export default function BreathExercise({
       return;
     }
 
-    const t = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
+    const t = setTimeout(() => {
+      setSecondsLeft((s) => s - 1);
+      setElapsedSec((e) => e + 1);
+    }, 1000);
     return () => clearTimeout(t);
   }, [state, secondsLeft, phaseIndex, cycle, protocol]);
 
@@ -101,6 +112,11 @@ export default function BreathExercise({
       : state === 'done'
         ? 0.85
         : 0.7;
+
+  const totalSec = protocol.cycles * protocol.phases.reduce((a, p) => a + p.seconds, 0);
+  const remainSec = Math.max(0, totalSec - elapsedSec);
+  const remainMin = Math.floor(remainSec / 60);
+  const remainS = remainSec % 60;
 
   return (
     <div className="w-full">
@@ -121,7 +137,10 @@ export default function BreathExercise({
                   protocolId === p.id ? 'var(--accent-soft)' : 'var(--card-solid)',
               }}
             >
-              <span className="block text-sm font-semibold">{p.label}</span>
+              <span className="block text-sm font-semibold">
+                {p.label}
+                {p.featured ? ' · recommandé' : ''}
+              </span>
               <span className="block text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
                 {p.useWhen}
               </span>
@@ -131,52 +150,81 @@ export default function BreathExercise({
       )}
 
       <div className="flex flex-col items-center">
-        <div
-          className="relative flex items-center justify-center"
-          style={{ width: 160, height: 160 }}
-          aria-live="polite"
-        >
+        <div className="relative" style={{ width: 168, height: 168 }}>
           <div
-            className="absolute rounded-full"
-            style={{
-              width: 160,
-              height: 160,
-              background: 'var(--accent-soft)',
-              border:
-                '1.5px solid color-mix(in srgb, var(--accent) 35%, transparent)',
-              transform: `scale(${scale})`,
-              transition:
-                state === 'run'
-                  ? `transform ${phaseDuration}s linear`
-                  : 'transform 0.5s ease',
-            }}
-          />
-          <div className="relative z-10 text-center px-2">
-            <p
-              className="font-serif text-3xl tabular-nums leading-none"
-              style={{ color: 'var(--accent)' }}
-            >
-              {state === 'run' ? secondsLeft : '·'}
-            </p>
-            <p className="text-xs mt-2 leading-snug" style={{ color: 'var(--muted)' }}>
-              {state === 'idle'
-                ? protocol.short
-                : state === 'done'
-                  ? 'Terminé. Tu as tenu.'
-                  : currentPhase?.hint}
-            </p>
+            className="absolute inset-0 flex items-center justify-center"
+            aria-live="polite"
+          >
+            <div
+              className="absolute rounded-full"
+              style={{
+                width: 160,
+                height: 160,
+                background: 'var(--accent-soft)',
+                border:
+                  '1.5px solid color-mix(in srgb, var(--accent) 35%, transparent)',
+                transform: `scale(${scale})`,
+                transition:
+                  state === 'run'
+                    ? `transform ${phaseDuration}s linear`
+                    : 'transform 0.5s ease',
+              }}
+            />
+            <div className="relative z-10 text-center px-2">
+              <p
+                className="font-serif text-3xl tabular-nums leading-none"
+                style={{ color: 'var(--accent)' }}
+              >
+                {state === 'run' ? secondsLeft : '·'}
+              </p>
+              <p
+                className="text-xs mt-2 leading-snug"
+                style={{ color: 'var(--muted)' }}
+              >
+                {state === 'idle'
+                  ? protocol.short
+                  : state === 'done'
+                    ? 'Terminé. Tu as tenu.'
+                    : currentPhase?.hint}
+              </p>
+            </div>
           </div>
+
+          {/* Bouton Reset — toujours accessible près du cercle */}
+          <button
+            type="button"
+            onClick={reset}
+            title="Réinitialiser"
+            aria-label="Réinitialiser la respiration"
+            className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full text-[11px] font-semibold border"
+            style={{
+              borderColor: 'var(--border)',
+              background: 'var(--card-solid)',
+              color: 'var(--muted)',
+              boxShadow: 'var(--shadow-soft)',
+            }}
+          >
+            Reset
+          </button>
         </div>
 
         {state === 'run' && (
-          <p className="mt-4 text-xs" style={{ color: 'var(--muted)' }}>
-            Cycle {cycle + 1} / {protocol.cycles}
-          </p>
+          <div className="mt-8 text-center">
+            <p className="text-xs" style={{ color: 'var(--muted)' }}>
+              Cycle {cycle + 1} / {protocol.cycles}
+              {protocol.id === 'coherence55' && (
+                <>
+                  {' '}
+                  · reste {remainMin}:{String(remainS).padStart(2, '0')}
+                </>
+              )}
+            </p>
+          </div>
         )}
 
         {protocol.note && state === 'idle' && (
           <p
-            className="mt-4 text-xs text-center max-w-[32ch] leading-relaxed"
+            className="mt-8 text-xs text-center max-w-[34ch] leading-relaxed"
             style={{ color: 'var(--muted)' }}
           >
             {protocol.note}
@@ -187,7 +235,7 @@ export default function BreathExercise({
           <button
             type="button"
             onClick={start}
-            className="btn-primary !text-sm mt-5"
+            className="btn-primary !text-sm mt-6"
           >
             {state === 'done' ? 'Recommencer' : 'Lancer'}
           </button>
@@ -196,11 +244,11 @@ export default function BreathExercise({
         {state === 'run' && (
           <button
             type="button"
-            onClick={() => setState('idle')}
-            className="mt-5 text-xs"
-            style={{ color: 'var(--muted)' }}
+            onClick={reset}
+            className="mt-5 text-xs font-semibold"
+            style={{ color: 'var(--accent)' }}
           >
-            Arrêter
+            Reset — tout remettre à zéro
           </button>
         )}
       </div>
