@@ -1,3 +1,1 @@
-pacte-silencieux production
-2026-08-08
-features: sessions-pro, home-banner, pwa, install-hint, waiting-honest, design-pact-sensible, gestes-ouverture, crisis-panel, messages-part0-16
+pacte-silencieux production 2026-08-08 sound-sheet-mobile unlockAudio binaural
