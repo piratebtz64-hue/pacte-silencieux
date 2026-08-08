@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -11,29 +11,64 @@ import {
   clearSession,
 } from '@/lib/session';
 
+/** Polling rapide au début, puis un peu plus large pour économiser */
+function nextPollMs(attempt: number) {
+  if (attempt < 8) return 1200;
+  if (attempt < 20) return 2000;
+  return 3000;
+}
+
 function WaitingContent() {
   const [email, setEmail] = useState<string | null>(null);
   const [duration, setDuration] = useState<string | null>(null);
   const [waitingTime, setWaitingTime] = useState('00:00');
-  const [status, setStatus] = useState('Recherche d’une présence…');
+  const [status, setStatus] = useState('Recherche d une presence…');
   const [pactId, setPactId] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
   const [alone, setAlone] = useState(true);
   const [leaving, setLeaving] = useState(false);
+  const [offline, setOffline] = useState(false);
   const [honest, setHonest] = useState(
-    'Rien ne se passe tant qu’une autre personne n’a pas choisi la même durée et ouvert l’attente.'
+    'Rien ne se passe tant qu une autre personne n a pas choisi la meme duree et ouvert l attente.'
   );
+
+  const attemptRef = useRef(0);
+  const leftRef = useRef(false);
+  const pactIdRef = useRef<string | null>(null);
+
+  const signalDisconnect = useCallback((id: string | null) => {
+    if (!id || leftRef.current) return;
+    leftRef.current = true;
+    const body = JSON.stringify({ pactId: id, action: 'disconnect' });
+    try {
+      if (navigator.sendBeacon) {
+        const blob = new Blob([body], { type: 'application/json' });
+        navigator.sendBeacon('/api/match', blob);
+        return;
+      }
+    } catch {
+      /* fall through */
+    }
+    fetch('/api/match', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+      keepalive: true,
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const s = readSession();
     setEmail(s.email || null);
     setDuration(s.duration || null);
     setPactId(s.pactId || null);
+    pactIdRef.current = s.pactId || null;
 
     if (!s.pactId && s.email) {
       resolveAndSyncSession(s.email).then((r) => {
         if (r.pactId) {
           setPactId(r.pactId);
+          pactIdRef.current = r.pactId;
           if (r.status === 'ACTIVE') {
             window.location.assign(`/pact/${r.pactId}`);
           }
@@ -51,30 +86,68 @@ function WaitingContent() {
       );
       if (seconds === 45) {
         setHonest(
-          'Toujours seul·e : c’est normal s’il n’y a personne d’autre connecté en même temps.'
+          'Toujours seul(e) : c est normal s il n y a personne d autre connecte en meme temps.'
         );
       }
       if (seconds === 150) {
         setHonest(
-          'Tu peux laisser cette page ouverte, ou revenir plus tard avec le même email et la même durée.'
+          'Tu peux laisser cette page ouverte, ou revenir plus tard avec le meme email et la meme duree.'
         );
       }
       if (seconds === 300) {
         setHonest(
-          'Cinq minutes : tu peux annuler et réessayer plus tard, ou tester une autre durée si tu es deux à vous coordonner.'
+          'Cinq minutes : tu peux annuler et reessayer plus tard, ou tester une autre duree si vous etes deux.'
         );
       }
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, []);
+    const onOffline = () => {
+      setOffline(true);
+      setStatus('Connexion perdue. Nouvelle tentative des que le reseau revient…');
+    };
+    const onOnline = () => {
+      setOffline(false);
+      setStatus('Reseau de retour. Recherche en cours…');
+    };
+
+    // Fermeture onglet / navigation = deconnexion attendue → sortir de la file
+    const onPageHide = () => signalDisconnect(pactIdRef.current);
+    const onBeforeUnload = () => signalDisconnect(pactIdRef.current);
+
+    window.addEventListener('offline', onOffline);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('pagehide', onPageHide);
+    window.addEventListener('beforeunload', onBeforeUnload);
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('offline', onOffline);
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('pagehide', onPageHide);
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
+  }, [signalDisconnect]);
+
+  useEffect(() => {
+    pactIdRef.current = pactId;
+  }, [pactId]);
 
   useEffect(() => {
     if (!pactId) return;
 
     let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    attemptRef.current = 0;
+    leftRef.current = false;
 
     const tryMatch = async () => {
+      if (cancelled || leftRef.current) return;
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setOffline(true);
+        schedule();
+        return;
+      }
+
       try {
         const res = await fetch('/api/match', {
           method: 'POST',
@@ -82,12 +155,14 @@ function WaitingContent() {
           body: JSON.stringify({ pactId, action: 'match' }),
         });
         const data = await res.json();
-        if (cancelled) return;
+        if (cancelled || leftRef.current) return;
 
         if (data.matched && data.pactId) {
-          setStatus('Présence trouvée. Ouverture…');
+          setStatus('Presence trouvee. Ouverture…');
           setAlone(false);
           writeSession({ pactId: data.pactId, status: 'ACTIVE' });
+          // Ne pas signaler disconnect : on part vers le pacte
+          leftRef.current = true;
           window.location.assign(`/pact/${data.pactId}`);
           return;
         }
@@ -96,31 +171,42 @@ function WaitingContent() {
         setStatus(
           data.message ||
             (data.alone !== false
-              ? 'Tu es seul·e dans la file pour l’instant.'
+              ? 'Tu es seul(e) dans la file pour l instant.'
               : 'Toujours en attente…')
         );
         writeSession({ status: 'WAITING' });
         if (data.debug) {
           setHint(
-            `Durée : ${data.debug.myDuration} j · Dans la file : ${data.debug.totalWaiting} · Même durée que toi : ${data.debug.sameDurationOthers ?? 0}`
+            `Duree : ${data.debug.myDuration} j · Dans la file : ${data.debug.totalWaiting} · Meme duree : ${data.debug.sameDurationOthers ?? 0}`
           );
         }
       } catch {
-        if (!cancelled) setStatus('Connexion en cours…');
+        if (!cancelled) {
+          setStatus('Connexion en cours…');
+        }
       }
+
+      attemptRef.current += 1;
+      schedule();
+    };
+
+    const schedule = () => {
+      if (cancelled || leftRef.current) return;
+      timer = setTimeout(tryMatch, nextPollMs(attemptRef.current));
     };
 
     tryMatch();
-    const interval = setInterval(tryMatch, 3000);
+
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      clearTimeout(timer);
     };
   }, [pactId]);
 
   const leaveQueue = async () => {
     if (!pactId || leaving) return;
     setLeaving(true);
+    leftRef.current = true;
     try {
       await fetch('/api/match', {
         method: 'POST',
@@ -152,9 +238,18 @@ function WaitingContent() {
             {duration
               ? ` de ${duration} jour${Number(duration) > 1 ? 's' : ''}`
               : ''}
-            . Le lien ne se crée que lorsqu’une autre personne est vraiment en
-            file avec la même durée.
+            . Le lien se cree seulement quand une autre personne est en file avec
+            la meme duree.
           </p>
+
+          {offline && (
+            <p
+              className="mt-4 text-xs font-semibold"
+              style={{ color: 'var(--accent)' }}
+            >
+              Hors ligne — la recherche reprendra automatiquement.
+            </p>
+          )}
 
           <div
             className="mt-8 p-6 rounded-2xl border"
@@ -169,7 +264,7 @@ function WaitingContent() {
               className="text-xs tracking-wide mb-2"
               style={{ color: 'var(--muted)' }}
             >
-              Temps d’attente
+              Temps d attente
             </div>
             <div
               className="text-4xl font-serif tabular-nums"
@@ -190,7 +285,7 @@ function WaitingContent() {
                 className="mt-3 text-[11px] font-semibold tracking-wide"
                 style={{ color: 'var(--accent)' }}
               >
-                File : toi seul·e pour le moment
+                File : toi seul(e) pour le moment
               </p>
             )}
           </div>
@@ -224,9 +319,9 @@ function WaitingContent() {
             <p className="font-semibold" style={{ color: 'var(--accent)' }}>
               Pour que le lien se fasse
             </p>
-            <p>· Deux appareils (ou deux emails différents)</p>
-            <p>· La même durée : 1, 3 ou 7 jours</p>
-            <p>· Les deux restent sur cette page d’attente</p>
+            <p>- Deux appareils (ou deux emails differents)</p>
+            <p>- La meme duree : 1, 3 ou 7 jours</p>
+            <p>- Les deux restent sur cette page d attente</p>
           </div>
 
           {email && (
@@ -244,11 +339,11 @@ function WaitingContent() {
                 onClick={leaveQueue}
                 className="btn-ghost !text-sm"
               >
-                {leaving ? 'Sortie…' : 'Annuler l’attente'}
+                {leaving ? 'Sortie…' : 'Annuler l attente'}
               </button>
             )}
             <Link href="/" className="text-sm" style={{ color: 'var(--muted)' }}>
-              ← Accueil
+              Accueil
             </Link>
           </div>
         </div>
