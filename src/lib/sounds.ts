@@ -53,6 +53,12 @@ async function ensureRunning() {
   return c;
 }
 
+/** À appeler dans un geste utilisateur (clic) pour autoriser l’audio mobile */
+export async function unlockAudio() {
+  const c = await ensureRunning();
+  return !!c;
+}
+
 export function getSoundMode(): SoundMode {
   if (typeof window === 'undefined') return 'ui';
   const v = localStorage.getItem(STORAGE_KEY) as SoundMode | null;
@@ -266,7 +272,6 @@ async function startAmbient(kind: AmbientId) {
   }
 }
 
-/** Binaural : deux sinus, L / R, différence = beat Hz. Casque requis. */
 async function startBinaural(id: BinauralId) {
   const c = await ensureRunning();
   if (!c || ambientActive) return;
@@ -302,7 +307,6 @@ async function startBinaural(id: BinauralId) {
   rightOsc.start();
   ambientNodes.push(leftOsc, rightOsc, leftG, rightG, merger);
 
-  // Léger bruit de fond pour adoucir le sinus pur
   const noise = c.createBufferSource();
   noise.buffer = makeNoiseBuffer(c, 3, 'pink');
   noise.loop = true;
