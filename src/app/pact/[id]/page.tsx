@@ -362,7 +362,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
       <section className="flex-1 py-8 md:py-12 pact-shell">
         <div className="max-w-lg mx-auto px-4 relative">
-          {/* Entête discrète */}
           <div className="flex items-center justify-between gap-3 mb-2">
             <div className="flex items-center gap-2.5">
               <div className="pact-breath" aria-hidden />
@@ -391,10 +390,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
           )}
 
           {statusMsg && (
-            <p
-              className="mt-3 text-center text-sm animate-fade-in"
-              style={{ color: 'var(--accent)' }}
-            >
+            <p className="mt-3 text-center text-sm animate-fade-in" style={{ color: 'var(--accent)' }}>
               {statusMsg}
             </p>
           )}
@@ -408,22 +404,16 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
             />
           )}
 
-          {/* Clôture digne */}
           {pact.status === 'ENDED' && (
             <div className="pact-close">
               <div
                 className="mx-auto mb-6 w-12 h-12 rounded-full grid place-items-center"
                 style={{ background: 'var(--accent-soft)' }}
               >
-                <span className="text-xl" style={{ color: 'var(--accent)' }}>
-                  ·
-                </span>
+                <span className="text-xl" style={{ color: 'var(--accent)' }}>·</span>
               </div>
               <h1 className="pact-welcome-title">Ce temps-là est terminé</h1>
-              <p
-                className="mt-4 text-sm leading-relaxed max-w-[32ch] mx-auto"
-                style={{ color: 'var(--muted)' }}
-              >
+              <p className="mt-4 text-sm leading-relaxed max-w-[32ch] mx-auto" style={{ color: 'var(--muted)' }}>
                 Merci d’avoir tenu une présence. Tu peux relire le Fil ci-dessous,
                 ou recommencer un autre jour si tu en ressens le besoin.
               </p>
@@ -447,7 +437,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
           {pact.status === 'ACTIVE' && (
             <>
-              {/* Navigation douce */}
               <nav
                 className="mt-6 p-1 rounded-full flex gap-0.5"
                 style={{
@@ -467,9 +456,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                     type="button"
                     key={key}
                     onClick={() => setTab(key)}
-                    className={`pact-tab relative ${
-                      tab === key ? 'pact-tab-active' : ''
-                    }`}
+                    className={`pact-tab relative ${tab === key ? 'pact-tab-active' : ''}`}
                   >
                     {label}
                     {key === 'fil' && (unreadCount > 0 || pendingForMe > 0) && (
@@ -482,7 +469,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                 ))}
               </nav>
 
-              {/* ——— FIL ——— */}
               {tab === 'fil' && (
                 <div className="mt-8">
                   {isEmptyFil ? (
@@ -494,32 +480,51 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                         className="mt-4 text-sm leading-relaxed max-w-[28ch] mx-auto"
                         style={{ color: 'var(--muted)' }}
                       >
-                        Un geste suffit. Ou le silence, un moment.
+                        Choisis un premier signe — ou reste en silence un moment.
                       </p>
+                      <div className="mt-8 space-y-2.5 text-left max-w-sm mx-auto">
+                        {(
+                          [
+                            ['JE_SUIS_LA', 'Je suis là.'],
+                            ['PRESENCE_DISCRETE', 'Présence discrète. Pas besoin de répondre.'],
+                            ['DOUCEMENT', 'Doucement.'],
+                            ['RESPIRATION', 'Une respiration avec toi.'],
+                            ['SANS_PRESSION', 'Sans pression.'],
+                            ['C_EST_OK', 'C’est ok de ne rien dire.'],
+                          ] as const
+                        ).map(([type, label]) => (
+                          <button
+                            key={type}
+                            type="button"
+                            disabled={sending}
+                            onClick={() => sendGesture(type)}
+                            className="suggest-card disabled:opacity-50"
+                          >
+                            <span className="msg-body text-[1rem]">{label}</span>
+                          </button>
+                        ))}
+                      </div>
                       <button
                         type="button"
-                        disabled={sending}
-                        onClick={() => sendGesture('JE_SUIS_LA')}
-                        className="mt-10 btn-primary disabled:opacity-50"
+                        onClick={() => setTab('geste')}
+                        className="mt-5 block mx-auto text-sm"
+                        style={{ color: 'var(--accent)' }}
                       >
-                        Je suis là.
+                        Voir tous les gestes →
                       </button>
                       <button
                         type="button"
                         onClick={() => setTab('soutien')}
-                        className="mt-4 block mx-auto text-sm"
+                        className="mt-2 block mx-auto text-sm"
                         style={{ color: 'var(--muted)' }}
                       >
-                        Ou choisir un message →
+                        Ou un message →
                       </button>
                     </div>
                   ) : (
                     <div className="space-y-5">
                       {pendingForMe > 0 && (
-                        <p
-                          className="text-center text-xs tracking-wide"
-                          style={{ color: 'var(--accent)' }}
-                        >
+                        <p className="text-center text-xs tracking-wide" style={{ color: 'var(--accent)' }}>
                           Une réponse t’attend
                         </p>
                       )}
@@ -538,9 +543,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                         return (
                           <div
                             key={m.id}
-                            className={`space-y-2 ${
-                              isMine ? 'pl-6' : 'pr-6'
-                            }`}
+                            className={`space-y-2 ${isMine ? 'pl-6' : 'pr-6'}`}
                             style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
                           >
                             <div
@@ -549,11 +552,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                               }`}
                             >
                               <p className="msg-meta">
-                                {isSystem
-                                  ? 'Moment'
-                                  : isMine
-                                    ? 'Toi'
-                                    : 'Présence'}
+                                {isSystem ? 'Moment' : isMine ? 'Toi' : 'Présence'}
                                 {isGesture ? ' · geste' : ''} ·{' '}
                                 {new Date(m.createdAt).toLocaleString('fr-FR', {
                                   day: 'numeric',
@@ -567,10 +566,8 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                             {m.responseText && (
                               <div
                                 className={`msg-bubble ${
-                                  !isMine
-                                    ? 'msg-bubble-mine'
-                                    : 'msg-bubble-theirs'
-                                } ${!isMine ? 'pl-0' : ''}`}
+                                  !isMine ? 'msg-bubble-mine' : 'msg-bubble-theirs'
+                                }`}
                               >
                                 <p className="msg-meta">Réponse</p>
                                 <p className="msg-body">{m.responseText}</p>
@@ -578,10 +575,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                             )}
                             {needsResponse && opening && (
                               <div className="pt-1 space-y-2">
-                                <p
-                                  className="text-xs tracking-wide px-1"
-                                  style={{ color: 'var(--accent)' }}
-                                >
+                                <p className="text-xs tracking-wide px-1" style={{ color: 'var(--accent)' }}>
                                   Répondre
                                 </p>
                                 {opening.responses.map((r) => (
@@ -606,7 +600,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                 </div>
               )}
 
-              {/* ——— GESTE ——— */}
               {tab === 'geste' && (
                 <div className="mt-8">
                   <p
@@ -621,14 +614,8 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                       onClick={() => setGestureGroup('all')}
                       className="px-3 py-1 rounded-full text-xs font-semibold"
                       style={{
-                        background:
-                          gestureGroup === 'all'
-                            ? 'var(--accent-soft)'
-                            : 'transparent',
-                        color:
-                          gestureGroup === 'all'
-                            ? 'var(--accent)'
-                            : 'var(--muted)',
+                        background: gestureGroup === 'all' ? 'var(--accent-soft)' : 'transparent',
+                        color: gestureGroup === 'all' ? 'var(--accent)' : 'var(--muted)',
                       }}
                     >
                       Tous
@@ -640,14 +627,8 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                         onClick={() => setGestureGroup(g)}
                         className="px-3 py-1 rounded-full text-xs font-semibold"
                         style={{
-                          background:
-                            gestureGroup === g
-                              ? 'var(--accent-soft)'
-                              : 'transparent',
-                          color:
-                            gestureGroup === g
-                              ? 'var(--accent)'
-                              : 'var(--muted)',
+                          background: gestureGroup === g ? 'var(--accent-soft)' : 'transparent',
+                          color: gestureGroup === g ? 'var(--accent)' : 'var(--muted)',
                         }}
                       >
                         {g}
@@ -676,12 +657,9 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                 </div>
               )}
 
-              {/* ——— SOUTIEN ——— */}
               {tab === 'soutien' && (
                 <div className="mt-8">
-                  <p
-                    className="font-serif text-xl leading-snug text-center max-w-[18ch] mx-auto"
-                  >
+                  <p className="font-serif text-xl leading-snug text-center max-w-[18ch] mx-auto">
                     Quelques mots. Pas tout le catalogue.
                   </p>
 
@@ -699,15 +677,10 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                             ? 'color-mix(in srgb, var(--accent) 40%, transparent)'
                             : 'var(--border)',
                         background:
-                          intent === 'offer'
-                            ? 'var(--accent-soft)'
-                            : 'var(--card-solid)',
+                          intent === 'offer' ? 'var(--accent-soft)' : 'var(--card-solid)',
                       }}
                     >
-                      <span
-                        className="block text-sm font-semibold"
-                        style={{ color: 'var(--accent)' }}
-                      >
+                      <span className="block text-sm font-semibold" style={{ color: 'var(--accent)' }}>
                         Je soutiens
                       </span>
                     </button>
@@ -724,15 +697,10 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                             ? 'color-mix(in srgb, var(--accent) 40%, transparent)'
                             : 'var(--border)',
                         background:
-                          intent === 'seek'
-                            ? 'var(--accent-soft)'
-                            : 'var(--card-solid)',
+                          intent === 'seek' ? 'var(--accent-soft)' : 'var(--card-solid)',
                       }}
                     >
-                      <span
-                        className="block text-sm font-semibold"
-                        style={{ color: 'var(--accent)' }}
-                      >
+                      <span className="block text-sm font-semibold" style={{ color: 'var(--accent)' }}>
                         J’ai besoin
                       </span>
                     </button>
@@ -740,10 +708,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
 
                   {!showCatalog && (
                     <div className="space-y-2.5">
-                      <p
-                        className="text-xs tracking-wide text-center mb-3"
-                        style={{ color: 'var(--muted)' }}
-                      >
+                      <p className="text-xs tracking-wide text-center mb-3" style={{ color: 'var(--muted)' }}>
                         Suggestions du moment
                       </p>
                       {suggestions.map((m) => (
@@ -778,7 +743,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                       >
                         ← Suggestions
                       </button>
-
                       <input
                         type="search"
                         placeholder="Rechercher…"
@@ -790,7 +754,6 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                           background: 'var(--card-solid)',
                         }}
                       />
-
                       <div className="flex flex-wrap gap-1.5 mb-4">
                         <button
                           type="button"
@@ -798,13 +761,9 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                           className="px-2.5 py-1 rounded-full text-xs font-semibold"
                           style={{
                             background:
-                              selectedCategory === 'all'
-                                ? 'var(--accent-soft)'
-                                : 'transparent',
+                              selectedCategory === 'all' ? 'var(--accent-soft)' : 'transparent',
                             color:
-                              selectedCategory === 'all'
-                                ? 'var(--accent)'
-                                : 'var(--muted)',
+                              selectedCategory === 'all' ? 'var(--accent)' : 'var(--muted)',
                           }}
                         >
                           Tous
@@ -817,20 +776,15 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                             className="px-2.5 py-1 rounded-full text-xs font-semibold"
                             style={{
                               background:
-                                selectedCategory === cat
-                                  ? 'var(--accent-soft)'
-                                  : 'transparent',
+                                selectedCategory === cat ? 'var(--accent-soft)' : 'transparent',
                               color:
-                                selectedCategory === cat
-                                  ? 'var(--accent)'
-                                  : 'var(--muted)',
+                                selectedCategory === cat ? 'var(--accent)' : 'var(--muted)',
                             }}
                           >
                             {CATEGORY_LABELS[cat]}
                           </button>
                         ))}
                       </div>
-
                       <div className="space-y-2 max-h-[26rem] overflow-y-auto">
                         {filteredOpenings.slice(0, 80).map((m) => (
                           <button
@@ -864,10 +818,7 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
             </>
           )}
 
-          <p
-            className="mt-14 text-xs text-center"
-            style={{ color: 'var(--muted)' }}
-          >
+          <p className="mt-14 text-xs text-center" style={{ color: 'var(--muted)' }}>
             En détresse : 3114 · 15 · 112
           </p>
         </div>
