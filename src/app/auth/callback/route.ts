@@ -46,10 +46,10 @@ export async function GET(request: NextRequest) {
     if (error) console.error('verifyOtp', error);
   }
 
+  // Après connexion : toujours la page d’accueil du site
   if (ok) {
-    // pactId est côté client (localStorage) — on envoie vers waiting
-    return NextResponse.redirect(`${origin}/waiting`);
+    return NextResponse.redirect(`${origin}/`);
   }
 
-  return NextResponse.redirect(`${origin}/start?error=auth`);
+  return NextResponse.redirect(`${origin}/?error=auth`);
 }

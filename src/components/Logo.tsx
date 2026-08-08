@@ -1,8 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { readSession } from '@/lib/session';
 
 /** Icône « chut » réutilisable (bannière, logo, etc.) */
 export function ShushIcon({ className = 'h-5 w-5' }: { className?: string }) {
@@ -37,20 +35,13 @@ export function ShushIcon({ className = 'h-5 w-5' }: { className?: string }) {
   );
 }
 
-/** Logo : accueil, sauf si session → page reprendre */
+/** Logo → toujours la page d’accueil */
 export default function Logo() {
-  const [href, setHref] = useState('/');
-
-  useEffect(() => {
-    const s = readSession();
-    if (s.email || s.pactId) setHref('/start');
-  }, []);
-
   return (
     <Link
-      href={href}
+      href="/"
       className="group flex items-center gap-2.5 no-underline"
-      aria-label="Le Pacte silencieux"
+      aria-label="Le Pacte silencieux — accueil"
     >
       <span
         className="logo-ring flex h-9 w-9 items-center justify-center rounded-full border"
