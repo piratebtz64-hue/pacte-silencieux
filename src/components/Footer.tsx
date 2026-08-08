@@ -22,6 +22,9 @@ export default function Footer() {
             <Link href="/start" className="btn-primary !py-2.5 !px-5 !text-sm">
               Commencer
             </Link>
+            <Link href="/professionnels" className="btn-ghost !py-2.5 !px-5 !text-sm">
+              Professionnels
+            </Link>
             <Link href="/#aide" className="btn-ghost !py-2.5 !px-5 !text-sm">
               Aide
             </Link>
@@ -37,6 +40,7 @@ export default function Footer() {
           style={{ color: 'var(--muted)' }}
         >
           {[
+            ['/professionnels', 'Pour les professionnels'],
             ['/confidentialite', 'Confidentialité'],
             ['/mentions-legales', 'Mentions légales'],
             ['/cgu', 'Conditions d’utilisation'],
