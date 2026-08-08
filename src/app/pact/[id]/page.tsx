@@ -23,6 +23,8 @@ import {
 } from '@/lib/messages';
 import { GESTURES, GESTURE_GROUPS } from '@/lib/gestures';
 import { playSendClick, playSoftChime, isSoundEnabled } from '@/lib/sounds';
+import { getChainAfter, repliesForOpening } from '@/lib/chains';
+import CheckInBar from '@/components/CheckInBar';
 
 const FAV_KEY = 'pacte-favorites';
 
@@ -520,6 +522,9 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                       >
                         Ou un message →
                       </button>
+                      <div className="mt-8 max-w-sm mx-auto">
+                        <CheckInBar disabled={sending} onSend={sendGesture} />
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-5">
@@ -573,12 +578,12 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                                 <p className="msg-body">{m.responseText}</p>
                               </div>
                             )}
-                            {needsResponse && opening && (
+                            {needsResponse && (
                               <div className="pt-1 space-y-2">
                                 <p className="text-xs tracking-wide px-1" style={{ color: 'var(--accent)' }}>
                                   Répondre
                                 </p>
-                                {opening.responses.map((r) => (
+                                {repliesForOpening(opening).map((r) => (
                                   <button
                                     type="button"
                                     key={r}
@@ -595,6 +600,49 @@ export default function PactPage({ params }: { params: Promise<{ id: string }> }
                         );
                       })}
                       <div ref={filEnd} />
+
+                      {(() => {
+                        const last = visibleMessages[visibleMessages.length - 1];
+                        if (
+                          !last ||
+                          last.openingId.startsWith('gesture:') ||
+                          last.openingId.startsWith('system:')
+                        )
+                          return null;
+                        const op = getMessageById(last.openingId);
+                        const chain = getChainAfter(
+                          op?.category,
+                          visibleMessages.map((x) => x.openingId)
+                        );
+                        return (
+                          <div
+                            className="mt-8 pt-6 border-t"
+                            style={{ borderColor: 'var(--border)' }}
+                          >
+                            <p
+                              className="text-xs tracking-wide text-center mb-3"
+                              style={{ color: 'var(--muted)' }}
+                            >
+                              Continuer le fil
+                            </p>
+                            <div className="space-y-2">
+                              {chain.map((m) => (
+                                <button
+                                  key={m.id}
+                                  type="button"
+                                  disabled={sending}
+                                  onClick={() => sendOpening(m)}
+                                  className="suggest-card disabled:opacity-50"
+                                >
+                                  <span className="msg-body text-[0.95rem]">{m.text}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      <CheckInBar disabled={sending} onSend={sendGesture} />
                     </div>
                   )}
                 </div>
