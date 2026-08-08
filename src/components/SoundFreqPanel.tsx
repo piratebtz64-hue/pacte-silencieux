@@ -3,61 +3,40 @@
 import { useEffect, useState } from 'react';
 import {
   type AmbientId,
+  type BinauralId,
   AMBIENT_FREQ,
+  BINAURAL_FREQ,
   loadFreqOverrides,
   saveFreqOverrides,
   getAmbientConfig,
+  getBinauralConfig,
+  isAmbientId,
+  isBinauralId,
 } from '@/lib/sound-config';
 import { getSoundMode, reloadAmbientIfNeeded, setSoundMode } from '@/lib/sounds';
 
-const AMBIENT_IDS = Object.keys(AMBIENT_FREQ) as AmbientId[];
-
-/**
- * Réglage simple : volume global + fréquence filtre de l’ambiance en cours.
- */
 export default function SoundFreqPanel() {
   const [open, setOpen] = useState(false);
-  const [master, setMaster] = useState(1);
+  const [masterA, setMasterA] = useState(1);
+  const [masterB, setMasterB] = useState(1);
   const [filterHz, setFilterHz] = useState(400);
-  const [mode, setMode] = useState<string>('ui');
+  const [carrier, setCarrier] = useState(100);
+  const [beat, setBeat] = useState(4);
+  const [mode, setMode] = useState('ui');
 
   useEffect(() => {
     const m = getSoundMode();
     setMode(m);
     const o = loadFreqOverrides();
-    setMaster(o.masterAmbient ?? 1);
-    if (m !== 'off' && m !== 'ui' && AMBIENT_IDS.includes(m as AmbientId)) {
-      setFilterHz(getAmbientConfig(m as AmbientId).filterHz);
+    setMasterA(o.masterAmbient ?? 1);
+    setMasterB(o.masterBinaural ?? 1);
+    if (isAmbientId(m)) setFilterHz(getAmbientConfig(m).filterHz);
+    if (isBinauralId(m)) {
+      const b = getBinauralConfig(m);
+      setCarrier(b.carrierHz);
+      setBeat(b.beatHz);
     }
   }, [open]);
-
-  const applyMaster = async (v: number) => {
-    setMaster(v);
-    saveFreqOverrides({ masterAmbient: v });
-    await reloadAmbientIfNeeded();
-  };
-
-  const applyFilter = async (hz: number) => {
-    setFilterHz(hz);
-    const m = getSoundMode();
-    if (m === 'off' || m === 'ui') return;
-    saveFreqOverrides({
-      [m]: { filterHz: hz },
-    });
-    await reloadAmbientIfNeeded();
-  };
-
-  const reset = async () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('pacte_sound_freq_overrides');
-    }
-    setMaster(1);
-    const m = getSoundMode();
-    if (m !== 'off' && m !== 'ui') {
-      setFilterHz(AMBIENT_FREQ[m as AmbientId].filterHz);
-    }
-    await reloadAmbientIfNeeded();
-  };
 
   if (!open) {
     return (
@@ -67,48 +46,67 @@ export default function SoundFreqPanel() {
         className="text-[10px] font-medium underline"
         style={{ color: 'var(--muted)' }}
       >
-        Fréquences / volume
+        Fréquences / volume / binaural
       </button>
     );
   }
 
-  const isAmbient = mode !== 'off' && mode !== 'ui';
-
   return (
     <div
-      className="mt-2 p-3 rounded-xl border text-xs space-y-3"
-      style={{ borderColor: 'var(--border)', background: 'var(--card-solid)' }}
+      className="mt-1 p-3 rounded-xl border text-xs space-y-3"
+      style={{ borderColor: 'var(--border)', background: 'var(--background)' }}
     >
       <div className="flex justify-between items-center">
         <span className="font-semibold">Réglage son</span>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          style={{ color: 'var(--muted)' }}
-        >
+        <button type="button" onClick={() => setOpen(false)} style={{ color: 'var(--muted)' }}>
           Fermer
         </button>
       </div>
 
       <label className="block">
         <span style={{ color: 'var(--muted)' }}>
-          Volume ambiances · {Math.round(master * 100)} %
+          Volume nature · {Math.round(masterA * 100)} %
         </span>
         <input
           type="range"
           min={0.4}
-          max={1.4}
+          max={1.5}
           step={0.05}
-          value={master}
-          onChange={(e) => applyMaster(Number(e.target.value))}
+          value={masterA}
+          onChange={async (e) => {
+            const v = Number(e.target.value);
+            setMasterA(v);
+            saveFreqOverrides({ masterAmbient: v });
+            await reloadAmbientIfNeeded();
+          }}
           className="w-full mt-1"
         />
       </label>
 
-      {isAmbient && (
+      <label className="block">
+        <span style={{ color: 'var(--muted)' }}>
+          Volume binaural · {Math.round(masterB * 100)} %
+        </span>
+        <input
+          type="range"
+          min={0.4}
+          max={1.5}
+          step={0.05}
+          value={masterB}
+          onChange={async (e) => {
+            const v = Number(e.target.value);
+            setMasterB(v);
+            saveFreqOverrides({ masterBinaural: v });
+            await reloadAmbientIfNeeded();
+          }}
+          className="w-full mt-1"
+        />
+      </label>
+
+      {isAmbientId(mode) && (
         <label className="block">
           <span style={{ color: 'var(--muted)' }}>
-            Fréquence filtre · {filterHz} Hz
+            Filtre ambiance · {filterHz} Hz
           </span>
           <input
             type="range"
@@ -116,47 +114,123 @@ export default function SoundFreqPanel() {
             max={2400}
             step={10}
             value={filterHz}
-            onChange={(e) => applyFilter(Number(e.target.value))}
+            onChange={async (e) => {
+              const hz = Number(e.target.value);
+              setFilterHz(hz);
+              saveFreqOverrides({ [mode]: { filterHz: hz } });
+              await reloadAmbientIfNeeded();
+            }}
             className="w-full mt-1"
           />
-          <span className="text-[10px]" style={{ color: 'var(--muted)' }}>
-            Plus bas = plus sourd / grave · plus haut = plus clair
-          </span>
         </label>
       )}
 
-      {!isAmbient && (
-        <p style={{ color: 'var(--muted)' }}>
-          Choisis une ambiance (eau, pluie, sommeil…) pour régler sa fréquence.
-        </p>
+      {isBinauralId(mode) && (
+        <>
+          <label className="block">
+            <span style={{ color: 'var(--muted)' }}>
+              Porteuse · {carrier} Hz
+            </span>
+            <input
+              type="range"
+              min={80}
+              max={200}
+              step={1}
+              value={carrier}
+              onChange={async (e) => {
+                const v = Number(e.target.value);
+                setCarrier(v);
+                saveFreqOverrides({ [mode]: { carrierHz: v } });
+                await reloadAmbientIfNeeded();
+              }}
+              className="w-full mt-1"
+            />
+          </label>
+          <label className="block">
+            <span style={{ color: 'var(--muted)' }}>
+              Battement · {beat} Hz
+            </span>
+            <input
+              type="range"
+              min={1}
+              max={12}
+              step={0.5}
+              value={beat}
+              onChange={async (e) => {
+                const v = Number(e.target.value);
+                setBeat(v);
+                saveFreqOverrides({ [mode]: { beatHz: v } });
+                await reloadAmbientIfNeeded();
+              }}
+              className="w-full mt-1"
+            />
+          </label>
+        </>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {(['sleep', 'water', 'rain', 'ocean'] as AmbientId[]).map((id) => (
-          <button
+          <Chip
             key={id}
-            type="button"
+            label={id}
             onClick={async () => {
               await setSoundMode(id);
               setMode(id);
               setFilterHz(getAmbientConfig(id).filterHz);
             }}
-            className="px-2 py-1 rounded-full border text-[10px]"
-            style={{ borderColor: 'var(--border)' }}
-          >
-            {id}
-          </button>
+          />
+        ))}
+        {(Object.keys(BINAURAL_FREQ) as BinauralId[]).map((id) => (
+          <Chip
+            key={id}
+            label={BINAURAL_FREQ[id].label.replace('Binaural ', '')}
+            onClick={async () => {
+              await setSoundMode(id);
+              setMode(id);
+              const b = getBinauralConfig(id);
+              setCarrier(b.carrierHz);
+              setBeat(b.beatHz);
+            }}
+          />
         ))}
       </div>
 
       <button
         type="button"
-        onClick={reset}
+        onClick={async () => {
+          localStorage.removeItem('pacte_sound_freq_overrides');
+          setMasterA(1);
+          setMasterB(1);
+          await reloadAmbientIfNeeded();
+        }}
         className="text-[10px] underline"
         style={{ color: 'var(--muted)' }}
       >
-        Réinitialiser les fréquences
+        Réinitialiser
       </button>
+
+      <p className="text-[10px] leading-relaxed" style={{ color: 'var(--muted)' }}>
+        Binaural : mets un casque. Ce n’est pas un dispositif médical.
+      </p>
     </div>
+  );
+}
+
+function Chip({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="px-2 py-1 rounded-full border text-[10px]"
+      style={{ borderColor: 'var(--border)' }}
+    >
+      {label}
+    </button>
   );
 }

@@ -7,8 +7,9 @@ import {
   playModeConfirm,
   SOUND_MODE_LABELS,
   SOUND_MODE_HINTS,
-  SOUND_MODE_ORDER,
   SLEEP_MODES,
+  BINAURAL_MODES,
+  NATURE_MODES,
   type SoundMode,
 } from '@/lib/sounds';
 import SoundFreqPanel from '@/components/SoundFreqPanel';
@@ -40,7 +41,6 @@ export default function SoundToggle({ className = '' }: { className?: string }) 
         }}
         title="Choisir le son"
         aria-expanded={open}
-        aria-haspopup="listbox"
       >
         {mode === 'off' ? 'Muet' : SOUND_MODE_LABELS[mode]}
       </button>
@@ -54,22 +54,19 @@ export default function SoundToggle({ className = '' }: { className?: string }) 
             onClick={() => setOpen(false)}
           />
           <div
-            className="absolute right-0 z-50 mt-2 w-[16rem] max-h-[75vh] overflow-y-auto rounded-xl border shadow-lg p-1"
+            className="absolute right-0 z-50 mt-2 w-[17rem] max-h-[78vh] overflow-y-auto rounded-xl border shadow-lg p-1"
             style={{
               borderColor: 'var(--border)',
               background: 'var(--card-solid)',
             }}
           >
-            <p
-              className="px-3 pt-2.5 pb-1 text-[10px] uppercase tracking-wide font-semibold"
-              style={{ color: 'var(--muted)' }}
-            >
-              Général
-            </p>
-            <ul role="listbox">
-              {SOUND_MODE_ORDER.filter(
-                (m) => m === 'off' || m === 'ui' || !SLEEP_MODES.includes(m)
-              ).map((m) => (
+            <Section title="Général">
+              <ModeRow m="off" active={mode === 'off'} onPick={() => apply('off')} />
+              <ModeRow m="ui" active={mode === 'ui'} onPick={() => apply('ui')} />
+            </Section>
+
+            <Section title="Nature">
+              {NATURE_MODES.map((m) => (
                 <ModeRow
                   key={m}
                   m={m}
@@ -77,15 +74,30 @@ export default function SoundToggle({ className = '' }: { className?: string }) 
                   onPick={() => apply(m)}
                 />
               ))}
-            </ul>
-            <p
-              className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wide font-semibold border-t"
-              style={{ color: 'var(--muted)', borderColor: 'var(--border)' }}
-            >
-              Pour s’endormir
-            </p>
-            <ul role="listbox" className="pb-1">
-              {SLEEP_MODES.map((m) => (
+            </Section>
+
+            <Section title="Pour s’endormir">
+              {SLEEP_MODES.filter((m) => !BINAURAL_MODES.includes(m)).map(
+                (m) => (
+                  <ModeRow
+                    key={m}
+                    m={m}
+                    active={mode === m}
+                    onPick={() => apply(m)}
+                  />
+                )
+              )}
+            </Section>
+
+            <Section title="Binaural (casque)">
+              <p
+                className="px-3 pb-1 text-[10px] leading-relaxed"
+                style={{ color: 'var(--muted)' }}
+              >
+                Deux fréquences L/R. Casque conseillé. Indicatif — pas un outil
+                médical.
+              </p>
+              {BINAURAL_MODES.map((m) => (
                 <ModeRow
                   key={m}
                   m={m}
@@ -93,7 +105,8 @@ export default function SoundToggle({ className = '' }: { className?: string }) 
                   onPick={() => apply(m)}
                 />
               ))}
-            </ul>
+            </Section>
+
             <div
               className="px-2 pb-2 pt-1 border-t"
               style={{ borderColor: 'var(--border)' }}
@@ -103,6 +116,20 @@ export default function SoundToggle({ className = '' }: { className?: string }) 
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p
+        className="px-3 pt-2.5 pb-1 text-[10px] uppercase tracking-wide font-semibold border-t first:border-0"
+        style={{ color: 'var(--muted)', borderColor: 'var(--border)' }}
+      >
+        {title}
+      </p>
+      <ul>{children}</ul>
     </div>
   );
 }

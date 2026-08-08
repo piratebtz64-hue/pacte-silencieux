@@ -1,16 +1,21 @@
 /**
- * Sons discrets — Web Audio, fréquences via sound-config.
+ * Sons — UI, ambiances, binaural (stéréo / casque).
  */
 
 import {
   type AmbientId,
+  type BinauralId,
   getAmbientConfig,
+  getBinauralConfig,
   getUiFreq,
+  isAmbientId,
+  isBinauralId,
   UI_DURATION,
   UI_GAIN,
+  BINAURAL_FREQ,
 } from '@/lib/sound-config';
 
-export type SoundMode = 'off' | 'ui' | AmbientId;
+export type SoundMode = 'off' | 'ui' | AmbientId | BinauralId;
 
 const STORAGE_KEY = 'pacte_sound_mode';
 
@@ -78,9 +83,9 @@ export async function setSoundMode(next: SoundMode) {
     localStorage.setItem('pacte_sound', next === 'off' ? '0' : '1');
   }
   stopAmbient();
-  if (next !== 'off' && next !== 'ui') {
-    await startAmbient(next);
-  }
+  if (next === 'off' || next === 'ui') return;
+  if (isBinauralId(next)) await startBinaural(next);
+  else if (isAmbientId(next)) await startAmbient(next);
 }
 
 function uiAllowed() {
@@ -115,7 +120,8 @@ function tone(
 export function playSoftChime() {
   tone(getUiFreq('chimeMid'), UI_DURATION.chime, 'sine', UI_GAIN.chime);
   setTimeout(
-    () => tone(getUiFreq('chimeHigh'), UI_DURATION.chime2, 'sine', UI_GAIN.chime),
+    () =>
+      tone(getUiFreq('chimeHigh'), UI_DURATION.chime2, 'sine', UI_GAIN.chime),
     120
   );
 }
@@ -129,7 +135,12 @@ export function playBreathIn() {
 }
 
 export function playBreathOut() {
-  tone(getUiFreq('breathOut'), UI_DURATION.breathOut, 'sine', UI_GAIN.breathOut);
+  tone(
+    getUiFreq('breathOut'),
+    UI_DURATION.breathOut,
+    'sine',
+    UI_GAIN.breathOut
+  );
 }
 
 export function playCrisisStart() {
@@ -255,13 +266,64 @@ async function startAmbient(kind: AmbientId) {
   }
 }
 
-/** Recharge l’ambiance active après changement de fréquences */
+/** Binaural : deux sinus, L / R, différence = beat Hz. Casque requis. */
+async function startBinaural(id: BinauralId) {
+  const c = await ensureRunning();
+  if (!c || ambientActive) return;
+  ambientActive = true;
+
+  const cfg = getBinauralConfig(id);
+  const master = c.createGain();
+  master.gain.value = cfg.volume;
+  master.connect(c.destination);
+  ambientNodes.push(master);
+
+  const merger = c.createChannelMerger(2);
+  merger.connect(master);
+
+  const leftOsc = c.createOscillator();
+  const rightOsc = c.createOscillator();
+  const leftG = c.createGain();
+  const rightG = c.createGain();
+  leftG.gain.value = 0.5;
+  rightG.gain.value = 0.5;
+
+  leftOsc.type = 'sine';
+  rightOsc.type = 'sine';
+  leftOsc.frequency.value = cfg.carrierHz;
+  rightOsc.frequency.value = cfg.carrierHz + cfg.beatHz;
+
+  leftOsc.connect(leftG);
+  rightOsc.connect(rightG);
+  leftG.connect(merger, 0, 0);
+  rightG.connect(merger, 0, 1);
+
+  leftOsc.start();
+  rightOsc.start();
+  ambientNodes.push(leftOsc, rightOsc, leftG, rightG, merger);
+
+  // Léger bruit de fond pour adoucir le sinus pur
+  const noise = c.createBufferSource();
+  noise.buffer = makeNoiseBuffer(c, 3, 'pink');
+  noise.loop = true;
+  const nf = c.createBiquadFilter();
+  nf.type = 'lowpass';
+  nf.frequency.value = 200;
+  const ng = c.createGain();
+  ng.gain.value = 0.15;
+  noise.connect(nf);
+  nf.connect(ng);
+  ng.connect(master);
+  noise.start();
+  ambientNodes.push(noise, nf, ng);
+}
+
 export async function reloadAmbientIfNeeded() {
   const m = getSoundMode();
-  if (m !== 'off' && m !== 'ui') {
-    stopAmbient();
-    await startAmbient(m);
-  }
+  if (m === 'off' || m === 'ui') return;
+  stopAmbient();
+  if (isBinauralId(m)) await startBinaural(m);
+  else if (isAmbientId(m)) await startAmbient(m);
 }
 
 export const SOUND_MODE_LABELS: Record<SoundMode, string> = {
@@ -275,6 +337,14 @@ export const SOUND_MODE_LABELS: Record<SoundMode, string> = {
   night: 'Nuit calme',
   sleep: 'S’endormir',
   softnoise: 'Bruit doux',
+  fire: 'Feu de bois',
+  wind: 'Vent doux',
+  stream: 'Ruisseau',
+  cave: 'Grotte',
+  binaural_delta: BINAURAL_FREQ.binaural_delta.label,
+  binaural_theta: BINAURAL_FREQ.binaural_theta.label,
+  binaural_alpha: BINAURAL_FREQ.binaural_alpha.label,
+  binaural_calm: BINAURAL_FREQ.binaural_calm.label,
 };
 
 export const SOUND_MODE_HINTS: Partial<Record<SoundMode, string>> = {
@@ -287,19 +357,62 @@ export const SOUND_MODE_HINTS: Partial<Record<SoundMode, string>> = {
   night: 'Calme nocturne',
   sleep: 'Très grave, volume minimal',
   softnoise: 'Bruit rose apaisant',
+  fire: 'Crépitement doux',
+  wind: 'Souffle léger',
+  stream: 'Eau vive discrète',
+  cave: 'Résonance grave',
+  binaural_delta: BINAURAL_FREQ.binaural_delta.hint,
+  binaural_theta: BINAURAL_FREQ.binaural_theta.hint,
+  binaural_alpha: BINAURAL_FREQ.binaural_alpha.hint,
+  binaural_calm: BINAURAL_FREQ.binaural_calm.hint,
 };
 
 export const SOUND_MODE_ORDER: SoundMode[] = [
   'off',
   'ui',
   'water',
+  'stream',
   'rain',
   'ocean',
   'forest',
+  'wind',
+  'fire',
   'countryside',
+  'cave',
   'night',
   'sleep',
   'softnoise',
+  'binaural_calm',
+  'binaural_delta',
+  'binaural_theta',
+  'binaural_alpha',
 ];
 
-export const SLEEP_MODES: SoundMode[] = ['sleep', 'night', 'softnoise', 'rain'];
+export const SLEEP_MODES: SoundMode[] = [
+  'sleep',
+  'night',
+  'softnoise',
+  'rain',
+  'cave',
+  'binaural_delta',
+  'binaural_calm',
+];
+
+export const BINAURAL_MODES: SoundMode[] = [
+  'binaural_calm',
+  'binaural_delta',
+  'binaural_theta',
+  'binaural_alpha',
+];
+
+export const NATURE_MODES: SoundMode[] = [
+  'water',
+  'stream',
+  'rain',
+  'ocean',
+  'forest',
+  'wind',
+  'fire',
+  'countryside',
+  'cave',
+];

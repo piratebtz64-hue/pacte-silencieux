@@ -1,6 +1,5 @@
 /**
- * Configuration des fréquences sonores (Hz) et volumes.
- * Ajustable sans toucher à la logique Web Audio.
+ * Configuration fréquences (Hz) — ambiances, UI, binaural.
  */
 
 export type AmbientId =
@@ -11,21 +10,29 @@ export type AmbientId =
   | 'forest'
   | 'night'
   | 'sleep'
-  | 'softnoise';
+  | 'softnoise'
+  | 'fire'
+  | 'wind'
+  | 'stream'
+  | 'cave';
 
-/** Notes UI (Hz) */
+export type BinauralId =
+  | 'binaural_delta'
+  | 'binaural_theta'
+  | 'binaural_alpha'
+  | 'binaural_calm';
+
 export const UI_FREQ = {
-  chimeHigh: 659.25, // E5
-  chimeMid: 523.25, // C5
-  send: 440, // A4
-  breathIn: 220, // A3
-  breathOut: 164.81, // E3
-  crisisA: 392, // G4
-  crisisB: 311.13, // Eb4
-  confirm: 392, // G4
+  chimeHigh: 659.25,
+  chimeMid: 523.25,
+  send: 440,
+  breathIn: 220,
+  breathOut: 164.81,
+  crisisA: 392,
+  crisisB: 311.13,
+  confirm: 392,
 } as const;
 
-/** Durées UI (secondes) */
 export const UI_DURATION = {
   chime: 0.15,
   chime2: 0.2,
@@ -37,7 +44,6 @@ export const UI_DURATION = {
   confirm: 0.1,
 } as const;
 
-/** Gains UI (0–1, rester bas) */
 export const UI_GAIN = {
   chime: 0.04,
   send: 0.03,
@@ -48,29 +54,28 @@ export const UI_GAIN = {
 } as const;
 
 export type AmbientFreqConfig = {
-  /** Fréquence centrale du filtre (Hz) */
   filterHz: number;
-  /** Résonance Q */
   q: number;
-  /** Type de filtre */
   filterType: BiquadFilterType;
-  /** Volume master */
   volume: number;
-  /** Couleur de bruit */
   noise: 'brown' | 'pink' | 'white';
-  /** LFO en Hz (0 = off) */
   lfoHz?: number;
-  /** Profondeur LFO sur le gain */
   lfoDepth?: number;
-  /** Drone optionnel (Hz) */
   droneHz?: number;
-  /** Volume drone */
   droneGain?: number;
-  /** Couche aiguë forêt (Hz highpass) */
   highpassHz?: number;
 };
 
-/** Profils d’ambiance — fréquences pensées pour rester doux */
+export type BinauralConfig = {
+  /** Fréquence porteuse oreille gauche (Hz) */
+  carrierHz: number;
+  /** Différence droite − gauche = battement perçu (Hz) */
+  beatHz: number;
+  volume: number;
+  label: string;
+  hint: string;
+};
+
 export const AMBIENT_FREQ: Record<AmbientId, AmbientFreqConfig> = {
   water: {
     filterHz: 680,
@@ -141,20 +146,86 @@ export const AMBIENT_FREQ: Record<AmbientId, AmbientFreqConfig> = {
     volume: 0.012,
     noise: 'pink',
   },
+  fire: {
+    filterHz: 1100,
+    q: 0.6,
+    filterType: 'bandpass',
+    volume: 0.02,
+    noise: 'pink',
+    lfoHz: 0.25,
+    lfoDepth: 0.005,
+  },
+  wind: {
+    filterHz: 350,
+    q: 0.35,
+    filterType: 'lowpass',
+    volume: 0.019,
+    noise: 'brown',
+    lfoHz: 0.07,
+    lfoDepth: 0.008,
+  },
+  stream: {
+    filterHz: 950,
+    q: 0.7,
+    filterType: 'bandpass',
+    volume: 0.024,
+    noise: 'white',
+    lfoHz: 0.18,
+    lfoDepth: 0.004,
+  },
+  cave: {
+    filterHz: 180,
+    q: 0.4,
+    filterType: 'lowpass',
+    volume: 0.017,
+    noise: 'brown',
+    droneHz: 48,
+    droneGain: 0.012,
+  },
 };
 
-/**
- * Surcharges utilisateur (localStorage) — ex. { sleep: { filterHz: 180 } }
- * Fusionnées au démarrage d’une ambiance.
- */
+/** Binaural — casque recommandé. Indicatif, pas un outil médical. */
+export const BINAURAL_FREQ: Record<BinauralId, BinauralConfig> = {
+  binaural_delta: {
+    carrierHz: 100,
+    beatHz: 2.5,
+    volume: 0.035,
+    label: 'Binaural delta',
+    hint: '≈ 2,5 Hz · endormissement (casque)',
+  },
+  binaural_theta: {
+    carrierHz: 120,
+    beatHz: 6,
+    volume: 0.032,
+    label: 'Binaural thêta',
+    hint: '≈ 6 Hz · détente profonde (casque)',
+  },
+  binaural_alpha: {
+    carrierHz: 140,
+    beatHz: 10,
+    volume: 0.03,
+    label: 'Binaural alpha',
+    hint: '≈ 10 Hz · calme éveillé (casque)',
+  },
+  binaural_calm: {
+    carrierHz: 110,
+    beatHz: 4,
+    volume: 0.033,
+    label: 'Binaural doux',
+    hint: '≈ 4 Hz · transition calme (casque)',
+  },
+};
+
 const OVERRIDE_KEY = 'pacte_sound_freq_overrides';
 
 export type FreqOverrides = Partial<
   Record<AmbientId, Partial<AmbientFreqConfig>>
-> & {
-  ui?: Partial<typeof UI_FREQ>;
-  masterAmbient?: number; // 0.5–1.5 multiplicateur volume ambiances
-};
+> &
+  Partial<Record<BinauralId, Partial<BinauralConfig>>> & {
+    ui?: Partial<typeof UI_FREQ>;
+    masterAmbient?: number;
+    masterBinaural?: number;
+  };
 
 export function loadFreqOverrides(): FreqOverrides {
   if (typeof window === 'undefined') return {};
@@ -170,8 +241,10 @@ export function loadFreqOverrides(): FreqOverrides {
 export function saveFreqOverrides(partial: FreqOverrides) {
   if (typeof window === 'undefined') return;
   const current = loadFreqOverrides();
-  const next = { ...current, ...partial };
-  localStorage.setItem(OVERRIDE_KEY, JSON.stringify(next));
+  localStorage.setItem(
+    OVERRIDE_KEY,
+    JSON.stringify({ ...current, ...partial })
+  );
 }
 
 export function getAmbientConfig(id: AmbientId): AmbientFreqConfig {
@@ -185,7 +258,26 @@ export function getAmbientConfig(id: AmbientId): AmbientFreqConfig {
   };
 }
 
+export function getBinauralConfig(id: BinauralId): BinauralConfig {
+  const base = BINAURAL_FREQ[id];
+  const over = loadFreqOverrides()[id] || {};
+  const master = loadFreqOverrides().masterBinaural ?? 1;
+  return {
+    ...base,
+    ...over,
+    volume: (over.volume ?? base.volume) * master,
+  };
+}
+
 export function getUiFreq(key: keyof typeof UI_FREQ): number {
   const over = loadFreqOverrides().ui;
   return over?.[key] ?? UI_FREQ[key];
+}
+
+export function isBinauralId(id: string): id is BinauralId {
+  return id in BINAURAL_FREQ;
+}
+
+export function isAmbientId(id: string): id is AmbientId {
+  return id in AMBIENT_FREQ;
 }
