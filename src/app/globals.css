@@ -22,6 +22,7 @@
     0 24px 48px rgba(22, 21, 18, 0.08);
   --font-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
   --duration: 0.35s;
 }
 
@@ -99,7 +100,6 @@ footer {
   letter-spacing: -0.025em;
 }
 
-/* Transitions GPU-friendly uniquement (opacity + transform) */
 a,
 button {
   transition: color 0.2s var(--ease-out), background-color 0.2s var(--ease-out),
@@ -196,7 +196,6 @@ button {
   );
 }
 
-/* Animations courtes, une seule fois, GPU */
 @keyframes fade-up {
   from {
     opacity: 0;
@@ -214,6 +213,29 @@ button {
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes breath {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes soft-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -271,4 +293,118 @@ button {
 .link-lux:hover::after {
   transform: scaleX(1);
   transform-origin: left;
+}
+
+/* ——— Pacte : atmosphère sensible ——— */
+.pact-shell {
+  position: relative;
+}
+.pact-shell::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -2rem;
+  width: min(28rem, 90vw);
+  height: 14rem;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    var(--accent-soft),
+    transparent 70%
+  );
+  opacity: 0.85;
+}
+
+.pact-breath {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 9999px;
+  background: var(--accent);
+  animation: breath 4.2s var(--ease-soft) infinite;
+}
+
+.msg-body {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
+}
+
+.msg-bubble {
+  border-radius: 1.25rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--border);
+  animation: soft-rise 0.55s var(--ease-soft) both;
+}
+
+.msg-bubble-mine {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.msg-bubble-theirs {
+  background: var(--card-solid);
+}
+
+.msg-meta {
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.pact-tab {
+  flex: 1;
+  min-width: 0;
+  padding: 0.7rem 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  border-radius: 9999px;
+  transition: background 0.25s var(--ease-out), color 0.25s var(--ease-out);
+}
+.pact-tab-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.suggest-card {
+  width: 100%;
+  text-align: left;
+  padding: 1rem 1.1rem;
+  border-radius: 1.15rem;
+  border: 1px solid var(--border);
+  background: var(--card-solid);
+  transition: border-color 0.25s ease, background 0.25s ease,
+    transform 0.3s var(--ease-out);
+}
+.suggest-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: var(--accent-soft);
+  transform: translateY(-2px);
+}
+
+.pact-welcome {
+  text-align: center;
+  padding: 2.5rem 1rem 2rem;
+  animation: soft-rise 0.7s var(--ease-soft) both;
+}
+
+.pact-welcome-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.35rem, 4vw, 1.75rem);
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  max-width: 18ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pact-close {
+  text-align: center;
+  padding: 3rem 1rem;
+  animation: soft-rise 0.7s var(--ease-soft) both;
 }
