@@ -6,7 +6,9 @@ import {
   setSoundMode,
   playModeConfirm,
   SOUND_MODE_LABELS,
+  SOUND_MODE_HINTS,
   SOUND_MODE_ORDER,
+  SLEEP_MODES,
   type SoundMode,
 } from '@/lib/sounds';
 
@@ -25,21 +27,11 @@ export default function SoundToggle({ className = '' }: { className?: string }) 
     setOpen(false);
   };
 
-  const cycle = async () => {
-    const i = SOUND_MODE_ORDER.indexOf(mode);
-    const next = SOUND_MODE_ORDER[(i + 1) % SOUND_MODE_ORDER.length];
-    await apply(next);
-  };
-
   return (
     <div className={`relative inline-block ${className}`}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          cycle();
-        }}
         className="text-xs font-medium px-3 py-1.5 rounded-full border transition"
         style={{
           borderColor: 'var(--border)',
@@ -61,50 +53,86 @@ export default function SoundToggle({ className = '' }: { className?: string }) 
             aria-label="Fermer"
             onClick={() => setOpen(false)}
           />
-          <ul
-            role="listbox"
-            className="absolute right-0 z-50 mt-2 min-w-[11rem] rounded-xl border py-1 shadow-lg"
+          <div
+            className="absolute right-0 z-50 mt-2 w-[15.5rem] max-h-[70vh] overflow-y-auto rounded-xl border shadow-lg"
             style={{
               borderColor: 'var(--border)',
               background: 'var(--card-solid)',
             }}
           >
-            {SOUND_MODE_ORDER.map((m) => (
-              <li key={m}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={mode === m}
-                  onClick={() => apply(m)}
-                  className="w-full text-left px-3 py-2 text-xs transition-opacity hover:opacity-80"
-                  style={{
-                    color: mode === m ? 'var(--accent)' : 'var(--foreground)',
-                    fontWeight: mode === m ? 600 : 400,
-                  }}
-                >
-                  {SOUND_MODE_LABELS[m]}
-                  {m !== 'off' && m !== 'ui' && (
-                    <span
-                      className="block text-[10px] mt-0.5"
-                      style={{ color: 'var(--muted)' }}
-                    >
-                      Fond sonore très discret
-                    </span>
-                  )}
-                  {m === 'ui' && (
-                    <span
-                      className="block text-[10px] mt-0.5"
-                      style={{ color: 'var(--muted)' }}
-                    >
-                      Clics et respiration seulement
-                    </span>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
+            <p
+              className="px-3 pt-2.5 pb-1 text-[10px] uppercase tracking-wide font-semibold"
+              style={{ color: 'var(--muted)' }}
+            >
+              Général
+            </p>
+            <ul role="listbox" className="pb-1">
+              {SOUND_MODE_ORDER.filter(
+                (m) => m === 'off' || m === 'ui' || !SLEEP_MODES.includes(m)
+              ).map((m) => (
+                <ModeRow
+                  key={m}
+                  m={m}
+                  active={mode === m}
+                  onPick={() => apply(m)}
+                />
+              ))}
+            </ul>
+            <p
+              className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wide font-semibold border-t"
+              style={{ color: 'var(--muted)', borderColor: 'var(--border)' }}
+            >
+              Pour s’endormir
+            </p>
+            <ul role="listbox" className="pb-1">
+              {SLEEP_MODES.map((m) => (
+                <ModeRow
+                  key={m}
+                  m={m}
+                  active={mode === m}
+                  onPick={() => apply(m)}
+                />
+              ))}
+            </ul>
+          </div>
         </>
       )}
     </div>
+  );
+}
+
+function ModeRow({
+  m,
+  active,
+  onPick,
+}: {
+  m: SoundMode;
+  active: boolean;
+  onPick: () => void;
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        role="option"
+        aria-selected={active}
+        onClick={onPick}
+        className="w-full text-left px-3 py-2 text-xs transition-opacity hover:opacity-80"
+        style={{
+          color: active ? 'var(--accent)' : 'var(--foreground)',
+          fontWeight: active ? 600 : 400,
+        }}
+      >
+        {SOUND_MODE_LABELS[m]}
+        {SOUND_MODE_HINTS[m] && (
+          <span
+            className="block text-[10px] mt-0.5"
+            style={{ color: 'var(--muted)' }}
+          >
+            {SOUND_MODE_HINTS[m]}
+          </span>
+        )}
+      </button>
+    </li>
   );
 }
