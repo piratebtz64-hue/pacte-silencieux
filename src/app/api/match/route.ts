@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { notifyPactMatched } from '@/lib/notify-email';
+import { notifyMatchRealtime } from '@/lib/realtime';
 
 const globalForPrisma = globalThis as unknown as { prismaMatch?: PrismaClient };
 const prisma =
@@ -45,7 +46,6 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     const waitingSinceCutoff = new Date(now.getTime() - WAITING_MAX_MS);
 
-    // Sortie volontaire ou déconnexion attendue (beacon)
     if (action === 'leave' || action === 'disconnect') {
       const current = await prisma.pact.findUnique({
         where: { id: pactId },
@@ -109,7 +109,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Pacte ACTIVE réel déjà lié à cet user
     const alreadyActive = await prisma.pact.findFirst({
       where: {
         status: 'ACTIVE',
@@ -136,7 +135,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Une seule requête : candidats même durée + totaux (évite count séparé au départ)
     let myWaiting = current;
     if (current.status !== 'WAITING' || current.createdAt < waitingSinceCutoff) {
       const recent = await prisma.pact.findFirst({
@@ -149,7 +147,6 @@ export async function POST(request: NextRequest) {
         orderBy: { createdAt: 'desc' },
       });
       if (!recent) {
-        // Nettoyage opportuniste non bloquant
         void prisma.pact
           .updateMany({
             where: { status: 'WAITING', createdAt: { lt: waitingSinceCutoff } },
@@ -161,7 +158,7 @@ export async function POST(request: NextRequest) {
           matched: false,
           status: 'WAITING',
           alone: true,
-          message: 'Tu es seul(e) dans la file pour l instant.',
+          message: 'Tu es seul(e) dans la file pour l’instant.',
           code: 'WAITING',
           debug: {
             myDuration: current.durationDays,
@@ -174,7 +171,6 @@ export async function POST(request: NextRequest) {
       myWaiting = recent;
     }
 
-    // Heartbeat user en parallèle du scan candidats
     const heartbeat = prisma.user
       .update({
         where: { id: userId },
@@ -215,7 +211,6 @@ export async function POST(request: NextRequest) {
       totalPromise,
     ]);
 
-    // Nettoyage expirés en arrière-plan (ne bloque pas la réponse)
     void prisma.pact
       .updateMany({
         where: { status: 'WAITING', createdAt: { lt: waitingSinceCutoff } },
@@ -238,7 +233,7 @@ export async function POST(request: NextRequest) {
         message:
           totalRecent <= 1
             ? 'Tu es seul(e) dans la file. Garde cette page ouverte.'
-            : 'D autres personnes attendent, mais pas la meme duree (1, 3 ou 7 jours).',
+            : 'D’autres personnes attendent, mais pas la même durée (1, 3 ou 7 jours).',
         debug: {
           myDuration: myWaiting.durationDays,
           totalWaiting: totalRecent,
@@ -258,7 +253,7 @@ export async function POST(request: NextRequest) {
         matched: false,
         status: 'WAITING',
         alone: true,
-        message: 'Tu es seul(e) dans la file pour l instant.',
+        message: 'Tu es seul(e) dans la file pour l’instant.',
         ms: Date.now() - started,
       });
     }
@@ -278,7 +273,7 @@ export async function POST(request: NextRequest) {
         matched: false,
         status: 'WAITING',
         alone: true,
-        message: 'Tu es seul(e) dans la file pour l instant.',
+        message: 'Tu es seul(e) dans la file pour l’instant.',
         ms: Date.now() - started,
       });
     }
@@ -318,8 +313,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Emails hors chemin critique
     void (async () => {
+      try {
+        await notifyMatchRealtime([myWaiting.id, partner.id], primary.id);
+      } catch (e) {
+        console.error('Realtime match:', e);
+      }
       try {
         const users = await prisma.user.findMany({
           where: { id: { in: [aId, bId] } },
