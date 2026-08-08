@@ -1,25 +1,16 @@
 /**
- * Sons discrets — Web Audio, sans fichiers externes.
- *
- * Couleurs de bruit (blanc / rose / brun) : masquage sonore, préférence individuelle.
- * Nature (eau, pluie, vagues…) : literature sur sons naturels et baisse d’anxiété ressentie.
- * Ce n’est pas un traitement du sommeil ni un dispositif médical.
+ * Sons discrets — Web Audio, fréquences via sound-config.
  */
 
-export type SoundMode =
-  | 'off'
-  | 'ui'
-  | 'white'
-  | 'pink'
-  | 'brown'
-  | 'water'
-  | 'rain'
-  | 'ocean'
-  | 'forest'
-  | 'countryside'
-  | 'night'
-  | 'sleep'
-  | 'fan';
+import {
+  type AmbientId,
+  getAmbientConfig,
+  getUiFreq,
+  UI_DURATION,
+  UI_GAIN,
+} from '@/lib/sound-config';
+
+export type SoundMode = 'off' | 'ui' | AmbientId;
 
 const STORAGE_KEY = 'pacte_sound_mode';
 
@@ -64,13 +55,7 @@ export function getSoundMode(): SoundMode {
     mode = v;
     return v;
   }
-  // Anciens modes
-  if (v === ('softnoise' as SoundMode)) {
-    mode = 'pink';
-    return 'pink';
-  }
-  const legacy = localStorage.getItem('pacte_sound');
-  if (legacy === '0') {
+  if (localStorage.getItem('pacte_sound') === '0') {
     mode = 'off';
     return 'off';
   }
@@ -128,30 +113,37 @@ function tone(
 }
 
 export function playSoftChime() {
-  tone(523.25, 0.15);
-  setTimeout(() => tone(659.25, 0.2), 120);
+  tone(getUiFreq('chimeMid'), UI_DURATION.chime, 'sine', UI_GAIN.chime);
+  setTimeout(
+    () => tone(getUiFreq('chimeHigh'), UI_DURATION.chime2, 'sine', UI_GAIN.chime),
+    120
+  );
 }
 
 export function playSendClick() {
-  tone(440, 0.08, 'triangle', 0.03);
+  tone(getUiFreq('send'), UI_DURATION.send, 'triangle', UI_GAIN.send);
 }
 
 export function playBreathIn() {
-  tone(220, 0.4, 'sine', 0.025);
+  tone(getUiFreq('breathIn'), UI_DURATION.breathIn, 'sine', UI_GAIN.breath);
 }
 
 export function playBreathOut() {
-  tone(164.81, 0.5, 'sine', 0.02);
+  tone(getUiFreq('breathOut'), UI_DURATION.breathOut, 'sine', UI_GAIN.breathOut);
 }
 
 export function playCrisisStart() {
-  tone(392, 0.2);
-  setTimeout(() => tone(311.13, 0.35), 180);
+  tone(getUiFreq('crisisA'), UI_DURATION.crisis, 'sine', UI_GAIN.crisis);
+  setTimeout(
+    () =>
+      tone(getUiFreq('crisisB'), UI_DURATION.crisis2, 'sine', UI_GAIN.crisis),
+    180
+  );
 }
 
 export function playModeConfirm() {
   if (mode === 'off') return;
-  tone(392, 0.1, 'sine', 0.03);
+  tone(getUiFreq('confirm'), UI_DURATION.confirm, 'sine', UI_GAIN.confirm);
 }
 
 function stopAmbient() {
@@ -169,190 +161,92 @@ function stopAmbient() {
   ambientActive = false;
 }
 
-type NoiseColor = 'white' | 'pink' | 'brown';
-
 function makeNoiseBuffer(
   c: AudioContext,
   seconds = 4,
-  color: NoiseColor = 'brown'
+  color: 'brown' | 'pink' | 'white' = 'brown'
 ): AudioBuffer {
   const rate = c.sampleRate;
   const len = rate * seconds;
   const buffer = c.createBuffer(1, len, rate);
   const data = buffer.getChannelData(0);
-
-  // Filtres rose (approximation Paul Kellet)
   let b0 = 0,
     b1 = 0,
-    b2 = 0,
-    b3 = 0,
-    b4 = 0,
-    b5 = 0,
-    b6 = 0;
-  let lastBrown = 0;
-
+    b2 = 0;
   for (let i = 0; i < len; i++) {
     const white = Math.random() * 2 - 1;
-
     if (color === 'white') {
-      data[i] = white * 0.35;
+      data[i] = white * 0.4;
     } else if (color === 'pink') {
       b0 = 0.99886 * b0 + white * 0.0555179;
       b1 = 0.99332 * b1 + white * 0.0750759;
       b2 = 0.969 * b2 + white * 0.153852;
-      b3 = 0.8665 * b3 + white * 0.3104856;
-      b4 = 0.55 * b4 + white * 0.5329522;
-      b5 = -0.7616 * b5 - white * 0.016898;
-      const pink = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
-      b6 = white * 0.115926;
-      data[i] = pink * 0.11;
+      data[i] = (b0 + b1 + b2 + white * 0.1) * 0.15;
     } else {
-      // Brun (red) : intégration du blanc
-      lastBrown = (lastBrown + 0.02 * white) / 1.02;
-      data[i] = lastBrown * 3.5;
+      b0 = (b0 + 0.02 * white) / 1.02;
+      data[i] = b0 * 3.2;
     }
   }
   return buffer;
 }
 
-type AmbientKind = Exclude<SoundMode, 'off' | 'ui'>;
-
-async function startAmbient(kind: AmbientKind) {
+async function startAmbient(kind: AmbientId) {
   const c = await ensureRunning();
   if (!c || ambientActive) return;
   ambientActive = true;
 
+  const cfg = getAmbientConfig(kind);
   const master = c.createGain();
-  const volumes: Record<AmbientKind, number> = {
-    white: 0.018,
-    pink: 0.016,
-    brown: 0.02,
-    fan: 0.017,
-    water: 0.028,
-    rain: 0.022,
-    ocean: 0.026,
-    forest: 0.018,
-    countryside: 0.02,
-    night: 0.016,
-    sleep: 0.013,
-  };
-  master.gain.value = volumes[kind] ?? 0.018;
+  master.gain.value = cfg.volume;
   master.connect(c.destination);
   ambientNodes.push(master);
 
-  const noiseColor: NoiseColor =
-    kind === 'white' || kind === 'fan' || kind === 'rain'
-      ? 'white'
-      : kind === 'pink'
-        ? 'pink'
-        : kind === 'brown' || kind === 'sleep' || kind === 'night'
-          ? 'brown'
-          : kind === 'ocean' || kind === 'water'
-            ? 'brown'
-            : 'pink';
-
   const noise = c.createBufferSource();
-  noise.buffer = makeNoiseBuffer(c, 4, noiseColor);
+  noise.buffer = makeNoiseBuffer(c, 4, cfg.noise);
   noise.loop = true;
 
   const filter = c.createBiquadFilter();
-
-  switch (kind) {
-    case 'white':
-      filter.type = 'highshelf';
-      filter.frequency.value = 8000;
-      filter.gain.value = 0;
-      break;
-    case 'pink':
-      filter.type = 'lowpass';
-      filter.frequency.value = 8000;
-      filter.Q.value = 0.2;
-      break;
-    case 'brown':
-      filter.type = 'lowpass';
-      filter.frequency.value = 900;
-      filter.Q.value = 0.25;
-      break;
-    case 'fan':
-      filter.type = 'bandpass';
-      filter.frequency.value = 400;
-      filter.Q.value = 0.6;
-      break;
-    case 'water':
-      filter.type = 'bandpass';
-      filter.frequency.value = 680;
-      filter.Q.value = 0.55;
-      break;
-    case 'rain':
-      filter.type = 'lowpass';
-      filter.frequency.value = 1500;
-      filter.Q.value = 0.35;
-      break;
-    case 'ocean':
-      filter.type = 'lowpass';
-      filter.frequency.value = 500;
-      filter.Q.value = 0.5;
-      break;
-    case 'forest':
-      filter.type = 'bandpass';
-      filter.frequency.value = 900;
-      filter.Q.value = 0.4;
-      break;
-    case 'countryside':
-      filter.type = 'lowpass';
-      filter.frequency.value = 420;
-      filter.Q.value = 0.3;
-      break;
-    case 'night':
-      filter.type = 'lowpass';
-      filter.frequency.value = 280;
-      filter.Q.value = 0.25;
-      break;
-    case 'sleep':
-      filter.type = 'lowpass';
-      filter.frequency.value = 200;
-      filter.Q.value = 0.2;
-      break;
-  }
+  filter.type = cfg.filterType;
+  filter.frequency.value = cfg.filterHz;
+  filter.Q.value = cfg.q;
 
   noise.connect(filter);
   filter.connect(master);
   noise.start();
   ambientNodes.push(noise, filter);
 
-  if (kind === 'ocean' || kind === 'water' || kind === 'sleep' || kind === 'fan') {
+  if (cfg.lfoHz && cfg.lfoDepth) {
     const lfo = c.createOscillator();
     const lfoGain = c.createGain();
-    lfo.frequency.value =
-      kind === 'ocean' ? 0.08 : kind === 'sleep' ? 0.04 : kind === 'fan' ? 0.2 : 0.12;
-    lfoGain.gain.value = kind === 'sleep' ? 0.0025 : 0.006;
+    lfo.frequency.value = cfg.lfoHz;
+    lfoGain.gain.value = cfg.lfoDepth;
     lfo.connect(lfoGain);
     lfoGain.connect(master.gain);
     lfo.start();
     ambientNodes.push(lfo, lfoGain);
   }
 
-  if (kind === 'countryside' || kind === 'night' || kind === 'sleep' || kind === 'brown') {
+  if (cfg.droneHz != null) {
     const drone = c.createOscillator();
     const dg = c.createGain();
     drone.type = 'sine';
-    drone.frequency.value = kind === 'sleep' ? 48 : kind === 'night' ? 56 : 62;
-    dg.gain.value = kind === 'sleep' ? 0.009 : 0.007;
+    drone.frequency.value = cfg.droneHz;
+    dg.gain.value = cfg.droneGain ?? 0.008;
     drone.connect(dg);
     dg.connect(master);
     drone.start();
     ambientNodes.push(drone, dg);
   }
 
-  if (kind === 'forest') {
+  if (cfg.highpassHz != null) {
     const noise2 = c.createBufferSource();
     noise2.buffer = makeNoiseBuffer(c, 3, 'pink');
     noise2.loop = true;
     const f2 = c.createBiquadFilter();
     f2.type = 'highpass';
-    f2.frequency.value = 2000;
+    f2.frequency.value = cfg.highpassHz;
     const g2 = c.createGain();
-    g2.gain.value = 0.3;
+    g2.gain.value = 0.35;
     noise2.connect(f2);
     f2.connect(g2);
     g2.connect(master);
@@ -361,44 +255,43 @@ async function startAmbient(kind: AmbientKind) {
   }
 }
 
+/** Recharge l’ambiance active après changement de fréquences */
+export async function reloadAmbientIfNeeded() {
+  const m = getSoundMode();
+  if (m !== 'off' && m !== 'ui') {
+    stopAmbient();
+    await startAmbient(m);
+  }
+}
+
 export const SOUND_MODE_LABELS: Record<SoundMode, string> = {
   off: 'Muet',
   ui: 'Sons discrets',
-  white: 'Bruit blanc',
-  pink: 'Bruit rose',
-  brown: 'Bruit brun',
-  fan: 'Ventilateur',
   water: 'Eau douce',
   rain: 'Pluie légère',
+  countryside: 'Campagne',
   ocean: 'Vagues',
   forest: 'Forêt',
-  countryside: 'Campagne',
   night: 'Nuit calme',
   sleep: 'S’endormir',
+  softnoise: 'Bruit doux',
 };
 
 export const SOUND_MODE_HINTS: Partial<Record<SoundMode, string>> = {
   ui: 'Clics et respiration seulement',
-  white: 'Statique égale — masque les bruits aigus',
-  pink: 'Plus doux que le blanc — type pluie régulière',
-  brown: 'Grave et enveloppant — type tonnerre lointain',
-  fan: 'Souffle type ventilateur',
-  water: 'Source / ruisseau',
-  rain: 'Pluie fine',
+  water: 'Source / ruisseau discret',
+  rain: 'Pluie fine en fond',
+  countryside: 'Souffle de plaine',
   ocean: 'Respiration de vagues',
   forest: 'Vent dans les feuilles',
-  countryside: 'Souffle de plaine',
   night: 'Calme nocturne',
   sleep: 'Très grave, volume minimal',
+  softnoise: 'Bruit rose apaisant',
 };
 
 export const SOUND_MODE_ORDER: SoundMode[] = [
   'off',
   'ui',
-  'white',
-  'pink',
-  'brown',
-  'fan',
   'water',
   'rain',
   'ocean',
@@ -406,17 +299,7 @@ export const SOUND_MODE_ORDER: SoundMode[] = [
   'countryside',
   'night',
   'sleep',
+  'softnoise',
 ];
 
-export const SOUND_GROUPS: { title: string; modes: SoundMode[] }[] = [
-  { title: 'Général', modes: ['off', 'ui'] },
-  {
-    title: 'Bruits (blanc · rose · brun)',
-    modes: ['white', 'pink', 'brown', 'fan'],
-  },
-  {
-    title: 'Nature',
-    modes: ['water', 'rain', 'ocean', 'forest', 'countryside'],
-  },
-  { title: 'Pour s’endormir', modes: ['sleep', 'night', 'brown', 'pink', 'rain'] },
-];
+export const SLEEP_MODES: SoundMode[] = ['sleep', 'night', 'softnoise', 'rain'];
