@@ -36,22 +36,25 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-4 grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
           <div className="lg:col-span-7 animate-fade-up">
             <span className="badge">gratuit · anonyme · 1 à 7 jours</span>
-            <h1 className="mt-5 font-serif text-[2.1rem] sm:text-4xl lg:text-[2.85rem] leading-[1.15] tracking-tight max-w-[22ch]">
-              Quand tu n’as pas envie de parler à quelqu’un de réel, ou que
-              personne n’est disponible.
+            <h1 className="mt-5 font-serif text-[2.1rem] sm:text-4xl lg:text-[2.85rem] leading-[1.15] tracking-tight max-w-[24ch]">
+              Quand personne n’est près de toi pour en parler — et que tu as
+              besoin d’un peu de soutien.
             </h1>
             <p
               className="mt-5 text-base sm:text-lg leading-relaxed max-w-[42ch]"
               style={{ color: 'var(--muted)' }}
             >
-              Une{' '}
+              Ici, une{' '}
               <strong style={{ color: 'var(--foreground)' }}>
                 présence anonyme entre pairs
+              </strong>
+              : gestes et messages déjà écrits, sans chat libre, sans profil.
+              Un complément quand l’entourage n’est pas disponible —{' '}
+              <strong style={{ color: 'var(--foreground)' }}>
+                pas un remplacement
               </strong>{' '}
-              — gestes et messages déjà écrits, sans chat libre, sans profil. Ce
-              n’est{' '}
-              <strong style={{ color: 'var(--foreground)' }}>pas</strong> une
-              assistante sociale, ni un psy, ni un service d’urgence.
+              des assistantes sociales, des proches, ni des professionnels de
+              santé.
             </p>
             <div className="mt-8 flex flex-wrap gap-3 items-center">
               <Link href="/start" className="btn-primary">
@@ -138,7 +141,7 @@ export default function HomePage() {
             },
             {
               t: 'Complément',
-              d: 'Utile le soir ou entre deux RDV. Dès que ça dépasse : les numéros en bas de page.',
+              d: 'Utile quand l’entourage n’est pas là. Dès que ça dépasse : les numéros en bas de page.',
             },
           ].map((item, i) => (
             <Reveal key={item.t} delay={i * 40}>

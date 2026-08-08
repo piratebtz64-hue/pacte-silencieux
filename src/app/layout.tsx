@@ -10,11 +10,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
     default:
-      'Le Pacte silencieux — Présence anonyme quand tu n’as pas envie de parler',
+      'Le Pacte silencieux — Soutien anonyme quand personne n’est disponible',
     template: '%s · Le Pacte silencieux',
   },
   description:
-    'Quand tu n’as pas envie de parler à quelqu’un de réel, ou que personne n’est disponible. Présence anonyme entre pairs, sans chat libre. Ne remplace pas une assistante sociale ni un professionnel de santé.',
+    'Quand personne n’est près de toi pour en parler et que tu as besoin d’un peu de soutien. Présence anonyme entre pairs, sans chat libre. Complément — ne remplace pas une assistante sociale ni un professionnel de santé.',
   keywords: [
     'pacte silencieux',
     'soutien anonyme',
@@ -37,13 +37,13 @@ export const metadata: Metadata = {
     siteName: 'Le Pacte silencieux',
     title: 'Le Pacte silencieux',
     description:
-      'Présence anonyme entre pairs. Pas un chat, pas un professionnel. Gratuit.',
+      'Quand personne n’est disponible près de toi — une présence anonyme entre pairs. Gratuit.',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Le Pacte silencieux',
     description:
-      'Quand tu n’as pas envie de parler à quelqu’un de réel — une présence discrète.',
+      'Soutien anonyme quand l’entourage n’est pas là. Pas un remplacement des professionnels.',
   },
   robots: { index: true, follow: true },
   alternates: { canonical: siteUrl },
