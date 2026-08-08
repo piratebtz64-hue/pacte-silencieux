@@ -1,13 +1,24 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { parseBleError, BLE_TROUBLESHOOTING, type BleErrorInfo } from '@/lib/ble-errors';
+import { parseBleError, BLE_GUIDE, type BleErrorInfo } from '@/lib/ble-errors';
+import {
+  HR_SERVICE,
+  HR_MEASUREMENT,
+  HR_SENSOR_LOCATION,
+  parseHeartRateMeasurement,
+  contactLabel,
+  locationLabel,
+  type HeartRateSample,
+} from '@/lib/gatt-heart-rate';
 
 type Source = 'none' | 'ble' | 'manual';
 type ConnState = 'idle' | 'picking' | 'connecting' | 'live' | 'error';
 
 export default function HeartRateFeedback() {
   const [bpm, setBpm] = useState<number | null>(null);
+  const [sample, setSample] = useState<HeartRateSample | null>(null);
+  const [location, setLocation] = useState<string | null>(null);
   const [source, setSource] = useState<Source>('none');
   const [conn, setConn] = useState<ConnState>('idle');
   const [status, setStatus] = useState('');
@@ -42,6 +53,8 @@ export default function HeartRateFeedback() {
     cleanupBle();
     setSource('none');
     setBpm(null);
+    setSample(null);
+    setLocation(null);
     setConn('idle');
     setStatus('Capteur déconnecté');
     setErrorInfo(null);
@@ -49,12 +62,12 @@ export default function HeartRateFeedback() {
 
   useEffect(() => () => cleanupBle(), [cleanupBle]);
 
-  const attachNotifications = async (device: BluetoothDevice) => {
+  const attachGattProfile = async (device: BluetoothDevice) => {
     setConn('connecting');
-    setStatus('Liaison en cours…');
+    setStatus('GATT : connexion…');
 
     if (!device.gatt) {
-      throw Object.assign(new Error('Pas d’accès GATT sur cet appareil'), {
+      throw Object.assign(new Error('GATT indisponible'), {
         name: 'NetworkError',
       });
     }
@@ -63,28 +76,34 @@ export default function HeartRateFeedback() {
       ? device.gatt
       : await device.gatt.connect();
 
-    setStatus('Recherche du service Heart Rate…');
-    const service = await server.getPrimaryService('heart_rate');
+    setStatus('GATT : service Heart Rate (0x180D)…');
+    const service = await server.getPrimaryService(HR_SERVICE);
 
-    setStatus('Activation des mesures…');
-    const characteristic = await service.getCharacteristic(
-      'heart_rate_measurement'
-    );
+    // Emplacement capteur (poignet PPG vs poitrine) — optionnel
+    try {
+      const locChar = await service.getCharacteristic(HR_SENSOR_LOCATION);
+      const locVal = await locChar.readValue();
+      if (locVal.byteLength >= 1) {
+        setLocation(locationLabel(locVal.getUint8(0)));
+      }
+    } catch {
+      setLocation(null);
+    }
+
+    setStatus('GATT : notifications mesure (0x2A37)…');
+    const characteristic = await service.getCharacteristic(HR_MEASUREMENT);
 
     const onValue = (event: Event) => {
       const target = event.target as BluetoothRemoteGATTCharacteristic;
-      const value = target.value;
-      if (!value) return;
-      const flags = value.getUint8(0);
-      const hr =
-        flags & 0x01 ? value.getUint16(1, true) : value.getUint8(1);
-      if (hr > 30 && hr < 220) {
-        setBpm(hr);
-        setSource('ble');
-        setConn('live');
-        setStatus('Mesure en direct');
-        setErrorInfo(null);
-      }
+      if (!target.value) return;
+      const parsed = parseHeartRateMeasurement(target.value);
+      if (!parsed) return;
+      setSample(parsed);
+      setBpm(parsed.bpm);
+      setSource('ble');
+      setConn('live');
+      setStatus('Mesure en direct (profil GATT HR)');
+      setErrorInfo(null);
     };
 
     await characteristic.startNotifications();
@@ -98,11 +117,13 @@ export default function HeartRateFeedback() {
     };
 
     setConn('live');
-    setStatus('Connecté — en attente des battements…');
+    setStatus('Connecté — en attente des échantillons…');
   };
 
   const connectBle = async () => {
     setErrorInfo(null);
+    setSample(null);
+    setLocation(null);
 
     if (!('bluetooth' in navigator)) {
       const info = parseBleError({
@@ -118,37 +139,34 @@ export default function HeartRateFeedback() {
     setConn('picking');
     setStatus(
       wideScan
-        ? 'Liste élargie — choisis ton appareil…'
-        : 'Choisis ton capteur Heart Rate…'
+        ? 'Sélecteur élargi — choisis l’appareil…'
+        : 'Sélecteur Heart Rate (0x180D)…'
     );
 
-    let device: BluetoothDevice | undefined;
-
     try {
-      // Étape 1 — sélecteur d’appareil (clic utilisateur requis)
       // @ts-expect-error Web Bluetooth
-      device = await navigator.bluetooth.requestDevice(
+      const device = await navigator.bluetooth.requestDevice(
         wideScan
           ? {
               acceptAllDevices: true,
-              optionalServices: ['heart_rate'],
+              optionalServices: [HR_SERVICE],
             }
           : {
-              filters: [{ services: ['heart_rate'] }],
-              optionalServices: ['heart_rate'],
+              filters: [{ services: [HR_SERVICE] }],
+              optionalServices: [HR_SERVICE],
             }
       );
 
       deviceRef.current = device;
       device.addEventListener('gattserverdisconnected', () => {
-        setStatus('Capteur déconnecté (signal perdu ou appareil éteint)');
+        setStatus('Déconnecté (signal ou appareil)');
         setSource('none');
         setConn('idle');
         setBpm(null);
+        setSample(null);
       });
 
-      // Étape 2 → 4 : GATT + service + notifications
-      await attachNotifications(device);
+      await attachGattProfile(device);
     } catch (e) {
       cleanupBle();
       const info = parseBleError(e);
@@ -167,21 +185,13 @@ export default function HeartRateFeedback() {
       setBpm(estimated);
       setSource('manual');
       setManualCounting(false);
-      setStatus(`Environ ${estimated} bpm (comptage 15 s)`);
+      setStatus(`Environ ${estimated} bpm (manuel 15 s)`);
       setConn('idle');
       return;
     }
     const t = setTimeout(() => setManualLeft((s) => s - 1), 1000);
     return () => clearTimeout(t);
   }, [manualCounting, manualLeft, manualTicks]);
-
-  const startManual = () => {
-    setManualTicks(0);
-    setManualLeft(15);
-    setManualCounting(true);
-    setErrorInfo(null);
-    setStatus('Compte chaque battement (doigt sur le cou ou le poignet)');
-  };
 
   const zone =
     bpm == null
@@ -192,7 +202,7 @@ export default function HeartRateFeedback() {
           ? 'Zone calme — idéale pour la cohérence'
           : bpm <= 100
             ? 'Un peu élevé — continue la respiration lente'
-            : 'Élevé — privilégie expire longue 4/6, sans forcer';
+            : 'Élevé — expire longue 4/6, sans forcer';
 
   return (
     <div
@@ -206,7 +216,7 @@ export default function HeartRateFeedback() {
         className="text-[10px] uppercase tracking-[0.12em] font-semibold"
         style={{ color: 'var(--accent)' }}
       >
-        Biofeedback · fréquence cardiaque
+        Biofeedback · GATT Heart Rate
       </p>
 
       <div className="mt-3 flex items-end gap-2">
@@ -222,21 +232,29 @@ export default function HeartRateFeedback() {
       </div>
 
       {zone && (
-        <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
+        <p className="mt-2 text-xs" style={{ color: 'var(--muted)' }}>
           {zone}
         </p>
+      )}
+
+      {sample && source === 'ble' && (
+        <div className="mt-2 text-[11px] space-y-0.5" style={{ color: 'var(--muted)' }}>
+          <p>{contactLabel(sample.contact)}</p>
+          {location && <p>Emplacement : {location}</p>}
+          {sample.rrIntervalsMs.length > 0 && (
+            <p>RR : {sample.rrIntervalsMs.slice(-3).join(' · ')} ms</p>
+          )}
+        </div>
       )}
 
       {status && (
         <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
           {status}
-          {conn === 'connecting' || conn === 'picking' ? '…' : ''}
-          {source === 'ble' ? ' · Bluetooth' : ''}
+          {source === 'ble' ? ' · BLE' : ''}
           {source === 'manual' ? ' · Manuel' : ''}
         </p>
       )}
 
-      {/* Erreur structurée */}
       {errorInfo && (
         <div
           className="mt-3 p-3 rounded-xl border text-sm"
@@ -245,9 +263,7 @@ export default function HeartRateFeedback() {
             background: 'var(--gold-soft)',
           }}
         >
-          <p className="font-semibold" style={{ color: 'var(--foreground)' }}>
-            {errorInfo.title}
-          </p>
+          <p className="font-semibold">{errorInfo.title}</p>
           <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
             {errorInfo.message}
           </p>
@@ -257,7 +273,7 @@ export default function HeartRateFeedback() {
             ))}
           </ul>
           <p className="mt-2 text-[10px]" style={{ color: 'var(--muted)' }}>
-            Code : {errorInfo.code}
+            Code {errorInfo.code}
           </p>
         </div>
       )}
@@ -266,9 +282,6 @@ export default function HeartRateFeedback() {
         <div className="mt-4 text-center">
           <p className="font-serif text-2xl" style={{ color: 'var(--accent)' }}>
             {manualLeft}s
-          </p>
-          <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
-            Appuie à chaque battement
           </p>
           <button
             type="button"
@@ -297,12 +310,15 @@ export default function HeartRateFeedback() {
                 className="btn-ghost !text-sm !py-2 w-full disabled:opacity-50"
               >
                 {conn === 'picking' || conn === 'connecting'
-                  ? 'Connexion…'
+                  ? 'Connexion GATT…'
                   : conn === 'live'
-                    ? 'Déconnecter le capteur'
-                    : 'Connecter montre / ceinture Bluetooth'}
+                    ? 'Déconnecter'
+                    : 'Connecter le capteur (GATT HR / PPG BLE)'}
               </button>
-              <label className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'var(--muted)' }}>
+              <label
+                className="flex items-center gap-2 text-xs cursor-pointer"
+                style={{ color: 'var(--muted)' }}
+              >
                 <input
                   type="checkbox"
                   checked={wideScan}
@@ -312,14 +328,20 @@ export default function HeartRateFeedback() {
               </label>
             </>
           ) : (
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
-              Web Bluetooth non disponible ici (souvent iPhone Safari). Utilise le
-              comptage manuel ou Chrome sur Android.
+            <p className="text-xs" style={{ color: 'var(--muted)' }}>
+              Web Bluetooth absent (souvent iPhone Safari). Comptage manuel ou
+              Chrome Android.
             </p>
           )}
           <button
             type="button"
-            onClick={startManual}
+            onClick={() => {
+              setManualTicks(0);
+              setManualLeft(15);
+              setManualCounting(true);
+              setErrorInfo(null);
+              setStatus('Compte chaque battement');
+            }}
             className="btn-ghost !text-sm !py-2 w-full"
           >
             Compter mon pouls (15 secondes)
@@ -333,18 +355,19 @@ export default function HeartRateFeedback() {
         className="mt-4 text-xs font-semibold w-full text-left"
         style={{ color: 'var(--accent)' }}
       >
-        {showGuide ? 'Masquer le guide de dépannage' : 'Guide de dépannage Bluetooth'}
+        {showGuide ? 'Masquer le guide' : 'Guide : Bluetooth, GATT, PPG'}
       </button>
 
       {showGuide && (
         <div className="mt-3 space-y-4 text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
-          {BLE_TROUBLESHOOTING.map((block) => (
-            <div key={block.title}>
+          <p style={{ color: 'var(--foreground)' }}>{BLE_GUIDE.intro}</p>
+          {BLE_GUIDE.sections.map((s) => (
+            <div key={s.id}>
               <p className="font-semibold" style={{ color: 'var(--foreground)' }}>
-                {block.title}
+                {s.title}
               </p>
-              <ul className="mt-1 space-y-1">
-                {block.items.map((item) => (
+              <ul className="mt-1.5 space-y-1">
+                {s.items.map((item) => (
                   <li key={item}>· {item}</li>
                 ))}
               </ul>
@@ -353,9 +376,8 @@ export default function HeartRateFeedback() {
         </div>
       )}
 
-      <p className="mt-3 text-[11px] leading-relaxed" style={{ color: 'var(--muted)' }}>
-        Indicatif uniquement — pas un dispositif médical. La cohérence 5/5 fonctionne
-        sans capteur.
+      <p className="mt-3 text-[11px]" style={{ color: 'var(--muted)' }}>
+        Indicatif — pas un dispositif médical. Cohérence 5/5 sans capteur possible.
       </p>
     </div>
   );
