@@ -11,6 +11,12 @@ import {
   locationLabel,
   type HeartRateSample,
 } from '@/lib/gatt-heart-rate';
+import {
+  assessHeartRate,
+  ensureNotificationPermission,
+  maybeNotifyHighHr,
+  type HrAssessment,
+} from '@/lib/hr-alerts';
 
 type Source = 'none' | 'ble' | 'manual';
 type ConnState = 'idle' | 'picking' | 'connecting' | 'live' | 'error';
@@ -29,6 +35,8 @@ export default function HeartRateFeedback() {
   const [manualCounting, setManualCounting] = useState(false);
   const [manualTicks, setManualTicks] = useState(0);
   const [manualLeft, setManualLeft] = useState(15);
+  const [notifPermission, setNotifPermission] = useState<string>('default');
+  const [assessment, setAssessment] = useState<HrAssessment | null>(null);
   const deviceRef = useRef<BluetoothDevice | null>(null);
   const unsubRef = useRef<(() => void) | null>(null);
 
@@ -36,7 +44,21 @@ export default function HeartRateFeedback() {
     setBleSupported(
       typeof navigator !== 'undefined' && 'bluetooth' in navigator
     );
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotifPermission(Notification.permission);
+    }
   }, []);
+
+  // Alertes à chaque nouveau bpm
+  useEffect(() => {
+    if (bpm == null) {
+      setAssessment(null);
+      return;
+    }
+    const a = assessHeartRate(bpm);
+    setAssessment(a);
+    maybeNotifyHighHr(bpm, a);
+  }, [bpm]);
 
   const cleanupBle = useCallback(() => {
     unsubRef.current?.();
@@ -62,6 +84,11 @@ export default function HeartRateFeedback() {
 
   useEffect(() => () => cleanupBle(), [cleanupBle]);
 
+  const enableNotifs = async () => {
+    const p = await ensureNotificationPermission();
+    setNotifPermission(p);
+  };
+
   const attachGattProfile = async (device: BluetoothDevice) => {
     setConn('connecting');
     setStatus('GATT : connexion…');
@@ -79,7 +106,6 @@ export default function HeartRateFeedback() {
     setStatus('GATT : service Heart Rate (0x180D)…');
     const service = await server.getPrimaryService(HR_SERVICE);
 
-    // Emplacement capteur (poignet PPG vs poitrine) — optionnel
     try {
       const locChar = await service.getCharacteristic(HR_SENSOR_LOCATION);
       const locVal = await locChar.readValue();
@@ -193,25 +219,24 @@ export default function HeartRateFeedback() {
     return () => clearTimeout(t);
   }, [manualCounting, manualLeft, manualTicks]);
 
-  const zone =
-    bpm == null
-      ? null
-      : bpm < 60
-        ? 'Plutôt bas — respire tranquillement'
-        : bpm <= 80
-          ? 'Zone calme — idéale pour la cohérence'
-          : bpm <= 100
-            ? 'Un peu élevé — continue la respiration lente'
-            : 'Élevé — expire longue 4/6, sans forcer';
+  const warnStyle =
+    assessment?.level === 'very_high'
+      ? {
+          borderColor: 'color-mix(in srgb, #b33 45%, var(--border))',
+          background: 'color-mix(in srgb, #b33 12%, var(--card-solid))',
+        }
+      : assessment?.warn
+        ? {
+            borderColor: 'color-mix(in srgb, var(--gold) 50%, var(--border))',
+            background: 'var(--gold-soft)',
+          }
+        : {
+            borderColor: 'var(--border)',
+            background: 'var(--card-solid)',
+          };
 
   return (
-    <div
-      className="mt-6 p-4 rounded-2xl border"
-      style={{
-        borderColor: 'var(--border)',
-        background: 'var(--card-solid)',
-      }}
-    >
+    <div className="mt-6 p-4 rounded-2xl border" style={warnStyle}>
       <p
         className="text-[10px] uppercase tracking-[0.12em] font-semibold"
         style={{ color: 'var(--accent)' }}
@@ -222,7 +247,12 @@ export default function HeartRateFeedback() {
       <div className="mt-3 flex items-end gap-2">
         <span
           className="font-serif text-4xl tabular-nums leading-none"
-          style={{ color: 'var(--accent)' }}
+          style={{
+            color:
+              assessment?.level === 'very_high' || assessment?.level === 'high'
+                ? '#a33'
+                : 'var(--accent)',
+          }}
         >
           {bpm ?? '—'}
         </span>
@@ -231,10 +261,25 @@ export default function HeartRateFeedback() {
         </span>
       </div>
 
-      {zone && (
-        <p className="mt-2 text-xs" style={{ color: 'var(--muted)' }}>
-          {zone}
-        </p>
+      {assessment && (
+        <div className="mt-2">
+          <p className="text-sm font-semibold">{assessment.label}</p>
+          <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
+            {assessment.advice}
+          </p>
+          {assessment.emergencyHint && (
+            <p className="mt-2 text-xs font-semibold">
+              Malaise, douleur, essoufflement intense →{' '}
+              <a href="tel:15" className="underline">
+                15
+              </a>{' '}
+              /{' '}
+              <a href="tel:112" className="underline">
+                112
+              </a>
+            </p>
+          )}
+        </div>
       )}
 
       {sample && source === 'ble' && (
@@ -255,6 +300,39 @@ export default function HeartRateFeedback() {
         </p>
       )}
 
+      {/* Notifications */}
+      <div className="mt-3 p-3 rounded-xl border text-xs" style={{ borderColor: 'var(--border)' }}>
+        <p className="font-semibold" style={{ color: 'var(--foreground)' }}>
+          Alertes téléphone
+        </p>
+        <p className="mt-1 leading-relaxed" style={{ color: 'var(--muted)' }}>
+          Si le rythme dépasse ~110–140 bpm au repos, une notification navigateur
+          peut s’afficher (onglet ou PWA ouverte). Ce n’est pas une surveillance
+          médicale 24h/24.
+        </p>
+        {notifPermission === 'granted' ? (
+          <p className="mt-2" style={{ color: 'var(--accent)' }}>
+            Notifications activées
+          </p>
+        ) : notifPermission === 'denied' ? (
+          <p className="mt-2" style={{ color: 'var(--muted)' }}>
+            Refusées — réactive-les dans les réglages du navigateur.
+          </p>
+        ) : notifPermission === 'unsupported' ? (
+          <p className="mt-2" style={{ color: 'var(--muted)' }}>
+            Non supportées sur ce navigateur.
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={enableNotifs}
+            className="btn-ghost !text-xs !py-2 mt-2 w-full"
+          >
+            Autoriser les notifications d’alerte
+          </button>
+        )}
+      </div>
+
       {errorInfo && (
         <div
           className="mt-3 p-3 rounded-xl border text-sm"
@@ -272,9 +350,6 @@ export default function HeartRateFeedback() {
               <li key={a}>· {a}</li>
             ))}
           </ul>
-          <p className="mt-2 text-[10px]" style={{ color: 'var(--muted)' }}>
-            Code {errorInfo.code}
-          </p>
         </div>
       )}
 
@@ -324,13 +399,12 @@ export default function HeartRateFeedback() {
                   checked={wideScan}
                   onChange={(e) => setWideScan(e.target.checked)}
                 />
-                Scan élargi (si le capteur n’apparaît pas)
+                Scan élargi
               </label>
             </>
           ) : (
             <p className="text-xs" style={{ color: 'var(--muted)' }}>
-              Web Bluetooth absent (souvent iPhone Safari). Comptage manuel ou
-              Chrome Android.
+              Web Bluetooth absent — comptage manuel ou Chrome Android.
             </p>
           )}
           <button
@@ -376,8 +450,9 @@ export default function HeartRateFeedback() {
         </div>
       )}
 
-      <p className="mt-3 text-[11px]" style={{ color: 'var(--muted)' }}>
-        Indicatif — pas un dispositif médical. Cohérence 5/5 sans capteur possible.
+      <p className="mt-3 text-[11px] leading-relaxed" style={{ color: 'var(--muted)' }}>
+        Indicatif uniquement — pas un dispositif médical ni une alarme d’urgence.
+        En détresse : 15 · 112 · 3114.
       </p>
     </div>
   );
