@@ -11,10 +11,9 @@ const prisma =
   });
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prismaMatch = prisma;
 
-/** File max : au-delà, le WAITING est considéré abandonné */
 const WAITING_MAX_MS = 20 * 60 * 1000;
-/** Le partenaire doit avoir envoyé un heartbeat il y a moins de 90 s */
-const HEARTBEAT_MAX_MS = 90 * 1000;
+/** Partenaire vivant = heartbeat < 2 min (client envoie ~25 s) */
+const HEARTBEAT_MAX_MS = 120 * 1000;
 
 function isRealActive(
   p: {
@@ -95,7 +94,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // ACTIVE invalide (même user des deux côtés, ou incomplet)
     if (current.status === 'ACTIVE') {
       await prisma.pact.update({
         where: { id: current.id },
@@ -114,7 +112,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Reprise uniquement d’un vrai pacte à deux personnes distinctes
     const alreadyActive = await prisma.pact.findFirst({
       where: {
         status: 'ACTIVE',
@@ -146,7 +143,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Sinon terminer les ACTIVE fantômes de cet user
     if (alreadyActive) {
       await prisma.pact
         .update({
@@ -187,7 +183,6 @@ export async function POST(request: NextRequest) {
           debug: {
             myDuration: current.durationDays,
             totalWaiting: 0,
-            sameDurationOthers: 0,
             livePartners: 0,
           },
           ms: Date.now() - started,
@@ -196,7 +191,7 @@ export async function POST(request: NextRequest) {
       myWaiting = recent;
     }
 
-    // Heartbeat : prouve que CET onglet est encore ouvert
+    // Heartbeat intégré (au cas où /api/heartbeat n’a pas encore tourné)
     await prisma.user
       .update({
         where: { id: userId },
@@ -204,7 +199,6 @@ export async function POST(request: NextRequest) {
       })
       .catch(() => {});
 
-    // Candidats : même durée + autre user + heartbeat récent (< 90 s)
     const candidates = await prisma.pact.findMany({
       where: {
         status: 'WAITING',
@@ -220,7 +214,7 @@ export async function POST(request: NextRequest) {
         },
       },
       orderBy: { createdAt: 'asc' },
-      take: 8,
+      take: 6,
       select: {
         id: true,
         userAId: true,
@@ -238,6 +232,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Cleanup vieux WAITING en arrière-plan (pas bloquant)
     void prisma.pact
       .updateMany({
         where: { status: 'WAITING', createdAt: { lt: waitingSinceCutoff } },
@@ -261,11 +256,10 @@ export async function POST(request: NextRequest) {
         message:
           totalRecent <= 1
             ? 'Tu es seul(e) dans la file. Garde cette page ouverte.'
-            : 'Personne d’autre n’est actif en ce moment avec la même durée. Garde la page ouverte.',
+            : 'Personne d’autre n’est actif en ce moment avec la même durée.',
         debug: {
           myDuration: myWaiting.durationDays,
           totalWaiting: totalRecent,
-          sameDurationOthers: candidates.length,
           livePartners: 0,
         },
         ms: Date.now() - started,
@@ -307,9 +301,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Double-check : le partenaire a toujours un heartbeat frais
+    const partnerUserId = bId === userId ? aId : bId;
     const partnerUser = await prisma.user.findUnique({
-      where: { id: bId === userId ? aId : bId },
+      where: { id: partnerUserId },
       select: { waitingSince: true },
     });
     if (
