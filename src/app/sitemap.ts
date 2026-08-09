@@ -3,11 +3,17 @@ import type { MetadataRoute } from 'next';
 const siteUrl =
   process.env.NEXT_PUBLIC_APP_URL || 'https://pacte-silencieux.vercel.app';
 
-const paths: { path: string; priority: number; changeFrequency: MetadataRoute.Sitemap[0]['changeFrequency'] }[] = [
+const paths: {
+  path: string;
+  priority: number;
+  changeFrequency: MetadataRoute.Sitemap[0]['changeFrequency'];
+}[] = [
   { path: '', priority: 1, changeFrequency: 'weekly' },
   { path: '/start', priority: 0.9, changeFrequency: 'monthly' },
   { path: '/outils', priority: 0.85, changeFrequency: 'monthly' },
   { path: '/selection', priority: 0.7, changeFrequency: 'monthly' },
+  { path: '/faq', priority: 0.75, changeFrequency: 'monthly' },
+  { path: '/pour-un-proche', priority: 0.7, changeFrequency: 'monthly' },
   { path: '/waiting', priority: 0.5, changeFrequency: 'monthly' },
   { path: '/don', priority: 0.5, changeFrequency: 'yearly' },
   { path: '/professionnels', priority: 0.4, changeFrequency: 'yearly' },
