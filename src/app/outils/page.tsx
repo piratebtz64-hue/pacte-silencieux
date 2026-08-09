@@ -93,17 +93,12 @@ function OutilsContent() {
   return (
     <main className="min-h-screen flex flex-col">
       <Header />
-      <section className="flex-1 py-12 md:py-16">
+      <section className="flex-1 py-10 md:py-14">
         <div className="max-w-lg mx-auto px-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p
-                className="text-xs font-bold uppercase tracking-[0.14em]"
-                style={{ color: 'var(--accent)' }}
-              >
-                Outils de stabilisation
-              </p>
-              <h1 className="mt-3 font-serif text-3xl tracking-tight">
+              <p className="section-label">Stabilisation</p>
+              <h1 className="mt-3 font-serif text-3xl tracking-tight leading-tight">
                 Respiration et ancrage
               </h1>
             </div>
@@ -113,8 +108,8 @@ function OutilsContent() {
             className="mt-3 text-sm leading-relaxed"
             style={{ color: 'var(--muted)' }}
           >
-            Accessibles sans pacte. Ce ne sont pas des soins médicaux. En
-            détresse aiguë : 3114 · 15 · 112.
+            Sans pacte. Indicatif — pas des soins médicaux. En détresse : 3114 ·
+            15 · 112.
           </p>
 
           {!tool && (
@@ -124,15 +119,16 @@ function OutilsContent() {
                   key={t.id}
                   type="button"
                   onClick={() => open(t.id)}
-                  className="w-full text-left p-4 rounded-2xl border"
-                  style={{
-                    borderColor: t.featured
-                      ? 'color-mix(in srgb, var(--accent) 45%, transparent)'
-                      : 'var(--border)',
-                    background: t.featured
-                      ? 'var(--accent-soft)'
-                      : 'var(--card-solid)',
-                  }}
+                  className="access-card w-full text-left min-h-[64px] touch-manipulation"
+                  style={
+                    t.featured
+                      ? {
+                          borderColor:
+                            'color-mix(in srgb, var(--accent) 40%, transparent)',
+                          background: 'var(--accent-soft)',
+                        }
+                      : undefined
+                  }
                 >
                   <span
                     className="font-semibold text-sm"
@@ -143,7 +139,7 @@ function OutilsContent() {
                     {t.title}
                   </span>
                   <span
-                    className="block text-xs mt-1"
+                    className="block text-xs mt-1.5"
                     style={{ color: 'var(--muted)' }}
                   >
                     {t.desc}
@@ -154,15 +150,15 @@ function OutilsContent() {
           )}
 
           {tool && (
-            <div className="mt-6">
-              <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="mt-6 animate-fade-up">
+              <div className="flex items-center justify-between gap-2 mb-5">
                 <button
                   type="button"
                   onClick={() => {
                     setTool(null);
                     window.history.replaceState(null, '', '/outils');
                   }}
-                  className="text-xs font-semibold"
+                  className="text-xs font-semibold min-h-[44px]"
                   style={{ color: 'var(--accent)' }}
                 >
                   ← Tous les outils
@@ -175,8 +171,7 @@ function OutilsContent() {
                   className="mb-4 text-xs leading-relaxed"
                   style={{ color: 'var(--muted)' }}
                 >
-                  Ambiance « S’endormir » activée (tu peux la changer avec le
-                  bouton son). Respiration lente optionnelle ci-dessous.
+                  Ambiance « S’endormir » activée (modifiable via le bouton son).
                 </p>
               )}
 
@@ -207,13 +202,13 @@ function OutilsContent() {
           )}
 
           <div className="mt-12 flex flex-col sm:flex-row gap-3">
-            <Link href="/start" className="btn-primary text-center">
+            <Link href="/start" className="btn-primary text-center min-h-[48px]">
               Commencer un pacte
             </Link>
-            <Link href="/selection" className="btn-ghost text-center">
-              Sélection empathique
+            <Link href="/selection" className="btn-ghost text-center min-h-[48px]">
+              Sélection
             </Link>
-            <Link href="/" className="btn-ghost text-center">
+            <Link href="/" className="btn-ghost text-center min-h-[48px]">
               Accueil
             </Link>
           </div>

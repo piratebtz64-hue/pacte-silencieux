@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { readSession, writeSession } from '@/lib/session';
 
 export default function StartPage() {
@@ -39,10 +41,6 @@ export default function StartPage() {
       window.location.assign('/waiting');
       return true;
     }
-    if (data.status === 'WAITING' && data.pactId) {
-      // nouveau ou attente : page attente
-      return false;
-    }
     return false;
   };
 
@@ -76,10 +74,10 @@ export default function StartPage() {
         userId: data.userId || '',
         pactId: data.pactId || '',
         duration: String(duration),
+        status: data.status || 'WAITING',
       });
 
       if (goAfterStart(data)) return;
-
       if (data.pactId) {
         window.location.assign('/waiting');
         return;
@@ -109,7 +107,6 @@ export default function StartPage() {
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         const parts = [data.error, data.detail].filter(Boolean);
         throw new Error(parts.join(' — ') || 'Une erreur est survenue');
@@ -120,9 +117,13 @@ export default function StartPage() {
         userId: data.userId || '',
         pactId: data.pactId || '',
         duration,
+        status: data.status || 'WAITING',
       });
 
-      if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      if (
+        typeof Notification !== 'undefined' &&
+        Notification.permission === 'default'
+      ) {
         Notification.requestPermission().catch(() => {});
       }
 
@@ -142,155 +143,193 @@ export default function StartPage() {
 
   if (done) {
     return (
-      <main className="min-h-screen grid place-items-center px-4 py-16">
-        <div className="max-w-md w-full text-center animate-fade-up">
-          <h1 className="font-serif text-3xl tracking-tight">
-            {done.emailSent ? 'Lien envoyé' : 'Pacte prêt'}
-          </h1>
-          <p className="mt-3 leading-relaxed" style={{ color: 'var(--muted)' }}>
-            {done.emailSent
-              ? 'Vérifie ta boîte mail. Tu peux aussi continuer tout de suite.'
-              : done.warning || 'Tu peux entrer en attente immédiatement.'}
-          </p>
-          <button
-            type="button"
-            onClick={() => window.location.assign('/waiting')}
-            className="btn-primary mt-8 w-full"
-          >
-            Continuer vers l’attente
-          </button>
-          <Link href="/" className="mt-8 inline-block text-sm" style={{ color: 'var(--muted)' }}>
-            ← Accueil
-          </Link>
-        </div>
+      <main className="min-h-screen flex flex-col">
+        <Header showCta={false} />
+        <section className="flex-1 grid place-items-center px-4 py-16">
+          <div className="max-w-md w-full text-center animate-fade-up">
+            <div className="flex justify-center mb-6">
+              <div className="pact-breath" />
+            </div>
+            <p className="section-label">Presque là</p>
+            <h1 className="mt-3 font-serif text-3xl tracking-tight">
+              {done.emailSent ? 'Lien envoyé' : 'Pacte prêt'}
+            </h1>
+            <p
+              className="mt-4 leading-relaxed text-sm"
+              style={{ color: 'var(--muted)' }}
+            >
+              {done.emailSent
+                ? 'Vérifie ta boîte mail. Tu peux aussi continuer tout de suite vers l’attente.'
+                : done.warning ||
+                  'Tu peux entrer en attente immédiatement.'}
+            </p>
+            <p
+              className="mt-3 text-xs leading-relaxed"
+              style={{ color: 'var(--muted)' }}
+            >
+              Le match ne se fait que si une autre personne choisit la même
+              durée et reste sur la page d’attente.
+            </p>
+            <button
+              type="button"
+              onClick={() => window.location.assign('/waiting')}
+              className="btn-primary mt-8 w-full min-h-[48px]"
+            >
+              Continuer vers l’attente
+            </button>
+            <Link
+              href="/"
+              className="mt-8 inline-block text-sm"
+              style={{ color: 'var(--muted)' }}
+            >
+              ← Accueil
+            </Link>
+          </div>
+        </section>
+        <Footer />
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen py-12 md:py-16">
-      <div className="max-w-md mx-auto px-4 w-full animate-fade-up">
-        <Link href="/" className="text-sm" style={{ color: 'var(--muted)' }}>
-          ← Accueil
-        </Link>
-        <h1 className="mt-6 font-serif text-3xl md:text-4xl tracking-tight">
-          Commencer un pacte de présence
-        </h1>
-        <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-          Tu n’as pas besoin de tout expliquer. Juste choisir une durée et
-          rester un peu avec quelqu’un — discrètement.
-        </p>
-
-        {hasSession && (
-          <div
-            className="mt-6 p-4 rounded-xl border text-sm"
-            style={{
-              borderColor: 'color-mix(in srgb, var(--accent) 30%, transparent)',
-              background: 'var(--accent-soft)',
-            }}
+    <main className="min-h-screen flex flex-col">
+      <Header showCta={false} />
+      <section className="flex-1 py-10 md:py-14">
+        <div className="max-w-md mx-auto px-4 w-full animate-fade-up">
+          <p className="section-label">Pacte</p>
+          <h1 className="mt-3 font-serif text-3xl md:text-[2.35rem] tracking-tight leading-tight">
+            Une présence, pour un temps limité
+          </h1>
+          <p
+            className="mt-3 text-sm leading-relaxed"
+            style={{ color: 'var(--muted)' }}
           >
-            <p className="font-semibold" style={{ color: 'var(--accent)' }}>
-              Session trouvée sur cet appareil
-            </p>
-            <p className="mt-1" style={{ color: 'var(--muted)' }}>
-              Vérifie l’email ci-dessous (le même qu’à l’inscription), puis ouvre
-              ton pacte.
-            </p>
-            <button
-              type="button"
-              disabled={resuming || !email}
-              onClick={resumePact}
-              className="mt-3 font-bold underline disabled:opacity-50"
-              style={{ color: 'var(--accent)' }}
-            >
-              {resuming ? 'Ouverture…' : 'Ouvrir mon pacte →'}
-            </button>
-          </div>
-        )}
-
-        <div className="card-premium mt-8 p-5">
-          <p className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>
-            Ce n’est pas un test
+            Gestes et messages déjà écrits · pas de chat libre · 1, 3 ou 7 jours.
+            Ce n’est pas un soin médical ni une urgence.
           </p>
-          <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-            Que tu aies besoin d’une présence, que tu veuilles en offrir une, ou
-            les deux : même parcours.
-          </p>
-        </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-          <div>
-            <label className="block text-sm font-semibold mb-2.5">Durée</label>
-            <div className="grid grid-cols-3 gap-2.5">
-              {(['1', '3', '7'] as const).map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => setDuration(d)}
-                  className="py-3.5 rounded-xl border text-sm font-semibold"
-                  style={
-                    duration === d
-                      ? {
-                          background: 'var(--accent)',
-                          color: '#fff',
-                          borderColor: 'var(--accent)',
-                        }
-                      : {
-                          background: 'var(--card)',
-                          borderColor: 'var(--border)',
-                        }
-                  }
-                >
-                  {d} jour{Number(d) > 1 ? 's' : ''}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold mb-2.5">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3.5 rounded-xl border text-sm"
+          {hasSession && (
+            <div
+              className="mt-6 p-5 rounded-2xl border text-sm"
               style={{
-                borderColor: 'var(--border)',
-                background: 'var(--card-solid)',
+                borderColor: 'color-mix(in srgb, var(--accent) 28%, transparent)',
+                background: 'var(--accent-soft)',
               }}
-              placeholder="ton@email.com"
-              autoComplete="email"
-            />
-            <p className="mt-2 text-xs" style={{ color: 'var(--muted)' }}>
-              Même email = tu reprends le pacte actif et l’historique.
-            </p>
-          </div>
-
-          {error && (
-            <p className="text-sm text-red-600 dark:text-red-400 break-words">{error}</p>
+            >
+              <p className="font-semibold" style={{ color: 'var(--accent)' }}>
+                Session sur cet appareil
+              </p>
+              <p className="mt-1.5" style={{ color: 'var(--muted)' }}>
+                Même email qu’à l’inscription pour rouvrir ton pacte ou
+                l’attente.
+              </p>
+              <button
+                type="button"
+                disabled={resuming || !email}
+                onClick={resumePact}
+                className="mt-3 font-bold underline disabled:opacity-50 min-h-[44px]"
+                style={{ color: 'var(--accent)' }}
+              >
+                {resuming ? 'Ouverture…' : 'Ouvrir mon pacte →'}
+              </button>
+            </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-primary w-full disabled:opacity-60"
-          >
-            {loading ? 'Chargement…' : 'Continuer'}
-          </button>
-        </form>
+          <div className="card-premium mt-7 p-5">
+            <p className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>
+              Pour que le lien se fasse
+            </p>
+            <ul
+              className="mt-2 text-sm space-y-1.5 leading-relaxed"
+              style={{ color: 'var(--muted)' }}
+            >
+              <li>· Deux personnes (deux emails ou deux appareils)</li>
+              <li>· La même durée choisie</li>
+              <li>· Les deux restent sur la page d’attente</li>
+            </ul>
+          </div>
 
-        <p className="mt-8 text-xs text-center leading-relaxed" style={{ color: 'var(--muted)' }}>
-          En continuant :{' '}
-          <Link href="/cgu" className="underline">
-            conditions
-          </Link>{' '}
-          ·{' '}
-          <Link href="/confidentialite" className="underline">
-            confidentialité
-          </Link>
-        </p>
-      </div>
+          <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+            <div>
+              <label className="block text-sm font-semibold mb-2.5">Durée</label>
+              <div className="grid grid-cols-3 gap-2.5">
+                {(['1', '3', '7'] as const).map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDuration(d)}
+                    className="py-3.5 min-h-[48px] rounded-xl border text-sm font-semibold touch-manipulation"
+                    style={
+                      duration === d
+                        ? {
+                            background: 'var(--accent)',
+                            color: '#fff',
+                            borderColor: 'var(--accent)',
+                          }
+                        : {
+                            background: 'var(--card-solid)',
+                            borderColor: 'var(--border)',
+                          }
+                    }
+                  >
+                    {d} j
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2.5">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-4 py-3.5 min-h-[48px] rounded-xl border text-sm"
+                style={{
+                  borderColor: 'var(--border)',
+                  background: 'var(--card-solid)',
+                }}
+                placeholder="ton@email.com"
+                autoComplete="email"
+              />
+              <p className="mt-2 text-xs" style={{ color: 'var(--muted)' }}>
+                Même email = reprise du pacte et de l’historique.
+              </p>
+            </div>
+
+            {error && (
+              <p className="text-sm text-red-600 dark:text-red-400 break-words">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary w-full min-h-[48px] disabled:opacity-60"
+            >
+              {loading ? 'Chargement…' : 'Continuer'}
+            </button>
+          </form>
+
+          <p
+            className="mt-8 text-xs text-center leading-relaxed"
+            style={{ color: 'var(--muted)' }}
+          >
+            En continuant :{' '}
+            <Link href="/cgu" className="underline">
+              conditions
+            </Link>{' '}
+            ·{' '}
+            <Link href="/confidentialite" className="underline">
+              confidentialité
+            </Link>
+            {' '}· En détresse : 3114 · 15 · 112
+          </p>
+        </div>
+      </section>
+      <Footer />
     </main>
   );
 }

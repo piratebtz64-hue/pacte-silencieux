@@ -12,7 +12,6 @@ import {
 } from '@/lib/session';
 import { subscribePactMatch } from '@/lib/realtime';
 
-/** Polling de secours (Realtime d’abord). */
 function nextPollMs(attempt: number, realtimeOk: boolean) {
   if (realtimeOk) return attempt < 5 ? 4000 : 8000;
   if (attempt < 10) return 1200;
@@ -133,7 +132,6 @@ function WaitingContent() {
     pactIdRef.current = pactId;
   }, [pactId]);
 
-  // WebSocket Realtime
   useEffect(() => {
     if (!pactId) return;
     setLive(false);
@@ -143,7 +141,6 @@ function WaitingContent() {
       goToPact(activeId);
     });
 
-    // Marquer live après un court délai si le client existe
     const t = setTimeout(() => {
       setLive(true);
       liveRef.current = true;
@@ -158,7 +155,6 @@ function WaitingContent() {
     };
   }, [pactId, goToPact]);
 
-  // Polling de secours
   useEffect(() => {
     if (!pactId) return;
 
@@ -208,7 +204,7 @@ function WaitingContent() {
         writeSession({ status: 'WAITING' });
         if (data.debug) {
           setHint(
-            `Durée : ${data.debug.myDuration} j · File : ${data.debug.totalWaiting} · Même durée : ${data.debug.sameDurationOthers ?? 0}`
+            `Durée : ${data.debug.myDuration} j · File : ${data.debug.totalWaiting} · Actifs même durée : ${data.debug.livePartners ?? data.debug.sameDurationOthers ?? 0}`
           );
         }
       } catch {
@@ -245,14 +241,15 @@ function WaitingContent() {
 
   return (
     <main className="min-h-screen flex flex-col">
-      <Header />
-      <section className="flex-1 grid place-items-center py-16 pact-shell">
-        <div className="max-w-md mx-auto px-4 text-center">
-          <div className="mx-auto mb-6 flex justify-center">
+      <Header showCta={false} />
+      <section className="flex-1 grid place-items-center py-12 md:py-16 pact-shell">
+        <div className="max-w-md mx-auto px-4 text-center w-full">
+          <div className="mx-auto mb-7 flex justify-center">
             <div className="pact-breath" />
           </div>
 
-          <h1 className="font-serif text-3xl tracking-tight">En attente</h1>
+          <p className="section-label">File d’attente</p>
+          <h1 className="mt-3 font-serif text-3xl tracking-tight">En attente</h1>
           <p
             className="mt-3 text-sm leading-relaxed max-w-[34ch] mx-auto"
             style={{ color: 'var(--muted)' }}
@@ -261,11 +258,11 @@ function WaitingContent() {
             {duration
               ? ` de ${duration} jour${Number(duration) > 1 ? 's' : ''}`
               : ''}
-            . Le lien se crée quand une autre personne est en file avec la même
-            durée.
+            . Le lien se crée seulement si une autre personne est active avec la
+            même durée.
           </p>
 
-          <div className="mt-4 flex flex-wrap justify-center gap-2 text-[11px]">
+          <div className="mt-5 flex flex-wrap justify-center gap-2 text-[11px]">
             {live && (
               <span
                 className="px-2.5 py-1 rounded-full font-semibold"
@@ -278,20 +275,20 @@ function WaitingContent() {
               </span>
             )}
             {offline && (
-              <span className="px-2.5 py-1 rounded-full font-semibold" style={{ color: 'var(--muted)' }}>
+              <span
+                className="px-2.5 py-1 rounded-full font-semibold"
+                style={{ color: 'var(--muted)' }}
+              >
                 Hors ligne
               </span>
             )}
           </div>
 
-          <div
-            className="mt-6 p-6 rounded-2xl border"
-            style={{
-              background: 'var(--card-solid)',
-              borderColor: 'var(--border)',
-            }}
-          >
-            <div className="text-xs tracking-wide mb-2" style={{ color: 'var(--muted)' }}>
+          <div className="card-premium mt-8 p-7">
+            <div
+              className="text-[10px] uppercase tracking-[0.14em] font-semibold mb-2"
+              style={{ color: 'var(--muted)' }}
+            >
               Temps d’attente
             </div>
             <div
@@ -300,7 +297,10 @@ function WaitingContent() {
             >
               {waitingTime}
             </div>
-            <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+            <p
+              className="mt-4 text-sm leading-relaxed"
+              style={{ color: 'var(--muted)' }}
+            >
               {status}
             </p>
             {hint && (
@@ -310,7 +310,7 @@ function WaitingContent() {
             )}
             {alone && (
               <p
-                className="mt-3 text-[11px] font-semibold tracking-wide"
+                className="mt-4 text-[11px] font-semibold tracking-wide"
                 style={{ color: 'var(--accent)' }}
               >
                 File : toi seul(e) pour le moment
@@ -319,7 +319,7 @@ function WaitingContent() {
           </div>
 
           <p
-            className="mt-5 text-xs leading-relaxed max-w-[36ch] mx-auto"
+            className="mt-6 text-xs leading-relaxed max-w-[36ch] mx-auto"
             style={{ color: 'var(--muted)' }}
           >
             {honest}
@@ -327,7 +327,7 @@ function WaitingContent() {
 
           {!pactId && (
             <div
-              className="mt-6 p-4 rounded-xl border text-sm"
+              className="mt-6 p-4 rounded-xl border text-sm text-left"
               style={{
                 borderColor: 'color-mix(in srgb, var(--gold) 40%, transparent)',
                 background: 'var(--gold-soft)',
@@ -341,19 +341,19 @@ function WaitingContent() {
           )}
 
           <div
-            className="mt-8 text-left text-xs space-y-2 p-4 rounded-xl"
-            style={{ background: 'var(--accent-soft)', color: 'var(--muted)' }}
+            className="mt-8 text-left text-xs space-y-2 p-5 rounded-2xl"
+            style={{ background: 'var(--mist)', color: 'var(--muted)' }}
           >
             <p className="font-semibold" style={{ color: 'var(--accent)' }}>
               Pour que le lien se fasse
             </p>
-            <p>- Deux appareils (ou deux emails différents)</p>
-            <p>- La même durée : 1, 3 ou 7 jours</p>
-            <p>- Les deux restent sur cette page d’attente</p>
+            <p>· Deux appareils (ou deux emails différents)</p>
+            <p>· La même durée : 1, 3 ou 7 jours</p>
+            <p>· Les deux restent sur cette page</p>
           </div>
 
           {email && (
-            <p className="mt-4 text-xs" style={{ color: 'var(--muted)' }}>
+            <p className="mt-5 text-xs" style={{ color: 'var(--muted)' }}>
               Cet appareil : <strong>{email}</strong>
               {duration ? ` · ${duration} j` : ''}
             </p>
@@ -365,12 +365,12 @@ function WaitingContent() {
                 type="button"
                 disabled={leaving}
                 onClick={leaveQueue}
-                className="btn-ghost !text-sm"
+                className="btn-ghost !text-sm min-h-[44px]"
               >
                 {leaving ? 'Sortie…' : 'Annuler l’attente'}
               </button>
             )}
-            <Link href="/" className="text-sm" style={{ color: 'var(--muted)' }}>
+            <Link href="/" className="text-sm min-h-[44px] grid place-items-center" style={{ color: 'var(--muted)' }}>
               Accueil
             </Link>
           </div>
