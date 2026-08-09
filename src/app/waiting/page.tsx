@@ -12,7 +12,6 @@ import {
 } from '@/lib/session';
 import { subscribePactMatch } from '@/lib/realtime';
 
-/** Polling match : plus lent si seul, plus lent si Realtime OK */
 function nextPollMs(
   attempt: number,
   realtimeOk: boolean,
@@ -114,12 +113,12 @@ function WaitingContent() {
       );
       if (seconds === 45) {
         setHonest(
-          'Toujours seul(e) : c’est normal s’il n’y a personne d’autre connecté en même temps.'
+          'Toujours seul(e) : c’est normal. Tu peux respirer en attendant, ou revenir plus tard.'
         );
       }
       if (seconds === 150) {
         setHonest(
-          'Tu peux laisser cette page ouverte, ou revenir plus tard avec le même email et la même durée.'
+          'Laisse cette page ouverte si tu veux rester dans la file, ou reviens avec le même email et la même durée.'
         );
       }
     }, 1000);
@@ -150,7 +149,6 @@ function WaitingContent() {
     pactIdRef.current = pactId;
   }, [pactId]);
 
-  // Heartbeat léger toutes les 25 s (indépendant du match)
   useEffect(() => {
     if (!pactId) return;
     let cancelled = false;
@@ -286,9 +284,9 @@ function WaitingContent() {
   return (
     <main className="min-h-screen flex flex-col">
       <Header showCta={false} />
-      <section className="flex-1 grid place-items-center py-12 md:py-16 pact-shell">
+      <section className="flex-1 py-10 md:py-14 pact-shell">
         <div className="max-w-md mx-auto px-4 text-center w-full">
-          <div className="mx-auto mb-7 flex justify-center">
+          <div className="mx-auto mb-6 flex justify-center">
             <div className="pact-breath" />
           </div>
 
@@ -302,11 +300,11 @@ function WaitingContent() {
             {duration
               ? ` de ${duration} jour${Number(duration) > 1 ? 's' : ''}`
               : ''}
-            . Le lien se crée seulement si une autre personne est active avec la
-            même durée.
+            . Match uniquement si une autre personne est active avec la même
+            durée.
           </p>
 
-          <div className="mt-5 flex flex-wrap justify-center gap-2 text-[11px]">
+          <div className="mt-4 flex flex-wrap justify-center gap-2 text-[11px]">
             {live && (
               <span
                 className="px-2.5 py-1 rounded-full font-semibold"
@@ -328,7 +326,7 @@ function WaitingContent() {
             )}
           </div>
 
-          <div className="card-premium mt-8 p-7">
+          <div className="card-premium mt-7 p-6 sm:p-7">
             <div
               className="text-[10px] uppercase tracking-[0.14em] font-semibold mb-2"
               style={{ color: 'var(--muted)' }}
@@ -363,11 +361,54 @@ function WaitingContent() {
           </div>
 
           <p
-            className="mt-6 text-xs leading-relaxed max-w-[36ch] mx-auto"
+            className="mt-5 text-xs leading-relaxed max-w-[36ch] mx-auto"
             style={{ color: 'var(--muted)' }}
           >
             {honest}
           </p>
+
+          {/* Attente utile : pas un cul-de-sac */}
+          {alone && pactId && (
+            <div className="mt-8 text-left space-y-3">
+              <p className="section-label text-center">En attendant</p>
+              <p
+                className="text-xs text-center leading-relaxed"
+                style={{ color: 'var(--muted)' }}
+              >
+                La file continue en arrière-plan si tu gardes cet onglet ouvert.
+              </p>
+              <Link
+                href="/outils?outil=coherence"
+                className="access-card block"
+              >
+                <span className="font-semibold text-sm">Cohérence cardiaque</span>
+                <span
+                  className="block text-xs mt-1"
+                  style={{ color: 'var(--muted)' }}
+                >
+                  5 minutes · respiration guidée
+                </span>
+              </Link>
+              <Link href="/outils?outil=ground" className="access-card block">
+                <span className="font-semibold text-sm">Ancrage 5-4-3-2-1</span>
+                <span
+                  className="block text-xs mt-1"
+                  style={{ color: 'var(--muted)' }}
+                >
+                  Revenir dans le corps
+                </span>
+              </Link>
+              <Link href="/outils?outil=breath" className="access-card block">
+                <span className="font-semibold text-sm">Autres respirations</span>
+                <span
+                  className="block text-xs mt-1"
+                  style={{ color: 'var(--muted)' }}
+                >
+                  4/6 · carré · 4-7-8
+                </span>
+              </Link>
+            </div>
+          )}
 
           {!pactId && (
             <div
@@ -389,11 +430,12 @@ function WaitingContent() {
             style={{ background: 'var(--mist)', color: 'var(--muted)' }}
           >
             <p className="font-semibold" style={{ color: 'var(--accent)' }}>
-              Pour que le lien se fasse
+              Tester à deux (2 min)
             </p>
-            <p>· Deux appareils (ou deux emails différents)</p>
-            <p>· La même durée : 1, 3 ou 7 jours</p>
-            <p>· Les deux restent sur cette page</p>
+            <p>1. Deux téléphones ou deux emails différents</p>
+            <p>2. Même durée (ex. 3 jours)</p>
+            <p>3. Les deux restent sur cette page d’attente</p>
+            <p>4. Le match ouvre le pacte automatiquement</p>
           </div>
 
           {email && (
@@ -422,6 +464,13 @@ function WaitingContent() {
               Accueil
             </Link>
           </div>
+
+          <p
+            className="mt-8 text-[11px] leading-relaxed"
+            style={{ color: 'var(--muted)' }}
+          >
+            En détresse : 3114 · 15 · 112
+          </p>
         </div>
       </section>
       <Footer />
