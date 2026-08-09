@@ -2,28 +2,30 @@
 
 import { useState } from 'react';
 
-const APP_URL =
-  typeof window !== 'undefined'
-    ? window.location.origin
-    : 'https://pacte-silencieux.vercel.app';
-
-const SHARE_TEXT =
-  'Le Pacte silencieux — une présence anonyme, sans chat, pendant quelques jours. Gratuit.';
+const DEFAULT_TEXT =
+  'Le Pacte silencieux — présence anonyme, messages déjà écrits, sans chat. On peut tester à deux (même durée, page d’attente). Gratuit :';
 
 export default function ShareButton({
   className = '',
-  label = 'Partager',
+  label = 'Inviter quelqu’un',
   url,
-  text = SHARE_TEXT,
+  text = DEFAULT_TEXT,
+  variant = 'ghost',
 }: {
   className?: string;
   label?: string;
   url?: string;
   text?: string;
+  variant?: 'ghost' | 'primary' | 'link';
 }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const shareUrl = url || APP_URL;
+
+  const shareUrl =
+    url ||
+    (typeof window !== 'undefined'
+      ? window.location.origin
+      : 'https://pacte-silencieux.vercel.app');
 
   const nativeShare = async () => {
     if (typeof navigator !== 'undefined' && navigator.share) {
@@ -35,7 +37,7 @@ export default function ShareButton({
         });
         return;
       } catch {
-        /* user cancelled or not supported */
+        /* cancelled */
       }
     }
     setOpen((v) => !v);
@@ -43,7 +45,7 @@ export default function ShareButton({
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(`${text} ${shareUrl}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -56,20 +58,12 @@ export default function ShareButton({
 
   const links = [
     {
-      name: 'X / Twitter',
-      href: `https://twitter.com/intent/tweet?text=${encodedText}&url=${encoded}`,
-    },
-    {
       name: 'WhatsApp',
       href: `https://wa.me/?text=${encodedText}%20${encoded}`,
     },
     {
-      name: 'Facebook',
-      href: `https://www.facebook.com/sharer/sharer.php?u=${encoded}`,
-    },
-    {
-      name: 'LinkedIn',
-      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encoded}`,
+      name: 'X / Twitter',
+      href: `https://twitter.com/intent/tweet?text=${encodedText}&url=${encoded}`,
     },
     {
       name: 'E-mail',
@@ -77,25 +71,40 @@ export default function ShareButton({
     },
   ];
 
+  const btnClass =
+    variant === 'primary'
+      ? 'btn-primary !text-sm !py-2.5 !px-4'
+      : variant === 'link'
+        ? 'text-sm font-semibold underline-offset-2 hover:underline'
+        : 'btn-ghost !text-sm !py-2.5 !px-4';
+
   return (
     <div className={`relative inline-block ${className}`}>
       <button
         type="button"
         onClick={nativeShare}
-        className="px-4 py-2 rounded-full border border-black/10 dark:border-white/10 text-sm font-bold hover:border-[#1f6b67] hover:text-[#1f6b67] transition"
+        className={`${btnClass} whitespace-nowrap`}
+        style={variant === 'link' ? { color: 'var(--accent)' } : undefined}
       >
-        {label}
+        {copied ? 'Copié ✓' : label}
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-52 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1c1a] shadow-lg z-50 p-2">
+        <div
+          className="absolute right-0 mt-2 w-52 rounded-xl border shadow-lg z-50 p-2 text-left"
+          style={{
+            borderColor: 'var(--border)',
+            background: 'var(--card-solid)',
+          }}
+        >
           {links.map((l) => (
             <a
               key={l.name}
               href={l.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="block px-3 py-2 text-sm rounded-lg hover:bg-[#1f6b67]/10"
+              className="block px-3 py-2.5 text-sm rounded-lg hover:opacity-90"
+              style={{ color: 'var(--foreground)' }}
               onClick={() => setOpen(false)}
             >
               {l.name}
@@ -104,9 +113,10 @@ export default function ShareButton({
           <button
             type="button"
             onClick={copy}
-            className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-[#1f6b67]/10 font-medium"
+            className="w-full text-left px-3 py-2.5 text-sm rounded-lg font-medium"
+            style={{ color: 'var(--accent)' }}
           >
-            {copied ? 'Lien copié ✓' : 'Copier le lien'}
+            {copied ? 'Lien copié ✓' : 'Copier le message + lien'}
           </button>
         </div>
       )}
