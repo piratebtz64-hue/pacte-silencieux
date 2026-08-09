@@ -1,6 +1,5 @@
 /**
- * Parcours de sélection empathique — pas un test clinique.
- * Oriente vers intention (soutenir / être soutenu) et ton préféré.
+ * Sélection empathique — orientation douce, pas un test clinique.
  */
 
 export type EmpathicAnswer = 'a' | 'b' | 'c' | 'd';
@@ -8,47 +7,50 @@ export type EmpathicAnswer = 'a' | 'b' | 'c' | 'd';
 export type EmpathicQuestion = {
   id: string;
   text: string;
+  hint?: string;
   options: { id: EmpathicAnswer; label: string }[];
 };
 
 export const EMPATHIC_QUESTIONS: EmpathicQuestion[] = [
   {
     id: 'moment',
-    text: 'Comment tu te sens en ce moment ?',
+    text: 'Où en es-tu, là, maintenant ?',
+    hint: 'Une impression suffit. Pas besoin d’analyser.',
     options: [
-      { id: 'a', label: 'Un peu seul·e, sans trop savoir pourquoi' },
-      { id: 'b', label: 'Lourd·e, j’aurais besoin qu’on reste un peu' },
-      { id: 'c', label: 'Ça va à peu près, je veux plutôt offrir une présence' },
-      { id: 'd', label: 'Je ne sais pas trop — je regarde juste' },
+      { id: 'a', label: 'Un peu seul·e' },
+      { id: 'b', label: 'C’est lourd aujourd’hui' },
+      { id: 'c', label: 'Ça va — j’ai de la place pour quelqu’un' },
+      { id: 'd', label: 'Je ne sais pas trop' },
     ],
   },
   {
     id: 'parler',
-    text: 'Envie de parler à quelqu’un en ce moment ?',
+    text: 'As-tu envie de parler à quelqu’un ?',
+    hint: 'Ici, on ne discute pas librement : seulement des messages déjà écrits.',
     options: [
-      { id: 'a', label: 'Non, pas vraiment — juste une présence' },
-      { id: 'b', label: 'Un peu, mais sans devoir tout expliquer' },
-      { id: 'c', label: 'Oui, j’aimerais être entendu·e doucement' },
-      { id: 'd', label: 'Je préfère plutôt soutenir quelqu’un d’autre' },
+      { id: 'a', label: 'Non — juste savoir que quelqu’un est là' },
+      { id: 'b', label: 'Un peu, sans tout raconter' },
+      { id: 'c', label: 'Oui, être entendu·e doucement' },
+      { id: 'd', label: 'Je préfère plutôt soutenir quelqu’un' },
     ],
   },
   {
     id: 'soutien',
-    text: 'Tu as quelqu’un autour pour te soutenir aujourd’hui ?',
+    text: 'As-tu quelqu’un de disponible près de toi ?',
     options: [
       { id: 'a', label: 'Pas vraiment, pas en ce moment' },
-      { id: 'b', label: 'Oui, mais je n’ai pas envie de les déranger' },
-      { id: 'c', label: 'Oui, et ça va' },
-      { id: 'd', label: 'Je suis plutôt disponible pour les autres' },
+      { id: 'b', label: 'Oui, mais je ne veux pas déranger' },
+      { id: 'c', label: 'Oui, et c’est ok' },
+      { id: 'd', label: 'Je suis plutôt dispo pour les autres' },
     ],
   },
   {
     id: 'ton',
-    text: 'Quel style de présence te ferait du bien ?',
+    text: 'Quelle présence te ferait du bien ?',
     options: [
-      { id: 'a', label: 'Très doux, presque silencieux' },
-      { id: 'b', label: 'Chaleureux, simple, sans pression' },
-      { id: 'c', label: 'Un peu de courage / motivation' },
+      { id: 'a', label: 'Très douce, presque silencieuse' },
+      { id: 'b', label: 'Simple et chaleureuse' },
+      { id: 'c', label: 'Un peu de courage' },
       { id: 'd', label: 'Peu importe, tant que c’est respectueux' },
     ],
   },
@@ -57,8 +59,13 @@ export const EMPATHIC_QUESTIONS: EmpathicQuestion[] = [
 export type EmpathicResult = {
   intent: 'offer' | 'seek' | 'both';
   toneHint: 'doux' | 'neutre' | 'energique' | 'all';
+  title: string;
   message: string;
   suggestion: string;
+  primaryHref: string;
+  primaryLabel: string;
+  secondaryHref: string;
+  secondaryLabel: string;
 };
 
 export function computeEmpathicResult(
@@ -91,26 +98,48 @@ export function computeEmpathicResult(
   else if (answers.ton === 'b') toneHint = 'neutre';
   else if (answers.ton === 'c') toneHint = 'energique';
 
+  const titles: Record<EmpathicResult['intent'], string> = {
+    seek: 'Tu sembles avoir besoin d’une présence',
+    offer: 'Tu sembles prêt·e à offrir une présence',
+    both: 'Les deux sont possibles ici',
+  };
+
   const messages: Record<EmpathicResult['intent'], string> = {
     seek:
-      'Tu sembles avoir besoin d’une présence discrète. Ce n’est pas un échec — c’est un moment où être accompagné·e peut faire du bien.',
+      'Pas besoin d’expliquer toute ton histoire. Un pacte, c’est quelqu’un d’anonyme qui reste un peu, avec des gestes et des messages déjà écrits.',
     offer:
-      'Tu sembles plutôt disponible pour offrir une présence. Merci. Rester là, sans forcer, c’est déjà beaucoup.',
+      'Rester là sans forcer, c’est déjà beaucoup. Tu pourras choisir des messages de soutien — sans chat libre.',
     both:
-      'Tu peux à la fois avoir besoin d’être soutenu·e et envie d’en offrir. Les deux sont possibles ici, sans choisir un camp.',
+      'Tu peux avoir besoin d’être soutenu·e et aussi envie d’en offrir. Tu n’as pas à choisir un camp.',
   };
+
+  const toneLine =
+    toneHint === 'doux'
+      ? 'Préférence : ton très doux.'
+      : toneHint === 'neutre'
+        ? 'Préférence : ton simple et chaleureux.'
+        : toneHint === 'energique'
+          ? 'Préférence : un peu de courage.'
+          : 'Ton : selon ce qui te convient sur le moment.';
 
   const suggestion =
     intent === 'offer'
-      ? 'Sur le pacte, tu pourras commencer par l’onglet « Je soutiens ».'
+      ? `${toneLine} Ensuite : commence un pacte, ou respire d’abord si tu en as besoin.`
       : intent === 'seek'
-        ? 'Sur le pacte, tu pourras commencer par « J’ai besoin de soutien ».'
-        : 'Tu pourras alterner librement entre soutenir et être soutenu·e.';
+        ? `${toneLine} Si c’est trop fort : 3114. Sinon, un pacte ou un outil de respiration.`
+        : `${toneLine}`;
 
   return {
     intent,
     toneHint,
+    title: titles[intent],
     message: messages[intent],
     suggestion,
+    primaryHref: '/start',
+    primaryLabel: 'Commencer un pacte',
+    secondaryHref:
+      intent === 'seek' ? '/outils?outil=coherence' : '/outils',
+    secondaryLabel:
+      intent === 'seek' ? 'Respirer d’abord' : 'Voir les outils',
   };
 }
