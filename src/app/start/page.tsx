@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { readSession, writeSession } from '@/lib/session';
+import JourneyMarkers from '@/components/JourneyMarkers';
 
 export default function StartPage() {
   const [email, setEmail] = useState('');
@@ -147,6 +148,9 @@ export default function StartPage() {
         <Header showCta={false} />
         <section className="flex-1 grid place-items-center px-4 py-16">
           <div className="max-w-md w-full text-center animate-fade-up">
+            <div className="mb-6">
+              <JourneyMarkers current="start" />
+            </div>
             <div className="flex justify-center mb-6">
               <div className="pact-breath" />
             </div>
@@ -162,13 +166,6 @@ export default function StartPage() {
                 ? 'Vérifie ta boîte mail. Tu peux aussi continuer tout de suite vers l’attente.'
                 : done.warning ||
                   'Tu peux entrer en attente immédiatement.'}
-            </p>
-            <p
-              className="mt-3 text-xs leading-relaxed"
-              style={{ color: 'var(--muted)' }}
-            >
-              Pour matcher : second téléphone ou second email, même durée, page
-              d’attente ouverte des deux côtés.
             </p>
             <button
               type="button"
@@ -203,6 +200,9 @@ export default function StartPage() {
       <Header showCta={false} />
       <section className="flex-1 py-10 md:py-14">
         <div className="max-w-md mx-auto px-4 w-full animate-fade-up">
+          <div className="mb-8">
+            <JourneyMarkers current="start" />
+          </div>
           <p className="section-label">Pacte</p>
           <h1 className="mt-3 font-serif text-3xl md:text-[2.35rem] tracking-tight leading-tight">
             Une présence, pour un temps limité
@@ -337,7 +337,11 @@ export default function StartPage() {
             className="mt-8 text-xs text-center leading-relaxed"
             style={{ color: 'var(--muted)' }}
           >
-            En continuant :{' '}
+            <Link href="/faq" className="underline">
+              Questions fréquentes
+            </Link>
+            {' '}
+            ·{' '}
             <Link href="/cgu" className="underline">
               conditions
             </Link>{' '}
@@ -345,7 +349,7 @@ export default function StartPage() {
             <Link href="/confidentialite" className="underline">
               confidentialité
             </Link>
-            {' '}· En détresse : 3114 · 15 · 112
+            {' '}· 3114 · 15 · 112
           </p>
         </div>
       </section>
