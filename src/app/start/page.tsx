@@ -167,8 +167,8 @@ export default function StartPage() {
               className="mt-3 text-xs leading-relaxed"
               style={{ color: 'var(--muted)' }}
             >
-              Le match ne se fait que si une autre personne choisit la même
-              durée et reste sur la page d’attente.
+              Pour matcher : second téléphone ou second email, même durée, page
+              d’attente ouverte des deux côtés.
             </p>
             <button
               type="button"
@@ -178,8 +178,15 @@ export default function StartPage() {
               Continuer vers l’attente
             </button>
             <Link
+              href="/outils?outil=coherence"
+              className="mt-4 inline-block text-sm"
+              style={{ color: 'var(--accent)' }}
+            >
+              Ou respirer en attendant →
+            </Link>
+            <Link
               href="/"
-              className="mt-8 inline-block text-sm"
+              className="mt-6 inline-block text-sm"
               style={{ color: 'var(--muted)' }}
             >
               ← Accueil
@@ -247,6 +254,19 @@ export default function StartPage() {
               <li>· La même durée choisie</li>
               <li>· Les deux restent sur la page d’attente</li>
             </ul>
+          </div>
+
+          <div
+            className="mt-4 p-4 rounded-2xl text-xs leading-relaxed text-left"
+            style={{ background: 'var(--mist)', color: 'var(--muted)' }}
+          >
+            <p className="font-semibold" style={{ color: 'var(--accent)' }}>
+              Astuce : tester en 2 minutes
+            </p>
+            <p className="mt-1.5">
+              Second téléphone + autre email + même durée + les deux sur « En
+              attente ». Le match s’ouvre tout seul.
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-6">
