@@ -11,6 +11,7 @@ import {
   clearSession,
 } from '@/lib/session';
 import { subscribePactMatch } from '@/lib/realtime';
+import JourneyMarkers from '@/components/JourneyMarkers';
 
 function nextPollMs(
   attempt: number,
@@ -286,6 +287,9 @@ function WaitingContent() {
       <Header showCta={false} />
       <section className="flex-1 py-10 md:py-14 pact-shell">
         <div className="max-w-md mx-auto px-4 text-center w-full">
+          <div className="mb-6">
+            <JourneyMarkers current="waiting" />
+          </div>
           <div className="mx-auto mb-6 flex justify-center">
             <div className="pact-breath" />
           </div>
@@ -367,7 +371,6 @@ function WaitingContent() {
             {honest}
           </p>
 
-          {/* Attente utile : pas un cul-de-sac */}
           {alone && pactId && (
             <div className="mt-8 text-left space-y-3">
               <p className="section-label text-center">En attendant</p>
@@ -456,6 +459,13 @@ function WaitingContent() {
                 {leaving ? 'Sortie…' : 'Annuler l’attente'}
               </button>
             )}
+            <Link
+              href="/faq"
+              className="text-sm min-h-[44px] grid place-items-center"
+              style={{ color: 'var(--accent)' }}
+            >
+              Questions fréquentes
+            </Link>
             <Link
               href="/"
               className="text-sm min-h-[44px] grid place-items-center"
