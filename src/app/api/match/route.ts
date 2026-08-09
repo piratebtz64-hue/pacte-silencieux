@@ -11,7 +11,10 @@ const prisma =
   });
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prismaMatch = prisma;
 
+/** File max : au-delà, le WAITING est considéré abandonné */
 const WAITING_MAX_MS = 20 * 60 * 1000;
+/** Le partenaire doit avoir envoyé un heartbeat il y a moins de 90 s */
+const HEARTBEAT_MAX_MS = 90 * 1000;
 
 function isRealActive(
   p: {
@@ -45,6 +48,7 @@ export async function POST(request: NextRequest) {
 
     const now = new Date();
     const waitingSinceCutoff = new Date(now.getTime() - WAITING_MAX_MS);
+    const heartbeatCutoff = new Date(now.getTime() - HEARTBEAT_MAX_MS);
 
     if (action === 'leave' || action === 'disconnect') {
       const current = await prisma.pact.findUnique({
@@ -91,6 +95,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // ACTIVE invalide (même user des deux côtés, ou incomplet)
     if (current.status === 'ACTIVE') {
       await prisma.pact.update({
         where: { id: current.id },
@@ -109,11 +114,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Reprise uniquement d’un vrai pacte à deux personnes distinctes
     const alreadyActive = await prisma.pact.findFirst({
       where: {
         status: 'ACTIVE',
         endsAt: { gt: now },
-        NOT: { userBId: null },
+        userAId: { not: null },
+        userBId: { not: null },
         OR: [{ userAId: userId }, { userBId: userId }],
       },
       select: {
@@ -126,13 +133,27 @@ export async function POST(request: NextRequest) {
       orderBy: { startedAt: 'desc' },
     });
 
-    if (alreadyActive && isRealActive(alreadyActive, now)) {
+    if (
+      alreadyActive &&
+      isRealActive(alreadyActive, now) &&
+      alreadyActive.userAId !== alreadyActive.userBId
+    ) {
       return NextResponse.json({
         matched: true,
         pactId: alreadyActive.id,
         status: 'ACTIVE',
         ms: Date.now() - started,
       });
+    }
+
+    // Sinon terminer les ACTIVE fantômes de cet user
+    if (alreadyActive) {
+      await prisma.pact
+        .update({
+          where: { id: alreadyActive.id },
+          data: { status: 'ENDED' },
+        })
+        .catch(() => {});
     }
 
     let myWaiting = current;
@@ -149,7 +170,10 @@ export async function POST(request: NextRequest) {
       if (!recent) {
         void prisma.pact
           .updateMany({
-            where: { status: 'WAITING', createdAt: { lt: waitingSinceCutoff } },
+            where: {
+              status: 'WAITING',
+              createdAt: { lt: waitingSinceCutoff },
+            },
             data: { status: 'ENDED' },
           })
           .catch(() => {});
@@ -164,6 +188,7 @@ export async function POST(request: NextRequest) {
             myDuration: current.durationDays,
             totalWaiting: 0,
             sameDurationOthers: 0,
+            livePartners: 0,
           },
           ms: Date.now() - started,
         });
@@ -171,14 +196,16 @@ export async function POST(request: NextRequest) {
       myWaiting = recent;
     }
 
-    const heartbeat = prisma.user
+    // Heartbeat : prouve que CET onglet est encore ouvert
+    await prisma.user
       .update({
         where: { id: userId },
-        data: { waitingSince: now },
+        data: { waitingSince: now, lastActiveAt: now },
       })
       .catch(() => {});
 
-    const candidatesPromise = prisma.pact.findMany({
+    // Candidats : même durée + autre user + heartbeat récent (< 90 s)
+    const candidates = await prisma.pact.findMany({
       where: {
         status: 'WAITING',
         durationDays: myWaiting.durationDays,
@@ -186,30 +213,30 @@ export async function POST(request: NextRequest) {
         id: { not: myWaiting.id },
         userAId: { not: userId },
         createdAt: { gte: waitingSinceCutoff },
+        userA: {
+          is: {
+            waitingSince: { gte: heartbeatCutoff },
+          },
+        },
       },
       orderBy: { createdAt: 'asc' },
-      take: 5,
+      take: 8,
       select: {
         id: true,
         userAId: true,
         createdAt: true,
         durationDays: true,
+        userA: { select: { id: true, waitingSince: true } },
       },
     });
 
-    const totalPromise = prisma.pact.count({
+    const totalRecent = await prisma.pact.count({
       where: {
         status: 'WAITING',
         userBId: null,
         createdAt: { gte: waitingSinceCutoff },
       },
     });
-
-    const [, candidates, totalRecent] = await Promise.all([
-      heartbeat,
-      candidatesPromise,
-      totalPromise,
-    ]);
 
     void prisma.pact
       .updateMany({
@@ -218,26 +245,28 @@ export async function POST(request: NextRequest) {
       })
       .catch(() => {});
 
-    const validPartners = candidates.filter(
-      (c) =>
-        !!c.userAId &&
-        c.userAId !== userId &&
-        c.userAId !== myWaiting.userAId
-    );
+    const validPartners = candidates.filter((c) => {
+      if (!c.userAId || c.userAId === userId || c.userAId === myWaiting.userAId)
+        return false;
+      const ws = c.userA?.waitingSince;
+      if (!ws) return false;
+      return ws.getTime() >= heartbeatCutoff.getTime();
+    });
 
     if (validPartners.length === 0) {
       return NextResponse.json({
         matched: false,
         status: 'WAITING',
-        alone: totalRecent <= 1,
+        alone: true,
         message:
           totalRecent <= 1
             ? 'Tu es seul(e) dans la file. Garde cette page ouverte.'
-            : 'D’autres personnes attendent, mais pas la même durée (1, 3 ou 7 jours).',
+            : 'Personne d’autre n’est actif en ce moment avec la même durée. Garde la page ouverte.',
         debug: {
           myDuration: myWaiting.durationDays,
           totalWaiting: totalRecent,
-          sameDurationOthers: 0,
+          sameDurationOthers: candidates.length,
+          livePartners: 0,
         },
         ms: Date.now() - started,
       });
@@ -274,6 +303,24 @@ export async function POST(request: NextRequest) {
         status: 'WAITING',
         alone: true,
         message: 'Tu es seul(e) dans la file pour l’instant.',
+        ms: Date.now() - started,
+      });
+    }
+
+    // Double-check : le partenaire a toujours un heartbeat frais
+    const partnerUser = await prisma.user.findUnique({
+      where: { id: bId === userId ? aId : bId },
+      select: { waitingSince: true },
+    });
+    if (
+      !partnerUser?.waitingSince ||
+      partnerUser.waitingSince.getTime() < heartbeatCutoff.getTime()
+    ) {
+      return NextResponse.json({
+        matched: false,
+        status: 'WAITING',
+        alone: true,
+        message: 'La présence s’est déconnectée. On continue d’attendre…',
         ms: Date.now() - started,
       });
     }
