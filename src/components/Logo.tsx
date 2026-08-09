@@ -40,21 +40,22 @@ export default function Logo() {
   return (
     <Link
       href="/"
-      className="group flex items-center gap-2.5 no-underline"
+      className="group flex items-center gap-2 no-underline min-w-0"
       aria-label="Le Pacte silencieux — accueil"
     >
       <span
-        className="logo-ring flex h-9 w-9 items-center justify-center rounded-full border"
+        className="logo-ring flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full border"
         style={{
           borderColor: 'color-mix(in srgb, var(--accent) 35%, transparent)',
           background: 'var(--accent-soft)',
           color: 'var(--accent)',
         }}
       >
-        <ShushIcon className="h-5 w-5" />
+        <ShushIcon className="h-4 w-4 sm:h-5 sm:w-5" />
       </span>
-      <span className="font-serif text-[0.95rem] sm:text-base tracking-tight font-semibold">
-        Le Pacte silencieux
+      <span className="font-serif text-[0.9rem] sm:text-base tracking-tight font-semibold truncate max-w-[9.5rem] sm:max-w-none">
+        <span className="sm:hidden">Pacte</span>
+        <span className="hidden sm:inline">Le Pacte silencieux</span>
       </span>
     </Link>
   );

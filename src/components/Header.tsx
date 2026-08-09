@@ -36,12 +36,12 @@ export default function Header({ showCta = true }: { showCta?: boolean }) {
         boxShadow: scrolled ? 'var(--shadow-soft)' : 'none',
       }}
     >
-      <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
-        <Link href="/" className="shrink-0" aria-label="Accueil">
+      <div className="max-w-5xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2 min-w-0">
+        <div className="min-w-0 shrink">
           <Logo />
-        </Link>
+        </div>
 
-        <nav className="hidden md:flex items-center gap-0.5 text-[13px] font-medium">
+        <nav className="hidden md:flex items-center gap-0.5 text-[13px] font-medium shrink-0">
           {[
             ['/outils', 'Outils'],
             ['/selection', 'Sélection'],
@@ -58,19 +58,23 @@ export default function Header({ showCta = true }: { showCta?: boolean }) {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
-          {hasSession && (
+        {/* Un seul CTA à droite : évite Mon pacte + Reprendre qui se coupent */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {showCta && hasSession && (
             <button
               type="button"
               onClick={openMyPact}
-              className="btn-ghost !py-2 !px-3.5 !text-xs"
+              className="btn-primary !py-2 !px-3 sm:!px-4 !text-xs sm:!text-sm whitespace-nowrap"
             >
-              Mon pacte
+              Reprendre
             </button>
           )}
-          {showCta && (
-            <Link href="/start" className="btn-primary !py-2.5 !px-5 !text-sm">
-              {hasSession ? 'Reprendre' : 'Commencer'}
+          {showCta && !hasSession && (
+            <Link
+              href="/start"
+              className="btn-primary !py-2 !px-3 sm:!px-4 !text-xs sm:!text-sm whitespace-nowrap"
+            >
+              Commencer
             </Link>
           )}
           <ThemeToggle />
