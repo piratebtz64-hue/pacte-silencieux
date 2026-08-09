@@ -162,7 +162,7 @@ export default function HeartRateFeedback() {
     setLocation(null);
     setBattery(null);
 
-    if (!('bluetooth' in navigator)) {
+    if (!navigator.bluetooth) {
       const info = parseBleError({
         name: 'NotSupportedError',
         message: 'bluetooth not available',
@@ -181,7 +181,6 @@ export default function HeartRateFeedback() {
     );
 
     try {
-      // @ts-expect-error Web Bluetooth
       const device = await navigator.bluetooth.requestDevice(
         wideScan
           ? {
