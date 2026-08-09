@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import BrandBanner from '@/components/BrandBanner';
 import Reveal from '@/components/Reveal';
 import HomeSessionBanner from '@/components/HomeSessionBanner';
+import ShareButton from '@/components/ShareButton';
 
 const HELPLINES: [string, string][] = [
   ['09 72 39 40 50', 'SOS Amitié — écoute et soutien'],
@@ -51,6 +52,11 @@ const QUICK = [
     desc: 'Clarifier ce dont tu as besoin',
   },
   {
+    href: '/pour-un-proche',
+    title: 'Inviter quelqu’un',
+    desc: 'Tester à deux en 2 minutes',
+  },
+  {
     href: '/#aide',
     title: 'Numéros d’aide',
     desc: 'Écoute et urgences (France)',
@@ -64,7 +70,6 @@ export default function HomePage() {
       <HomeSessionBanner />
       <BrandBanner />
 
-      {/* HERO */}
       <section className="hero-silence">
         <div className="hero-orb" aria-hidden />
         <div className="hero-orb-2" aria-hidden />
@@ -90,18 +95,32 @@ export default function HomePage() {
             écrits, sans chat libre. Un complément — pas un remplacement des
             proches ni des professionnels.
           </p>
-          <div className="mt-11 flex flex-wrap gap-3 justify-center animate-fade-up animate-delay-3">
+          <div className="mt-11 flex flex-wrap gap-3 justify-center items-center animate-fade-up animate-delay-3">
             <Link href="/start" className="btn-primary">
               Commencer un pacte
             </Link>
             <Link href="/outils" className="btn-ghost">
               Respiration et outils
             </Link>
+            <ShareButton label="Inviter quelqu’un" />
           </div>
+          <p
+            className="mt-6 text-xs leading-relaxed max-w-[40ch] mx-auto animate-fade-up"
+            style={{ color: 'var(--muted)' }}
+          >
+            Fonctionne mieux à deux · même durée · page d’attente ouverte des
+            deux côtés.{' '}
+            <Link
+              href="/pour-un-proche"
+              className="underline"
+              style={{ color: 'var(--accent)' }}
+            >
+              Comment inviter
+            </Link>
+          </p>
         </div>
       </section>
 
-      {/* ACCÈS */}
       <section className="pb-16 md:pb-20">
         <div className="max-w-3xl mx-auto px-4">
           <p className="section-label text-center mb-3">Parcours</p>
@@ -124,124 +143,71 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* EXEMPLE D’ÉCHANGE */}
       <section className="pb-16 md:pb-24">
         <div className="max-w-md mx-auto px-4">
           <Reveal>
-            <div className="card-premium p-7 md:p-9">
-              <p className="section-label text-center mb-6">Aperçu</p>
-              <div className="space-y-4">
-                <div
-                  className="p-4 rounded-2xl"
-                  style={{ background: 'var(--warm)' }}
-                >
-                  <p
-                    className="text-[10px] uppercase tracking-wider mb-2"
-                    style={{ color: 'var(--muted)' }}
-                  >
-                    Présence
-                  </p>
-                  <p className="font-serif text-[1.08rem] leading-snug">
-                    Si c’est lourd aujourd’hui, tu n’as pas à le porter seul.
-                  </p>
-                </div>
-                <div
-                  className="p-4 rounded-2xl ml-4"
-                  style={{ background: 'var(--accent-soft)' }}
-                >
-                  <p
-                    className="text-[10px] uppercase tracking-wider mb-2 font-medium"
-                    style={{ color: 'var(--accent)' }}
-                  >
-                    Réponse choisie
-                  </p>
-                  <p className="font-serif text-[1.08rem] leading-snug">
-                    Merci. Ça m’aide un peu.
-                  </p>
-                </div>
+            <p className="section-label text-center mb-6">Aperçu</p>
+            <div
+              className="rounded-2xl border p-5 space-y-4"
+              style={{ borderColor: 'var(--border)', background: 'var(--card)' }}
+            >
+              <div className="msg-bubble msg-bubble-theirs">
+                <p className="msg-body">Je suis là. Pas besoin de répondre.</p>
               </div>
+              <div className="msg-bubble msg-bubble-mine">
+                <p className="msg-body">Merci. Ça aide un peu.</p>
+              </div>
+              <p className="text-xs text-center" style={{ color: 'var(--muted)' }}>
+                Messages déjà écrits · pas de chat libre
+              </p>
             </div>
           </Reveal>
         </div>
       </section>
 
-      {/* TONS */}
-      <section
-        id="tons"
-        className="py-16 md:py-24 border-t"
-        style={{ borderColor: 'var(--border)' }}
-      >
-        <div className="max-w-2xl mx-auto px-4">
-          <Reveal>
-            <p className="section-label text-center mb-3">Cadence</p>
-            <h2 className="font-serif text-2xl md:text-3xl tracking-tight text-center max-w-[14ch] mx-auto">
-              Trois tons, une même prudence
-            </h2>
-            <p
-              className="mt-5 text-sm leading-relaxed text-center max-w-[38ch] mx-auto"
-              style={{ color: 'var(--muted)' }}
-            >
-              L’échange ne s’emballe pas. On commence doux. On monte seulement si
-              la personne le choisit.
-            </p>
-          </Reveal>
-          <div className="mt-12 grid gap-4">
+      <section className="pb-16 md:pb-24">
+        <div className="max-w-3xl mx-auto px-4">
+          <p className="section-label text-center mb-3">Cadence</p>
+          <h2 className="font-serif text-2xl md:text-3xl text-center tracking-tight mb-10">
+            Comment ça se passe
+          </h2>
+          <div className="grid sm:grid-cols-3 gap-6">
             {[
               {
-                n: '01',
-                t: 'Présence douce',
-                d: 'Messages courts, sans pression. Juste rester là.',
+                t: 'Tu choisis une durée',
+                d: '1, 3 ou 7 jours. Même durée des deux côtés pour le match.',
               },
               {
-                n: '02',
-                t: 'Validation',
-                d: 'Reconnaître ce qui est difficile, sans minimiser.',
+                t: 'Tu attends une présence',
+                d: 'Si tu es seul·e : outils de respiration. Si quelqu’un arrive : pacte.',
               },
               {
-                n: '03',
-                t: 'Outils si besoin',
-                d: 'Respiration, ancrage — seulement si tu le choisis.',
+                t: 'Gestes et messages',
+                d: 'Déjà écrits. À la fin, vous pouvez prolonger 7 jours si les deux disent oui.',
               },
             ].map((s) => (
-              <Reveal key={s.n}>
-                <div
-                  className="flex gap-5 p-5 rounded-2xl border"
-                  style={{
-                    borderColor: 'var(--border)',
-                    background: 'var(--card-solid)',
-                  }}
-                >
-                  <span
-                    className="shrink-0 font-serif text-lg tabular-nums"
-                    style={{ color: 'var(--accent)' }}
+              <Reveal key={s.t}>
+                <div>
+                  <h3 className="font-semibold text-[15px]">{s.t}</h3>
+                  <p
+                    className="text-sm mt-1.5 leading-relaxed"
+                    style={{ color: 'var(--muted)' }}
                   >
-                    {s.n}
-                  </span>
-                  <div>
-                    <h3 className="font-semibold text-[15px]">{s.t}</h3>
-                    <p
-                      className="text-sm mt-1.5 leading-relaxed"
-                      style={{ color: 'var(--muted)' }}
-                    >
-                      {s.d}
-                    </p>
-                  </div>
+                    {s.d}
+                  </p>
                 </div>
               </Reveal>
             ))}
           </div>
-          <div className="mt-12 text-center flex flex-wrap gap-3 justify-center">
+          <div className="mt-12 text-center flex flex-wrap gap-3 justify-center items-center">
             <Link href="/start" className="btn-primary">
               Commencer un pacte
             </Link>
-            <Link href="/outils" className="btn-ghost">
-              Voir les outils
-            </Link>
+            <ShareButton label="Inviter quelqu’un" />
           </div>
         </div>
       </section>
 
-      {/* AIDE */}
       <section
         id="aide"
         className="py-16 md:py-24 border-t"
@@ -250,44 +216,28 @@ export default function HomePage() {
           background: 'var(--mist)',
         }}
       >
-        <div className="max-w-2xl mx-auto px-4">
-          <Reveal>
-            <p className="section-label mb-3">Soutien réel</p>
-            <h2 className="font-serif text-2xl md:text-3xl tracking-tight leading-snug">
-              En cas de besoin
-            </h2>
-            <p
-              className="mt-5 text-sm leading-relaxed max-w-[42ch]"
-              style={{ color: 'var(--muted)' }}
-            >
-              Ce site ne remplace pas un psychologue ou un médecin. Pour une
-              écoute humaine : SOS Amitié ou Croix-Rouge. Urgence :{' '}
-              <strong>15</strong> ou <strong>112</strong>.
-            </p>
-          </Reveal>
-          <Reveal delay={60}>
-            <div className="card-premium mt-10 p-6 md:p-8">
-              <h3
-                className="text-sm font-semibold"
-                style={{ color: 'var(--accent)' }}
-              >
-                Numéros d’aide (France)
-              </h3>
-              <ul className="mt-5 space-y-3 text-sm">
-                {HELPLINES.map(([n, label]) => (
-                  <li key={n} className="flex gap-3 flex-wrap items-baseline">
-                    <strong
-                      className="shrink-0 min-w-[7.5rem] tabular-nums"
-                      style={{ color: 'var(--accent)' }}
-                    >
-                      {n}
-                    </strong>
-                    <span style={{ color: 'var(--muted)' }}>{label}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </Reveal>
+        <div className="max-w-3xl mx-auto px-4">
+          <p className="section-label mb-3">Soutien réel</p>
+          <h2 className="font-serif text-2xl md:text-3xl tracking-tight mb-3">
+            Numéros d’aide
+          </h2>
+          <p className="text-sm mb-8 leading-relaxed" style={{ color: 'var(--muted)' }}>
+            Ce site ne remplace pas un professionnel. En détresse, appelle.
+          </p>
+          <ul className="space-y-3 text-sm">
+            {HELPLINES.map(([num, label]) => (
+              <li key={num} className="flex flex-wrap gap-x-3 gap-y-1">
+                <a
+                  href={`tel:${num.replace(/\s/g, '')}`}
+                  className="font-semibold tabular-nums"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  {num}
+                </a>
+                <span style={{ color: 'var(--muted)' }}>{label}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
