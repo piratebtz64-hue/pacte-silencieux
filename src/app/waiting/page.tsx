@@ -12,10 +12,22 @@ import {
 } from '@/lib/session';
 import { subscribePactMatch } from '@/lib/realtime';
 
-function nextPollMs(attempt: number, realtimeOk: boolean) {
-  if (realtimeOk) return attempt < 5 ? 4000 : 8000;
-  if (attempt < 10) return 1200;
-  if (attempt < 25) return 2000;
+/** Polling match : plus lent si seul, plus lent si Realtime OK */
+function nextPollMs(
+  attempt: number,
+  realtimeOk: boolean,
+  alone: boolean
+) {
+  if (realtimeOk) {
+    return alone ? 8000 : 4500;
+  }
+  if (alone) {
+    if (attempt < 5) return 2500;
+    if (attempt < 20) return 4000;
+    return 6000;
+  }
+  if (attempt < 8) return 1500;
+  if (attempt < 20) return 2500;
   return 4000;
 }
 
@@ -38,12 +50,14 @@ function WaitingContent() {
   const leftRef = useRef(false);
   const pactIdRef = useRef<string | null>(null);
   const liveRef = useRef(false);
+  const aloneRef = useRef(true);
 
   const goToPact = useCallback((activeId: string) => {
     if (leftRef.current) return;
     leftRef.current = true;
     setStatus('Présence trouvée. Ouverture…');
     setAlone(false);
+    aloneRef.current = false;
     writeSession({ pactId: activeId, status: 'ACTIVE' });
     window.location.assign(`/pact/${activeId}`);
   }, []);
@@ -70,6 +84,10 @@ function WaitingContent() {
       keepalive: true,
     }).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    aloneRef.current = alone;
+  }, [alone]);
 
   useEffect(() => {
     const s = readSession();
@@ -132,6 +150,29 @@ function WaitingContent() {
     pactIdRef.current = pactId;
   }, [pactId]);
 
+  // Heartbeat léger toutes les 25 s (indépendant du match)
+  useEffect(() => {
+    if (!pactId) return;
+    let cancelled = false;
+
+    const beat = () => {
+      if (cancelled || leftRef.current) return;
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+      fetch('/api/heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pactId }),
+      }).catch(() => {});
+    };
+
+    beat();
+    const t = setInterval(beat, 25_000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, [pactId]);
+
   useEffect(() => {
     if (!pactId) return;
     setLive(false);
@@ -166,7 +207,7 @@ function WaitingContent() {
       if (cancelled || leftRef.current) return;
       timer = setTimeout(
         tryMatch,
-        nextPollMs(attemptRef.current, liveRef.current)
+        nextPollMs(attemptRef.current, liveRef.current, aloneRef.current)
       );
     };
 
@@ -192,11 +233,14 @@ function WaitingContent() {
           return;
         }
 
-        setAlone(data.alone !== false);
+        const isAlone = data.alone !== false;
+        setAlone(isAlone);
+        aloneRef.current = isAlone;
+
         if (!liveRef.current) {
           setStatus(
             data.message ||
-              (data.alone !== false
+              (isAlone
                 ? 'Tu es seul(e) dans la file pour l’instant.'
                 : 'Toujours en attente…')
           );
@@ -204,7 +248,7 @@ function WaitingContent() {
         writeSession({ status: 'WAITING' });
         if (data.debug) {
           setHint(
-            `Durée : ${data.debug.myDuration} j · File : ${data.debug.totalWaiting} · Actifs même durée : ${data.debug.livePartners ?? data.debug.sameDurationOthers ?? 0}`
+            `Durée : ${data.debug.myDuration} j · File : ${data.debug.totalWaiting} · Actifs : ${data.debug.livePartners ?? 0}`
           );
         }
       } catch {
@@ -370,7 +414,11 @@ function WaitingContent() {
                 {leaving ? 'Sortie…' : 'Annuler l’attente'}
               </button>
             )}
-            <Link href="/" className="text-sm min-h-[44px] grid place-items-center" style={{ color: 'var(--muted)' }}>
+            <Link
+              href="/"
+              className="text-sm min-h-[44px] grid place-items-center"
+              style={{ color: 'var(--muted)' }}
+            >
               Accueil
             </Link>
           </div>
