@@ -75,7 +75,6 @@ export async function POST(request: NextRequest) {
 
     if (!forceNew) {
       try {
-        // 1) Pacte ACTIF (les deux présents)
         const active = await prisma.pact.findFirst({
           where: {
             status: 'ACTIVE',
@@ -87,6 +86,7 @@ export async function POST(request: NextRequest) {
           orderBy: { startedAt: 'desc' },
         });
 
+        // Vrai pacte à deux personnes distinctes uniquement
         if (
           active &&
           active.userAId &&
@@ -104,11 +104,21 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        // 2) Pacte encore EN ATTENTE
+        // ACTIVE fantôme → on le clôture
+        if (active) {
+          await prisma.pact
+            .update({
+              where: { id: active.id },
+              data: { status: 'ENDED' },
+            })
+            .catch(() => {});
+        }
+
         const waiting = await prisma.pact.findFirst({
           where: {
             status: 'WAITING',
-            OR: [{ userAId: user.id }, { userBId: user.id }],
+            userBId: null,
+            OR: [{ userAId: user.id }],
           },
           orderBy: { createdAt: 'desc' },
         });
